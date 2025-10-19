@@ -1,0 +1,907 @@
+# 12306铁路系统前端UI接口库
+# 版本: v1.0
+# 创建日期: 2025-01-18
+
+# 用户认证相关UI组件
+- type: Frontend
+  id: UI-RegisterForm
+  description: 用户注册表单组件，处理用户注册流程包括信息填写和验证码验证。
+  properties:
+    - name: onRegisterSuccess
+      type: function
+      description: "注册成功后的回调函数。"
+    - name: onRegisterError
+      type: function
+      description: "注册失败时的错误处理回调。"
+    - name: initialValues
+      type: object
+      description: "表单初始值，用于编辑模式。"
+  state:
+    - phoneNumber
+    - email
+    - verificationCode
+    - password
+    - confirmPassword
+    - realName
+    - idCard
+    - isLoading
+    - errors
+    - codeCountdown
+  dependencies:
+    - API-POST-Register
+    - API-POST-SendVerificationCode
+  acceptanceCriteria:
+    - 组件应渲染手机号、邮箱、验证码、密码、确认密码、真实姓名、身份证号输入框。
+    - 点击获取验证码按钮时，应调用发送验证码API并启动60秒倒计时。
+    - 点击注册按钮时，应验证所有必填字段并调用注册API。
+    - 当isLoading状态为true时，注册按钮应被禁用并显示加载状态。
+    - 实时验证输入格式，如手机号、邮箱、身份证号格式。
+    - 密码强度检查和确认密码一致性验证。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+# 首页相关UI组件接口
+- type: Frontend
+  id: UI-HomeHeader
+  description: 首页顶部导航栏，包含用户状态显示和辅助功能。
+  properties:
+    - name: userInfo
+      type: object
+      description: "用户信息对象，包含登录状态和基本信息。"
+    - name: onLoginClick
+      type: function
+      description: "点击登录按钮的回调函数。"
+    - name: onRegisterClick
+      type: function
+      description: "点击注册按钮的回调函数。"
+    - name: onUserMenuClick
+      type: function
+      description: "点击用户菜单的回调函数。"
+  state:
+    - isLoggedIn
+    - userMenuVisible
+    - notificationCount
+  dependencies:
+    - API-GET-UserStatus
+  acceptanceCriteria:
+    - 未登录时显示登录/注册按钮。
+    - 已登录时显示用户头像、昵称和下拉菜单。
+    - 包含消息通知、帮助中心等辅助功能入口。
+    - 支持响应式布局，移动端自适应。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建，支持首页顶部导航功能。"
+
+- type: Frontend
+  id: UI-TicketQueryForm
+  description: 车票查询表单，包含出发地/目的地选择、日期选择和查询选项。
+  properties:
+    - name: onSearch
+      type: function
+      description: "提交查询的回调函数。"
+    - name: defaultValues
+      type: object
+      description: "表单默认值，包含出发地、目的地、日期等。"
+    - name: disabled
+      type: boolean
+      description: "是否禁用表单，默认false。"
+  state:
+    - fromStation
+    - toStation
+    - departDate
+    - returnDate
+    - passengerType
+    - trainType
+    - onlyAvailable
+    - includeNoSeat
+    - isLoading
+    - errors
+    - showDatePicker
+    - showStationSelector
+  dependencies:
+    - API-GET-StationsSearch
+    - API-GET-HotCities
+    - API-GET-UserRecentStations
+    - API-POST-SaveSearchHistory
+  acceptanceCriteria:
+    - 出发地/目的地输入框支持自动补全和热门城市选择。
+    - 日期选择器支持快速选择和日历视图。
+    - 包含乘客类型、车次类型等查询选项。
+    - 表单验证：出发地和目的地不能相同，日期不能早于当前日期。
+    - 支持交换出发地和目的地功能。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建，支持首页车票查询功能。"
+
+- type: Frontend
+  id: UI-StationSelector
+  description: 车站选择器组件，支持搜索、热门城市和历史记录。
+  properties:
+    - name: value
+      type: string
+      description: "当前选中的车站。"
+    - name: onChange
+      type: function
+      description: "车站选择变化的回调函数。"
+    - name: placeholder
+      type: string
+      description: "输入框占位符文本。"
+    - name: showHistory
+      type: boolean
+      description: "是否显示历史记录，默认true。"
+  state:
+    - searchKeyword
+    - suggestions
+    - hotCities
+    - recentStations
+    - isLoading
+    - showDropdown
+  dependencies:
+    - API-GET-StationsSearch
+    - API-GET-HotCities
+    - API-GET-UserRecentStations
+  acceptanceCriteria:
+    - 输入1个字符后开始搜索并显示建议。
+    - 显示热门城市分组（按省份）。
+    - 已登录用户显示最近使用的车站。
+    - 支持键盘导航和点击选择。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建，支持车站选择功能。"
+
+- type: Frontend
+  id: UI-DatePicker
+  description: 日期选择器组件，支持快速选择和日历视图。
+  properties:
+    - name: value
+      type: string
+      description: "当前选中的日期。"
+    - name: onChange
+      type: function
+      description: "日期变化的回调函数。"
+    - name: minDate
+      type: string
+      description: "最小可选日期，默认为今天。"
+    - name: maxDate
+      type: string
+      description: "最大可选日期，默认为60天后。"
+    - name: showQuickSelect
+      type: boolean
+      description: "是否显示快速选择，默认true。"
+  state:
+    - selectedDate
+    - currentMonth
+    - showCalendar
+    - quickSelectOptions
+  dependencies:
+    - API-GET-SystemConfig
+  acceptanceCriteria:
+    - 提供今天、明天、后天等快速选择选项。
+    - 日历视图标识节假日和票源紧张日期。
+    - 禁用过去的日期和超出预售期的日期。
+    - 支持键盘输入和点击选择。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建，支持日期选择功能。"
+
+- type: Frontend
+  id: UI-QuickAccess
+  description: 快捷入口组件，包含个人中心和常用功能。
+  properties:
+    - name: userInfo
+      type: object
+      description: "用户信息对象。"
+    - name: onItemClick
+      type: function
+      description: "点击快捷入口项的回调函数。"
+  state:
+    - isLoggedIn
+    - quickItems
+  dependencies:
+    - API-GET-UserStatus
+  acceptanceCriteria:
+    - 未登录时显示登录提示和基础功能入口。
+    - 已登录时显示个人中心相关功能。
+    - 包含我的订单、常用联系人、个人信息等入口。
+    - 支持图标和文字显示。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建，支持首页快捷入口功能。"
+
+- type: Frontend
+  id: UI-HotRoutes
+  description: 热门线路推荐组件，显示热门出行路线。
+  properties:
+    - name: onRouteClick
+      type: function
+      description: "点击热门线路的回调函数。"
+    - name: limit
+      type: number
+      description: "显示的线路数量，默认12。"
+  state:
+    - routes
+    - isLoading
+    - updateTime
+  dependencies:
+    - API-GET-HotRoutes
+  acceptanceCriteria:
+    - 显示热门出发地到目的地的线路。
+    - 包含参考价格和车次数量信息。
+    - 点击线路自动填充查询表单。
+    - 支持响应式布局，移动端滑动查看。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建，支持热门线路推荐功能。"
+
+- type: Frontend
+  id: UI-SearchHistory
+  description: 搜索历史组件，显示用户最近的查询记录。
+  properties:
+    - name: onHistoryClick
+      type: function
+      description: "点击历史记录的回调函数。"
+    - name: onClearHistory
+      type: function
+      description: "清空历史记录的回调函数。"
+    - name: visible
+      type: boolean
+      description: "是否显示历史记录，默认true。"
+  state:
+    - history
+    - isLoading
+  dependencies:
+    - API-GET-UserSearchHistory
+  acceptanceCriteria:
+    - 显示用户最近5条查询记录。
+    - 包含出发地、目的地、查询日期信息。
+    - 点击历史记录自动填充查询表单。
+    - 支持清空所有历史记录。
+    - 仅登录用户显示。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建，支持搜索历史功能。"
+
+- type: Frontend
+  id: UI-ServiceEntries
+  description: 服务功能入口组件，包含各种便民服务。
+  properties:
+    - name: onServiceClick
+      type: function
+      description: "点击服务入口的回调函数。"
+    - name: layout
+      type: string
+      description: "布局方式：grid或list，默认grid。"
+  state:
+    - services
+    - expandedCategories
+  dependencies:
+    - API-GET-SystemConfig
+  acceptanceCriteria:
+    - 包含重点旅客服务、失物招领、汽车票等服务入口。
+    - 支持分类展示和收起/展开功能。
+    - 每个服务显示图标、标题和简短描述。
+    - 支持外部链接跳转和内部页面导航。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建，支持服务功能入口。"
+
+- type: Frontend
+  id: UI-SystemNotice
+  description: 系统公告组件，显示重要通知和维护信息。
+  properties:
+    - name: onNoticeClick
+      type: function
+      description: "点击公告的回调函数。"
+    - name: autoClose
+      type: boolean
+      description: "是否自动关闭，默认false。"
+  state:
+    - notices
+    - currentNotice
+    - isVisible
+    - autoPlayTimer
+  dependencies:
+    - API-GET-SystemConfig
+  acceptanceCriteria:
+    - 显示系统公告、维护通知等重要信息。
+    - 支持轮播显示多条公告。
+    - 包含关闭按钮和详情查看功能。
+    - 根据公告优先级决定显示样式。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建，支持系统公告显示。"
+
+- type: Frontend
+  id: UI-HomePage
+  description: 首页主容器组件，整合所有首页功能模块。
+  properties:
+    - name: initialData
+      type: object
+      description: "页面初始数据。"
+    - name: onNavigate
+      type: function
+      description: "页面导航的回调函数。"
+  state:
+    - userInfo
+    - pageLoading
+    - searchParams
+    - activeTab
+  dependencies:
+    - UI-HomeHeader
+    - UI-TicketQueryForm
+    - UI-QuickAccess
+    - UI-HotRoutes
+    - UI-SearchHistory
+    - UI-ServiceEntries
+    - UI-SystemNotice
+    - API-GET-UserStatus
+    - API-GET-SystemConfig
+  acceptanceCriteria:
+    - 整合所有首页功能模块，提供统一的数据管理。
+    - 支持响应式布局，适配桌面端和移动端。
+    - 处理页面级的状态管理和数据流。
+    - 提供良好的加载状态和错误处理。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建，支持首页整体功能。"
+
+- type: Frontend
+  id: UI-LoginForm
+  description: 用户登录表单组件，支持手机号/邮箱+密码登录方式。
+  properties:
+    - name: onLoginSuccess
+      type: function
+      description: "登录成功后的回调函数。"
+    - name: onLoginError
+      type: function
+      description: "登录失败时的错误处理回调。"
+    - name: showCaptcha
+      type: boolean
+      description: "是否显示图形验证码。"
+  state:
+    - account
+    - password
+    - captcha
+    - isLoading
+    - errors
+    - loginAttempts
+  dependencies:
+    - API-POST-Login
+  acceptanceCriteria:
+    - 组件应渲染账号（手机号/邮箱）、密码输入框和登录按钮。
+    - 支持记住账号功能，使用localStorage存储。
+    - 登录失败超过3次时显示图形验证码。
+    - 当isLoading状态为true时，登录按钮应被禁用并显示加载状态。
+    - 提供"忘记密码"链接跳转到密码重置页面。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+- type: Frontend
+  id: UI-ResetPasswordForm
+  description: 密码重置表单组件，通过手机验证码重置密码。
+  properties:
+    - name: onResetSuccess
+      type: function
+      description: "密码重置成功后的回调函数。"
+    - name: onResetError
+      type: function
+      description: "密码重置失败时的错误处理回调。"
+  state:
+    - phoneNumber
+    - verificationCode
+    - newPassword
+    - confirmPassword
+    - isLoading
+    - errors
+    - codeCountdown
+  dependencies:
+    - API-POST-ResetPassword
+    - API-POST-SendVerificationCode
+  acceptanceCriteria:
+    - 组件应渲染手机号、验证码、新密码、确认密码输入框。
+    - 点击获取验证码按钮时启动60秒倒计时。
+    - 验证新密码强度和确认密码一致性。
+    - 重置成功后跳转到登录页面。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+# 车票查询相关UI组件
+- type: Frontend
+  id: UI-TrainSearchForm
+  description: 车票查询表单组件，提供出发地、目的地、日期等查询条件。
+  properties:
+    - name: onSearch
+      type: function
+      description: "执行搜索时的回调函数。"
+    - name: onSwapStations
+      type: function
+      description: "交换出发地和目的地的回调函数。"
+  state:
+    - fromStation
+    - toStation
+    - departDate
+    - returnDate
+    - passengerCount
+    - isLoading
+    - stationSuggestions
+  dependencies:
+    - API-GET-QueryTrains
+  acceptanceCriteria:
+    - 组件应渲染出发地、目的地选择器和出发日期选择器。
+    - 支持站点名称自动补全和搜索建议。
+    - 提供出发地和目的地快速交换功能。
+    - 日期选择器应限制可选择的日期范围（如未来60天）。
+    - 支持往返票查询（可选返程日期）。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+- type: Frontend
+  id: UI-TrainList
+  description: 车次列表组件，展示查询结果并支持筛选和排序。
+  properties:
+    - name: trains
+      type: array
+      description: "车次数据列表。"
+    - name: onSelectTrain
+      type: function
+      description: "选择车次时的回调函数。"
+    - name: onLoadMore
+      type: function
+      description: "加载更多数据的回调函数。"
+  state:
+    - filteredTrains
+    - sortBy
+    - filterOptions
+    - isLoading
+    - hasMore
+  dependencies:
+    - API-GET-QueryTrains
+    - API-GET-TrainDetail
+  acceptanceCriteria:
+    - 以列表形式展示车次信息，包括车次号、发车时间、到达时间、历时、余票、票价。
+    - 支持按车次类型、发车时间、票价等条件筛选。
+    - 支持按发车时间、历时、票价等字段排序。
+    - 实时显示余票信息，余票不足时给出提示。
+    - 支持分页加载或无限滚动加载更多数据。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+- type: Frontend
+  id: UI-TrainDetailModal
+  description: 车次详情弹窗组件，显示车次的详细信息和座位分布。
+  properties:
+    - name: trainId
+      type: string
+      description: "车次ID。"
+    - name: visible
+      type: boolean
+      description: "弹窗是否可见。"
+    - name: onClose
+      type: function
+      description: "关闭弹窗的回调函数。"
+    - name: onBookTicket
+      type: function
+      description: "预订车票的回调函数。"
+  state:
+    - trainDetail
+    - selectedSeatType
+    - isLoading
+  dependencies:
+    - API-GET-TrainDetail
+  acceptanceCriteria:
+    - 显示车次的完整信息，包括停靠站点和时刻表。
+    - 展示座位分布图和各座位等级的余票情况。
+    - 提供座位等级选择和预订功能。
+    - 支持关闭弹窗和跳转到订票页面。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+# 订单管理相关UI组件
+- type: Frontend
+  id: UI-BookingForm
+  description: 订票表单组件，处理乘客信息填写和座位选择。
+  properties:
+    - name: trainInfo
+      type: object
+      description: "选中的车次信息。"
+    - name: onSubmitOrder
+      type: function
+      description: "提交订单时的回调函数。"
+    - name: onAddPassenger
+      type: function
+      description: "添加乘客时的回调函数。"
+  state:
+    - selectedPassengers
+    - seatType
+    - seatNumbers
+    - contactInfo
+    - isLoading
+    - errors
+  dependencies:
+    - API-POST-CreateOrder
+    - API-GET-UserPassengers
+  acceptanceCriteria:
+    - 显示选中车次的基本信息。
+    - 提供乘客选择功能，支持从常用联系人中选择或临时添加。
+    - 支持座位等级选择和具体座位号选择（如果支持）。
+    - 验证乘客信息的完整性和有效性。
+    - 显示订单总价和提交订单按钮。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+- type: Frontend
+  id: UI-OrderList
+  description: 订单列表组件，展示用户的历史订单和当前订单。
+  properties:
+    - name: onViewDetail
+      type: function
+      description: "查看订单详情的回调函数。"
+    - name: onRefund
+      type: function
+      description: "申请退票的回调函数。"
+    - name: onReschedule
+      type: function
+      description: "申请改签的回调函数。"
+  state:
+    - orders
+    - filterStatus
+    - sortBy
+    - isLoading
+    - currentPage
+  dependencies:
+    - API-GET-UserOrders
+  acceptanceCriteria:
+    - 以列表或卡片形式展示订单信息。
+    - 支持按订单状态筛选（全部、待支付、已支付、已取消、已退票）。
+    - 显示订单的关键信息：车次、日期、乘客、状态、金额。
+    - 提供订单操作按钮：查看详情、支付、退票、改签等。
+    - 支持分页加载和下拉刷新。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+- type: Frontend
+  id: UI-OrderDetail
+  description: 订单详情组件，显示订单的完整信息。
+  properties:
+    - name: orderId
+      type: string
+      description: "订单ID。"
+    - name: onPayment
+      type: function
+      description: "支付订单的回调函数。"
+    - name: onRefund
+      type: function
+      description: "申请退票的回调函数。"
+    - name: onReschedule
+      type: function
+      description: "申请改签的回调函数。"
+  state:
+    - orderDetail
+    - isLoading
+    - actionLoading
+  dependencies:
+    - API-GET-OrderDetail
+  acceptanceCriteria:
+    - 显示订单的完整信息：车次详情、乘客信息、座位信息、支付信息。
+    - 根据订单状态显示相应的操作按钮。
+    - 支持订单状态实时更新。
+    - 提供电子客票下载或打印功能。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+# 支付相关UI组件
+- type: Frontend
+  id: UI-PaymentModal
+  description: 支付弹窗组件，处理订单支付流程。
+  properties:
+    - name: orderId
+      type: string
+      description: "待支付的订单ID。"
+    - name: amount
+      type: number
+      description: "支付金额。"
+    - name: visible
+      type: boolean
+      description: "弹窗是否可见。"
+    - name: onPaymentSuccess
+      type: function
+      description: "支付成功的回调函数。"
+    - name: onPaymentError
+      type: function
+      description: "支付失败的回调函数。"
+    - name: onClose
+      type: function
+      description: "关闭弹窗的回调函数。"
+  state:
+    - paymentMethod
+    - paymentUrl
+    - qrCode
+    - countdown
+    - isLoading
+    - paymentStatus
+  dependencies:
+    - API-POST-CreatePayment
+  acceptanceCriteria:
+    - 显示订单金额和支付方式选择。
+    - 支持支付宝、微信、银行卡等多种支付方式。
+    - 根据支付方式显示相应的支付界面（二维码、跳转链接等）。
+    - 显示支付倒计时（30分钟）。
+    - 支持支付状态轮询和实时更新。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+# 乘客管理相关UI组件
+- type: Frontend
+  id: UI-PassengerList
+  description: 常用联系人列表组件，管理用户的乘客信息。
+  properties:
+    - name: onAddPassenger
+      type: function
+      description: "添加新乘客的回调函数。"
+    - name: onEditPassenger
+      type: function
+      description: "编辑乘客信息的回调函数。"
+    - name: onDeletePassenger
+      type: function
+      description: "删除乘客的回调函数。"
+    - name: selectable
+      type: boolean
+      description: "是否支持选择乘客（用于订票流程）。"
+    - name: onSelectPassenger
+      type: function
+      description: "选择乘客时的回调函数。"
+  state:
+    - passengers
+    - selectedPassengers
+    - isLoading
+    - editingPassenger
+  dependencies:
+    - API-GET-UserPassengers
+    - API-DELETE-RemovePassenger
+  acceptanceCriteria:
+    - 以列表形式展示所有常用联系人。
+    - 显示乘客的基本信息：姓名、证件类型、证件号、乘客类型。
+    - 提供添加、编辑、删除乘客的操作按钮。
+    - 在订票流程中支持多选乘客功能。
+    - 支持乘客信息的搜索和筛选。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+- type: Frontend
+  id: UI-PassengerForm
+  description: 乘客信息表单组件，用于添加或编辑乘客信息。
+  properties:
+    - name: passenger
+      type: object
+      description: "乘客信息（编辑模式时传入）。"
+    - name: onSave
+      type: function
+      description: "保存乘客信息的回调函数。"
+    - name: onCancel
+      type: function
+      description: "取消操作的回调函数。"
+  state:
+    - name
+    - idCard
+    - phoneNumber
+    - passengerType
+    - idType
+    - isLoading
+    - errors
+  dependencies:
+    - API-POST-AddPassenger
+    - API-PUT-UpdatePassenger
+  acceptanceCriteria:
+    - 组件应渲染姓名、证件类型、证件号、手机号、乘客类型等输入框。
+    - 实时验证输入格式，特别是身份证号格式。
+    - 支持不同证件类型的选择（身份证、护照、港澳通行证等）。
+    - 根据乘客类型（成人、儿童、学生）调整表单字段。
+    - 保存成功后关闭表单并刷新乘客列表。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+# 退改签相关UI组件
+- type: Frontend
+  id: UI-RefundModal
+  description: 退票弹窗组件，处理退票申请流程。
+  properties:
+    - name: order
+      type: object
+      description: "要退票的订单信息。"
+    - name: visible
+      type: boolean
+      description: "弹窗是否可见。"
+    - name: onRefundSuccess
+      type: function
+      description: "退票成功的回调函数。"
+    - name: onClose
+      type: function
+      description: "关闭弹窗的回调函数。"
+  state:
+    - selectedPassengers
+    - refundReason
+    - refundAmount
+    - refundFee
+    - isLoading
+  dependencies:
+    - API-POST-RefundTicket
+  acceptanceCriteria:
+    - 显示订单信息和可退票的乘客列表。
+    - 支持全部退票或部分退票（选择特定乘客）。
+    - 实时计算退票费用和退款金额。
+    - 提供退票原因选择或填写。
+    - 显示退票规则和注意事项。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+- type: Frontend
+  id: UI-RescheduleModal
+  description: 改签弹窗组件，处理改签申请流程。
+  properties:
+    - name: order
+      type: object
+      description: "要改签的订单信息。"
+    - name: visible
+      type: boolean
+      description: "弹窗是否可见。"
+    - name: onRescheduleSuccess
+      type: function
+      description: "改签成功的回调函数。"
+    - name: onClose
+      type: function
+      description: "关闭弹窗的回调函数。"
+  state:
+    - newTrainId
+    - newDepartDate
+    - newSeatType
+    - selectedPassengers
+    - priceDiff
+    - availableTrains
+    - isLoading
+  dependencies:
+    - API-POST-RescheduleTicket
+    - API-GET-QueryTrains
+  acceptanceCriteria:
+    - 显示原订单信息和可改签的乘客列表。
+    - 提供新车次查询和选择功能。
+    - 实时显示改签费用差额。
+    - 支持部分改签（选择特定乘客）。
+    - 显示改签规则和限制条件。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+# 用户信息管理相关UI组件
+- type: Frontend
+  id: UI-UserProfile
+  description: 用户个人信息组件，显示和编辑用户基本信息。
+  properties:
+    - name: onUpdateProfile
+      type: function
+      description: "更新个人信息的回调函数。"
+    - name: onChangePassword
+      type: function
+      description: "修改密码的回调函数。"
+  state:
+    - userInfo
+    - editMode
+    - isLoading
+    - errors
+  dependencies:
+    - API-GET-UserProfile
+    - API-PUT-UpdateProfile
+  acceptanceCriteria:
+    - 显示用户的基本信息：头像、姓名、手机号、邮箱、注册时间等。
+    - 支持编辑模式切换，允许修改部分信息。
+    - 提供头像上传功能。
+    - 显示购票统计信息和会员等级。
+    - 提供修改密码的入口。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+# 通用UI组件
+- type: Frontend
+  id: UI-Header
+  description: 页面头部导航组件，包含Logo、导航菜单和用户信息。
+  properties:
+    - name: currentUser
+      type: object
+      description: "当前登录用户信息。"
+    - name: onLogin
+      type: function
+      description: "登录按钮点击的回调函数。"
+    - name: onLogout
+      type: function
+      description: "退出登录的回调函数。"
+  state:
+    - isLoggedIn
+    - userMenuVisible
+  dependencies:
+    - none
+  acceptanceCriteria:
+    - 显示12306 Logo和主要导航菜单。
+    - 未登录时显示登录/注册按钮。
+    - 已登录时显示用户头像和下拉菜单。
+    - 支持响应式设计，移动端显示汉堡菜单。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+- type: Frontend
+  id: UI-Footer
+  description: 页面底部组件，包含版权信息和相关链接。
+  properties:
+    - name: links
+      type: array
+      description: "底部链接列表。"
+  state:
+    - none
+  dependencies:
+    - none
+  acceptanceCriteria:
+    - 显示版权信息和相关链接。
+    - 包含客服电话、使用帮助等信息。
+    - 支持响应式布局。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+- type: Frontend
+  id: UI-LoadingSpinner
+  description: 加载状态指示器组件，用于显示数据加载状态。
+  properties:
+    - name: size
+      type: string
+      description: "加载器大小（small, medium, large）。"
+    - name: text
+      type: string
+      description: "加载提示文字。"
+  state:
+    - none
+  dependencies:
+    - none
+  acceptanceCriteria:
+    - 提供不同大小的加载动画。
+    - 支持自定义加载提示文字。
+    - 动画流畅，符合品牌设计风格。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+- type: Frontend
+  id: UI-ErrorBoundary
+  description: 错误边界组件，捕获和处理组件错误。
+  properties:
+    - name: fallback
+      type: component
+      description: "错误时显示的备用组件。"
+    - name: onError
+      type: function
+      description: "错误发生时的回调函数。"
+  state:
+    - hasError
+    - errorInfo
+  dependencies:
+    - none
+  acceptanceCriteria:
+    - 捕获子组件中的JavaScript错误。
+    - 显示友好的错误提示界面。
+    - 记录错误信息用于调试。
+    - 提供重试或刷新页面的选项。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"

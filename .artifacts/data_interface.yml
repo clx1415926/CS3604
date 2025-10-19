@@ -1,0 +1,380 @@
+# 12306铁路系统数据库操作接口库
+# 版本: v1.0
+# 创建日期: 2025-01-18
+
+# 用户管理相关数据库操作
+- type: Database
+  id: DB-CreateUser
+  description: 在数据库中创建一个新的用户记录，包含基本信息和认证信息。
+  dependencies:
+    - none
+  acceptanceCriteria:
+    - 成功执行后，users表中会增加一条新记录。
+    - 如果手机号已存在，操作应失败并抛出唯一性约束错误。
+    - 密码必须经过加密存储。
+    - 用户状态默认为"待激活"。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+- type: Database
+  id: DB-FindUserByPhone
+  description: 根据手机号查询用户信息，用于登录验证和重复性检查。
+  dependencies:
+    - none
+  acceptanceCriteria:
+    - 能够根据手机号精确查询用户记录。
+    - 返回用户的完整信息（不包含敏感密码）。
+    - 如果用户不存在，返回空结果。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+- type: Database
+  id: DB-FindUserByEmail
+  description: 根据邮箱地址查询用户信息，支持邮箱登录方式。
+  dependencies:
+    - none
+  acceptanceCriteria:
+    - 能够根据邮箱地址精确查询用户记录。
+    - 返回用户的完整信息（不包含敏感密码）。
+    - 如果用户不存在，返回空结果。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+- type: Database
+  id: DB-UpdateUserPassword
+  description: 更新用户密码，支持密码修改和找回功能。
+  dependencies:
+    - DB-FindUserByPhone
+  acceptanceCriteria:
+    - 新密码必须经过加密存储。
+    - 更新成功后返回操作结果。
+    - 记录密码修改时间和操作日志。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+- type: Database
+  id: DB-UpdateUserInfo
+  description: 更新用户基本信息，如姓名、身份证号等。
+  dependencies:
+    - DB-FindUserByPhone
+  acceptanceCriteria:
+    - 支持部分字段更新。
+    - 身份证号等关键信息修改需要额外验证。
+    - 记录信息修改历史。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+# 验证码管理相关数据库操作
+- type: Database
+  id: DB-CreateVerificationCode
+  description: 创建验证码记录，用于手机验证和邮箱验证。
+  dependencies:
+    - none
+  acceptanceCriteria:
+    - 验证码有效期为5分钟。
+    - 同一手机号/邮箱在1分钟内只能发送一次验证码。
+    - 验证码为6位数字。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+- type: Database
+  id: DB-VerifyCode
+  description: 验证验证码的有效性，包括过期时间和使用状态检查。
+  dependencies:
+    - DB-CreateVerificationCode
+  acceptanceCriteria:
+    - 验证码匹配且未过期时返回成功。
+    - 验证成功后标记验证码为已使用。
+    - 验证失败记录失败次数，超过5次锁定账户。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+# 车票查询相关数据库操作
+- type: Database
+  id: DB-QueryTrains
+  description: 根据出发地、目的地和日期查询可用车次信息。
+  dependencies:
+    - none
+  acceptanceCriteria:
+    - 支持按出发站、到达站、出发日期查询。
+    - 返回车次号、发车时间、到达时间、历时等信息。
+    - 支持按车次类型、价格等条件筛选。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+- type: Database
+  id: DB-QuerySeatAvailability
+  description: 查询指定车次的座位余票信息。
+  dependencies:
+    - DB-QueryTrains
+  acceptanceCriteria:
+    - 实时返回各座位等级的余票数量。
+    - 支持商务座、一等座、二等座、硬卧、软卧等座位类型。
+    - 返回对应的票价信息。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+# 订单管理相关数据库操作
+- type: Database
+  id: DB-CreateOrder
+  description: 创建新的订单记录，包含车次、乘客、座位等信息。
+  dependencies:
+    - DB-QuerySeatAvailability
+    - DB-FindUserByPhone
+  acceptanceCriteria:
+    - 订单创建时锁定座位资源。
+    - 订单状态初始为"待支付"。
+    - 包含完整的乘客信息和车次信息。
+    - 设置30分钟支付超时时间。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+- type: Database
+  id: DB-UpdateOrderStatus
+  description: 更新订单状态，如支付成功、已取消、已退票等。
+  dependencies:
+    - DB-CreateOrder
+  acceptanceCriteria:
+    - 支持订单状态流转管理。
+    - 状态变更时记录操作时间和操作人。
+    - 支付成功后确认座位分配。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+- type: Database
+  id: DB-QueryUserOrders
+  description: 查询用户的历史订单和当前订单。
+  dependencies:
+    - DB-FindUserByPhone
+  acceptanceCriteria:
+    - 支持按订单状态、时间范围筛选。
+    - 返回订单详细信息包括车次、乘客、座位等。
+    - 支持分页查询。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+# 乘客管理相关数据库操作
+- type: Database
+  id: DB-CreatePassenger
+  description: 创建乘客信息记录，支持用户添加常用联系人。
+  dependencies:
+    - DB-FindUserByPhone
+  acceptanceCriteria:
+    - 乘客信息包含姓名、身份证号、手机号等。
+    - 支持成人、儿童、学生等乘客类型。
+    - 身份证号唯一性验证。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+- type: Database
+  id: DB-QueryUserPassengers
+  description: 查询用户关联的所有乘客信息。
+  dependencies:
+    - DB-FindUserByPhone
+  acceptanceCriteria:
+    - 返回用户添加的所有常用联系人。
+    - 支持按乘客类型筛选。
+    - 包含乘客的完整信息。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+- type: Database
+  id: DB-UpdatePassenger
+  description: 更新乘客信息，支持修改联系方式等。
+  dependencies:
+    - DB-CreatePassenger
+  acceptanceCriteria:
+    - 支持修改乘客的非关键信息。
+    - 身份证号等关键信息修改需要重新验证。
+    - 记录信息修改历史。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+- type: Database
+  id: DB-DeletePassenger
+  description: 删除乘客信息记录。
+  dependencies:
+    - DB-CreatePassenger
+  acceptanceCriteria:
+    - 软删除方式，保留历史记录。
+    - 检查是否有未完成订单关联该乘客。
+    - 记录删除操作日志。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+# 支付相关数据库操作
+- type: Database
+  id: DB-CreatePayment
+  description: 创建支付记录，关联订单和支付方式。
+  dependencies:
+    - DB-CreateOrder
+  acceptanceCriteria:
+    - 记录支付方式、支付金额、支付时间等。
+    - 支持支付宝、微信、银行卡等多种支付方式。
+    - 生成唯一的支付流水号。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+- type: Database
+  id: DB-UpdatePaymentStatus
+  description: 更新支付状态，处理支付成功或失败的情况。
+  dependencies:
+    - DB-CreatePayment
+  acceptanceCriteria:
+    - 支付成功后更新订单状态。
+    - 支付失败时释放座位资源。
+    - 记录支付结果和第三方支付平台返回信息。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+# 退改签相关数据库操作
+- type: Database
+  id: DB-CreateRefundRequest
+  description: 创建退票申请记录。
+  dependencies:
+    - DB-QueryUserOrders
+  acceptanceCriteria:
+    - 检查订单状态是否允许退票。
+    - 计算退票手续费。
+    - 记录退票原因和申请时间。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+- type: Database
+  id: DB-ProcessRefund
+  description: 处理退票申请，更新订单状态并释放座位。
+  dependencies:
+    - DB-CreateRefundRequest
+  acceptanceCriteria:
+    - 更新订单状态为"已退票"。
+    - 释放对应的座位资源。
+    - 记录退票处理结果和退款金额。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+- type: Database
+  id: DB-CreateRescheduleRequest
+  description: 创建改签申请记录。
+  dependencies:
+    - DB-QueryUserOrders
+  acceptanceCriteria:
+    - 检查原订单是否允许改签。
+    - 检查目标车次座位可用性。
+    - 计算改签费用差额。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建。"
+
+# 首页相关数据库操作
+- type: Database
+  id: DB-QueryStations
+  description: 查询车站信息，支持按名称、拼音、城市等条件搜索。
+  dependencies:
+    - none
+  acceptanceCriteria:
+    - 支持车站名称模糊搜索。
+    - 支持拼音简码搜索。
+    - 支持按城市、省份分组查询。
+    - 返回车站编码、名称、城市、省份等信息。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建，支持首页车站搜索功能。"
+
+- type: Database
+  id: DB-QueryHotCities
+  description: 查询热门城市列表，用于首页快速选择。
+  dependencies:
+    - none
+  acceptanceCriteria:
+    - 返回按热度排序的城市列表。
+    - 包含城市名称、车站数量、热度值。
+    - 支持按地区分组显示。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建，支持首页热门城市显示。"
+
+- type: Database
+  id: DB-QueryHotRoutes
+  description: 查询热门线路数据，用于首页推荐显示。
+  dependencies:
+    - none
+  acceptanceCriteria:
+    - 返回热门出发地到目的地的线路。
+    - 包含线路热度、参考价格、车次数量。
+    - 支持按时间段更新热门度。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建，支持首页热门线路推荐。"
+
+- type: Database
+  id: DB-CreateSearchHistory
+  description: 创建用户搜索历史记录。
+  dependencies:
+    - DB-FindUserByPhone
+  acceptanceCriteria:
+    - 记录用户的查询条件（出发地、目的地、日期）。
+    - 记录查询时间和查询结果数量。
+    - 同一用户最多保留50条历史记录。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建，支持用户查询历史记录。"
+
+- type: Database
+  id: DB-QueryUserSearchHistory
+  description: 查询用户的搜索历史记录。
+  dependencies:
+    - DB-FindUserByPhone
+  acceptanceCriteria:
+    - 返回用户最近的搜索记录。
+    - 按查询时间倒序排列。
+    - 支持分页查询。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建，支持首页显示用户查询历史。"
+
+- type: Database
+  id: DB-QuerySystemConfig
+  description: 查询系统配置信息，如公告、维护通知等。
+  dependencies:
+    - none
+  acceptanceCriteria:
+    - 返回系统公告、维护通知等配置信息。
+    - 支持按类型和状态筛选。
+    - 包含配置的生效时间和过期时间。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建，支持首页系统信息显示。"
+
+- type: Database
+  id: DB-QueryUserRecentStations
+  description: 查询用户最近使用的车站，用于快速选择。
+  dependencies:
+    - DB-FindUserByPhone
+    - DB-QueryUserSearchHistory
+  acceptanceCriteria:
+    - 返回用户最近查询过的出发地和目的地。
+    - 按使用频率和时间排序。
+    - 最多返回10个车站。
+  changeLog:
+    - date: "2025-01-18"
+      description: "初始创建，支持首页显示用户常用车站。"
