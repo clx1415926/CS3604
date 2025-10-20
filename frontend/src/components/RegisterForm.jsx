@@ -84,10 +84,12 @@ const RegisterForm = ({
       name="register"
       onFinish={onFinish}
       autoComplete="off"
-      size="large"
+      className="register-form"
+      layout="vertical"
       initialValues={initialValues}
     >
       <Form.Item
+        label={<span className="register-form-label"><span className="required">*</span>手机号</span>}
         name="phoneNumber"
         rules={[
           { required: true, message: '请输入手机号!' },
@@ -95,13 +97,15 @@ const RegisterForm = ({
         ]}
       >
         <Input
+          className="register-input"
           prefix={<PhoneOutlined />}
-          placeholder="手机号"
+          placeholder="请输入手机号"
           maxLength={11}
         />
       </Form.Item>
 
       <Form.Item
+        label={<span className="register-form-label"><span className="required">*</span>邮箱</span>}
         name="email"
         rules={[
           { required: true, message: '请输入邮箱!' },
@@ -109,23 +113,25 @@ const RegisterForm = ({
         ]}
       >
         <Input
+          className="register-input"
           prefix={<MailOutlined />}
-          placeholder="邮箱"
+          placeholder="请输入邮箱地址"
         />
       </Form.Item>
 
       <Form.Item
+        label={<span className="register-form-label"><span className="required">*</span>验证码</span>}
         name="verificationCode"
         rules={[{ required: true, message: '请输入验证码!' }]}
       >
         <Input
-          placeholder="验证码"
+          className="register-verification-input"
+          placeholder="请输入验证码"
           addonAfter={
             <Button 
-              type="link" 
+              className="register-verification-btn"
               onClick={sendVerificationCode}
               disabled={codeCountdown > 0}
-              style={{ padding: 0 }}
             >
               {codeCountdown > 0 ? `${codeCountdown}s` : '获取验证码'}
             </Button>
@@ -134,6 +140,7 @@ const RegisterForm = ({
       </Form.Item>
 
       <Form.Item
+        label={<span className="register-form-label"><span className="required">*</span>密码</span>}
         name="password"
         rules={[
           { required: true, message: '请输入密码!' },
@@ -141,12 +148,14 @@ const RegisterForm = ({
         ]}
       >
         <Input.Password
+          className="register-password-input"
           prefix={<LockOutlined />}
-          placeholder="密码"
+          placeholder="请输入密码"
         />
       </Form.Item>
 
       <Form.Item
+        label={<span className="register-form-label"><span className="required">*</span>确认密码</span>}
         name="confirmPassword"
         dependencies={['password']}
         rules={[
@@ -162,22 +171,26 @@ const RegisterForm = ({
         ]}
       >
         <Input.Password
+          className="register-password-input"
           prefix={<LockOutlined />}
-          placeholder="确认密码"
+          placeholder="请再次输入密码"
         />
       </Form.Item>
 
       <Form.Item
+        label={<span className="register-form-label"><span className="required">*</span>真实姓名</span>}
         name="realName"
         rules={[{ required: true, message: '请输入真实姓名!' }]}
       >
         <Input
+          className="register-input"
           prefix={<UserOutlined />}
-          placeholder="真实姓名"
+          placeholder="请输入真实姓名"
         />
       </Form.Item>
 
       <Form.Item
+        label={<span className="register-form-label"><span className="required">*</span>身份证号</span>}
         name="idCard"
         rules={[
           { required: true, message: '请输入身份证号!' },
@@ -185,14 +198,21 @@ const RegisterForm = ({
         ]}
       >
         <Input
+          className="register-input"
           prefix={<IdcardOutlined />}
-          placeholder="身份证号"
+          placeholder="请输入身份证号"
           maxLength={18}
         />
       </Form.Item>
 
-      <Form.Item>
-        <Button type="primary" htmlType="submit" loading={loading} block>
+      <Form.Item className="register-button-item">
+        <Button 
+          type="primary" 
+          htmlType="submit" 
+          loading={loading} 
+          block
+          className="register-button"
+        >
           注册
         </Button>
       </Form.Item>

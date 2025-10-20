@@ -1,0 +1,639 @@
+/* 12306 登录表单样式 - 像素级精准复刻 */
+.login-form-container {
+  width: 100%;
+  max-width: 420px;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  padding: 0;
+  font-family: "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
+  border: 1px solid #e8e8e8;
+  overflow: hidden;
+}
+
+/* 登录头部 - Logo 和标题区域 */
+.login-header {
+  background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+  padding: 24px 30px 20px;
+  text-align: center;
+  position: relative;
+}
+
+.login-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.logo-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-icon svg {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.logo-text {
+  text-align: left;
+}
+
+.main-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1.2;
+  margin-bottom: 2px;
+}
+
+.sub-title {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 400;
+  letter-spacing: 0.5px;
+}
+
+/* 登录表单包装器 */
+.login-form-wrapper {
+  padding: 30px 30px 20px;
+}
+
+/* 标签页样式 */
+.login-tabs {
+  margin-bottom: 0;
+}
+
+.login-tabs .ant-tabs-nav {
+  margin-bottom: 24px;
+}
+
+.login-tabs .ant-tabs-nav-wrap {
+  justify-content: center;
+}
+
+.login-tabs .ant-tabs-tab {
+  padding: 12px 24px;
+  margin: 0 8px;
+  border-radius: 6px 6px 0 0;
+  background: #f8f9fa;
+  border: 1px solid #e8e8e8;
+  border-bottom: none;
+  transition: all 0.3s ease;
+}
+
+.login-tabs .ant-tabs-tab:hover {
+  background: #f0f2f5;
+  color: #0066cc;
+}
+
+.login-tabs .ant-tabs-tab-active {
+  background: #ffffff;
+  border-color: #0066cc;
+  border-bottom: 1px solid #ffffff;
+  position: relative;
+  z-index: 1;
+}
+
+.login-tabs .ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: #0066cc;
+  font-weight: 600;
+}
+
+.login-tabs .ant-tabs-ink-bar {
+  display: none;
+}
+
+.login-tabs .ant-tabs-content-holder {
+  border-top: 1px solid #e8e8e8;
+  padding-top: 24px;
+}
+
+.tab-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.tab-label .anticon {
+  font-size: 16px;
+}
+
+/* 账户信息标题 */
+.account-info-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 20px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #0066cc;
+  position: relative;
+}
+
+.account-info-title::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 40px;
+  height: 2px;
+  background: #ff8000;
+}
+
+/* 表单样式 */
+.login-form {
+  width: 100%;
+}
+
+.login-form .ant-form-item {
+  margin-bottom: 20px;
+}
+
+.login-form .ant-form-item-label {
+  padding-bottom: 6px;
+}
+
+.form-label {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+.form-label .required {
+  color: #ff4d4f;
+  margin-right: 4px;
+  font-weight: bold;
+}
+
+/* 输入框样式 */
+.login-input,
+.id-type-select {
+  height: 42px;
+  border-radius: 6px;
+  border: 1px solid #d9d9d9;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  background: #ffffff;
+}
+
+.login-input:hover,
+.id-type-select:hover {
+  border-color: #0066cc;
+}
+
+.login-input:focus,
+.login-input.ant-input-focused,
+.id-type-select:focus,
+.id-type-select.ant-select-focused {
+  border-color: #0066cc;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+}
+
+.login-input .ant-input {
+  padding-left: 40px;
+  font-size: 14px;
+}
+
+.input-icon {
+  color: #999;
+  font-size: 16px;
+  margin-left: 12px;
+}
+
+/* 下拉选择框样式 */
+.id-type-select .ant-select-selector {
+  height: 42px !important;
+  border-radius: 6px;
+  border: 1px solid #d9d9d9;
+  padding: 0 12px;
+}
+
+.id-type-select .ant-select-selection-item {
+  line-height: 40px;
+  font-size: 14px;
+}
+
+/* 表单选项区域 */
+.form-options {
+  margin-bottom: 24px;
+}
+
+.remember-checkbox {
+  font-size: 14px;
+  color: #666;
+}
+
+.remember-checkbox .ant-checkbox {
+  margin-right: 8px;
+}
+
+.remember-checkbox .ant-checkbox-checked .ant-checkbox-inner {
+  background-color: #0066cc;
+  border-color: #0066cc;
+}
+
+.forgot-link {
+  color: #0066cc;
+  font-size: 14px;
+  padding: 0;
+  height: auto;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.forgot-link:hover {
+  color: #0052a3;
+  text-decoration: underline;
+}
+
+/* 登录按钮样式 - 12306官方橙色按钮 */
+.login-button-item {
+  margin-bottom: 0;
+}
+
+.login-button {
+  height: 44px;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #ff8000 0%, #ff6600 100%);
+  border: none;
+  box-shadow: 0 2px 8px rgba(255, 128, 0, 0.3);
+  transition: all 0.3s ease;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.login-button:hover {
+  background: linear-gradient(135deg, #ff9000 0%, #ff7700 100%);
+  box-shadow: 0 4px 12px rgba(255, 128, 0, 0.4);
+  transform: translateY(-1px);
+}
+
+.login-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(255, 128, 0, 0.3);
+}
+
+.login-button:focus {
+  background: linear-gradient(135deg, #ff8000 0%, #ff6600 100%);
+  box-shadow: 0 0 0 2px rgba(255, 128, 0, 0.2);
+}
+
+/* 二维码登录区域 */
+.qr-login-section {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.qr-code-placeholder {
+  background: #f8f9fa;
+  border: 2px dashed #e0e0e0;
+  border-radius: 8px;
+  padding: 40px 20px;
+  margin-bottom: 20px;
+}
+
+.qr-icon {
+  margin-bottom: 16px;
+}
+
+.qr-code-placeholder > p {
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+
+.qr-tips {
+  text-align: left;
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  border-radius: 6px;
+  padding: 16px;
+  margin-top: 20px;
+}
+
+.qr-tips p {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.qr-tips p:last-child {
+  margin-bottom: 0;
+}
+
+/* 注册提示区域 */
+.register-prompt {
+  text-align: center;
+  padding: 20px 30px;
+  border-top: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+
+.register-text {
+  font-size: 14px;
+  color: #666;
+  margin-right: 8px;
+}
+
+.register-link {
+  font-size: 14px;
+  color: #0066cc;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.register-link:hover {
+  color: #0052a3;
+  text-decoration: underline;
+}
+
+/* 底部链接区域 */
+.login-footer {
+  padding: 20px 30px 24px;
+  background: #f8f9fa;
+  border-top: 1px solid #e8e8e8;
+  text-align: center;
+}
+
+.footer-link {
+  font-size: 13px;
+  color: #0066cc;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.footer-link:hover {
+  color: #0052a3;
+  text-decoration: underline;
+}
+
+.divider {
+  color: #ccc;
+  margin: 0 4px;
+  font-size: 12px;
+}
+
+.service-info {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e8e8e8;
+}
+
+.service-info p {
+  font-size: 12px;
+  color: #999;
+  margin: 4px 0;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .login-form-container {
+    max-width: 100%;
+    margin: 0 16px;
+    border-radius: 6px;
+  }
+  
+  .login-header {
+    padding: 20px 24px 16px;
+  }
+  
+  .logo-section {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .logo-text {
+    text-align: center;
+  }
+  
+  .main-title {
+    font-size: 18px;
+  }
+  
+  .sub-title {
+    font-size: 10px;
+  }
+  
+  .login-form-wrapper {
+    padding: 24px 24px 16px;
+  }
+  
+  .login-tabs .ant-tabs-tab {
+    padding: 10px 16px;
+    margin: 0 4px;
+  }
+  
+  .tab-label {
+    font-size: 13px;
+  }
+  
+  .account-info-title {
+    font-size: 15px;
+    margin-bottom: 16px;
+  }
+  
+  .login-input,
+  .id-type-select {
+    height: 40px;
+  }
+  
+  .login-button {
+    height: 42px;
+    font-size: 15px;
+  }
+  
+  .register-prompt {
+    padding: 16px 24px;
+  }
+  
+  .login-footer {
+    padding: 16px 24px 20px;
+  }
+  
+  .qr-code-placeholder {
+    padding: 30px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-form-container {
+    margin: 0 12px;
+  }
+  
+  .login-header {
+    padding: 16px 20px 12px;
+  }
+  
+  .main-title {
+    font-size: 16px;
+  }
+  
+  .sub-title {
+    font-size: 9px;
+  }
+  
+  .login-form-wrapper {
+    padding: 20px 20px 12px;
+  }
+  
+  .login-tabs .ant-tabs-tab {
+    padding: 8px 12px;
+    margin: 0 2px;
+  }
+  
+  .tab-label {
+    font-size: 12px;
+    gap: 4px;
+  }
+  
+  .tab-label .anticon {
+    font-size: 14px;
+  }
+  
+  .account-info-title {
+    font-size: 14px;
+    margin-bottom: 14px;
+  }
+  
+  .form-label {
+    font-size: 13px;
+  }
+  
+  .login-input,
+  .id-type-select {
+    height: 38px;
+    font-size: 13px;
+  }
+  
+  .login-button {
+    height: 40px;
+    font-size: 14px;
+  }
+  
+  .register-prompt {
+    padding: 14px 20px;
+  }
+  
+  .register-text,
+  .register-link {
+    font-size: 13px;
+  }
+  
+  .login-footer {
+    padding: 14px 20px 16px;
+  }
+  
+  .footer-link {
+    font-size: 12px;
+  }
+  
+  .service-info p {
+    font-size: 11px;
+  }
+  
+  .qr-code-placeholder {
+    padding: 24px 12px;
+  }
+  
+  .qr-code-placeholder > p {
+    font-size: 14px;
+  }
+  
+  .qr-tips {
+    padding: 12px;
+  }
+  
+  .qr-tips p {
+    font-size: 12px;
+  }
+}
+
+/* 加载状态 */
+.login-button.ant-btn-loading {
+  background: linear-gradient(135deg, #ff8000 0%, #ff6600 100%);
+  opacity: 0.8;
+}
+
+.login-button.ant-btn-loading:hover {
+  background: linear-gradient(135deg, #ff8000 0%, #ff6600 100%);
+  transform: none;
+}
+
+/* 错误状态 */
+.login-form .ant-form-item-has-error .login-input,
+.login-form .ant-form-item-has-error .id-type-select {
+  border-color: #ff4d4f;
+}
+
+.login-form .ant-form-item-has-error .login-input:focus,
+.login-form .ant-form-item-has-error .id-type-select:focus {
+  border-color: #ff4d4f;
+  box-shadow: 0 0 0 2px rgba(255, 77, 79, 0.1);
+}
+
+/* 成功状态 */
+.login-form .ant-form-item-has-success .login-input,
+.login-form .ant-form-item-has-success .id-type-select {
+  border-color: #52c41a;
+}
+
+/* 动画效果 */
+.login-form-container {
+  animation: slideInUp 0.6s ease-out;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 高对比度模式支持 */
+@media (prefers-contrast: high) {
+  .login-form-container {
+    border: 2px solid #000;
+  }
+  
+  .login-header {
+    background: #000;
+  }
+  
+  .login-button {
+    background: #ff8000;
+    border: 2px solid #000;
+  }
+}
+
+/* 减少动画模式支持 */
+@media (prefers-reduced-motion: reduce) {
+  .login-form-container,
+  .login-button {
+    animation: none;
+    transition: none;
+  }
+  
+  .login-button:hover {
+    transform: none;
+  }
+}

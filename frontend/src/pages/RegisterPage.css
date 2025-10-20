@@ -1,0 +1,590 @@
+/* 12306 注册页面样式 - 像素级精准复刻官方设计 */
+.register-page {
+  min-height: 100vh;
+  background: #f0f2f5;
+  display: flex;
+  flex-direction: column;
+  font-family: "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
+}
+
+/* 页面头部 - 12306官方导航栏 */
+.register-page-header {
+  background: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: relative;
+  z-index: 100;
+}
+
+.register-header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.register-header-left {
+  display: flex;
+  align-items: center;
+}
+
+.register-site-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.register-site-logo-icon {
+  width: 36px;
+  height: 36px;
+  background: #0066cc;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.register-site-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #0066cc;
+}
+
+.register-header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.register-header-nav {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.register-nav-link {
+  color: #666;
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.3s ease;
+}
+
+.register-nav-link:hover {
+  color: #0066cc;
+}
+
+/* 主要内容区域 */
+.register-page-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  position: relative;
+  min-height: calc(100vh - 60px - 200px);
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="%23e0e0e0" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+}
+
+/* 背景装饰 */
+.register-bg-decoration {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.register-bg-pattern {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: 
+    radial-gradient(circle at 20% 20%, rgba(0, 102, 204, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(255, 128, 0, 0.05) 0%, transparent 50%);
+  animation: registerFloat 30s ease-in-out infinite;
+}
+
+@keyframes registerFloat {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  33% { transform: translate(-30px, -30px) rotate(1deg); }
+  66% { transform: translate(30px, -15px) rotate(-1deg); }
+}
+
+/* 注册表单容器 */
+.register-container {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 480px;
+}
+
+.register-content {
+  width: 100%;
+}
+
+/* 12306 注册表单样式 - 像素级精准复刻 */
+.register-form-container {
+  width: 100%;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  padding: 0;
+  font-family: "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
+  border: 1px solid #e8e8e8;
+  overflow: hidden;
+}
+
+/* 注册头部 - Logo 和标题区域 */
+.register-header {
+  background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+  padding: 24px 30px 20px;
+  text-align: center;
+  position: relative;
+}
+
+.register-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
+}
+
+.register-logo-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.register-logo-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.register-logo-icon svg {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.register-logo-text {
+  text-align: left;
+}
+
+.register-main-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1.2;
+  margin-bottom: 2px;
+}
+
+.register-sub-title {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 400;
+  letter-spacing: 0.5px;
+}
+
+/* 注册表单包装器 */
+.register-form-wrapper {
+  padding: 30px 30px 20px;
+}
+
+/* 用户信息标题 */
+.register-info-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 20px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #0066cc;
+  position: relative;
+}
+
+.register-info-title::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 40px;
+  height: 2px;
+  background: #ff8000;
+}
+
+/* 表单样式 */
+.register-form {
+  width: 100%;
+}
+
+.register-form .ant-form-item {
+  margin-bottom: 20px;
+}
+
+.register-form .ant-form-item-label {
+  padding-bottom: 6px;
+}
+
+.register-form-label {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+.register-form-label .required {
+  color: #ff4d4f;
+  margin-right: 4px;
+}
+
+/* 输入框样式 */
+.register-input,
+.register-password-input {
+  height: 44px;
+  border-radius: 6px;
+  border: 1px solid #d9d9d9;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  background: #ffffff;
+}
+
+.register-input:hover,
+.register-password-input:hover {
+  border-color: #40a9ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+}
+
+.register-input:focus,
+.register-password-input:focus {
+  border-color: #0066cc;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+  outline: none;
+}
+
+.register-input .ant-input,
+.register-password-input .ant-input {
+  border: none;
+  box-shadow: none;
+  padding: 0 15px;
+}
+
+.register-input .anticon,
+.register-password-input .anticon {
+  color: #bfbfbf;
+  font-size: 16px;
+}
+
+/* 验证码输入框特殊样式 */
+.register-verification-input {
+  height: 44px;
+}
+
+.register-verification-input .ant-input-group-addon {
+  background: #f8f9fa;
+  border: 1px solid #d9d9d9;
+  border-left: none;
+  padding: 0;
+}
+
+.register-verification-btn {
+  height: 42px;
+  border: none;
+  background: transparent;
+  color: #0066cc;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 0 16px;
+  transition: all 0.3s ease;
+}
+
+.register-verification-btn:hover:not(:disabled) {
+  color: #0052a3;
+  background: rgba(0, 102, 204, 0.05);
+}
+
+.register-verification-btn:disabled {
+  color: #bfbfbf;
+  cursor: not-allowed;
+}
+
+/* 注册按钮样式 */
+.register-button {
+  height: 48px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+  border: none;
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 102, 204, 0.3);
+  margin-top: 8px;
+}
+
+.register-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0052a3 0%, #003d7a 100%);
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.4);
+  transform: translateY(-1px);
+}
+
+.register-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 102, 204, 0.3);
+}
+
+.register-button:disabled {
+  background: #f5f5f5;
+  color: #bfbfbf;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* 登录提示区域 */
+.register-login-prompt {
+  padding: 20px 30px;
+  background: #fafafa;
+  border-top: 1px solid #e8e8e8;
+  text-align: center;
+}
+
+.register-login-text {
+  font-size: 14px;
+  color: #666;
+  margin-right: 8px;
+}
+
+.register-login-link {
+  font-size: 14px;
+  color: #0066cc;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.register-login-link:hover {
+  color: #0052a3;
+  text-decoration: underline;
+}
+
+/* 底部链接区域 */
+.register-footer {
+  padding: 20px 30px 24px;
+  background: #f8f9fa;
+  border-top: 1px solid #e8e8e8;
+  text-align: center;
+}
+
+.register-footer-link {
+  font-size: 13px;
+  color: #0066cc;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.register-footer-link:hover {
+  color: #0052a3;
+  text-decoration: underline;
+}
+
+.register-divider {
+  color: #ccc;
+  margin: 0 4px;
+  font-size: 12px;
+}
+
+.register-service-info {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e8e8e8;
+}
+
+.register-service-info p {
+  font-size: 12px;
+  color: #999;
+  margin: 4px 0;
+}
+
+/* 表单验证错误样式 */
+.register-form .ant-form-item-has-error .register-input,
+.register-form .ant-form-item-has-error .register-password-input {
+  border-color: #ff4d4f;
+  box-shadow: 0 0 0 2px rgba(255, 77, 79, 0.2);
+}
+
+.register-form .ant-form-item-explain-error {
+  font-size: 12px;
+  color: #ff4d4f;
+  margin-top: 4px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .register-form-container {
+    max-width: 100%;
+    margin: 0 16px;
+    border-radius: 6px;
+  }
+  
+  .register-header {
+    padding: 20px 24px 16px;
+  }
+  
+  .register-logo-section {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .register-logo-text {
+    text-align: center;
+  }
+  
+  .register-main-title {
+    font-size: 18px;
+  }
+  
+  .register-sub-title {
+    font-size: 10px;
+  }
+  
+  .register-form-wrapper {
+    padding: 24px 24px 16px;
+  }
+  
+  .register-info-title {
+    font-size: 15px;
+    margin-bottom: 16px;
+  }
+  
+  .register-input,
+  .register-password-input {
+    height: 40px;
+  }
+  
+  .register-button {
+    height: 42px;
+    font-size: 15px;
+  }
+  
+  .register-login-prompt {
+    padding: 16px 24px;
+  }
+  
+  .register-footer {
+    padding: 16px 24px 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .register-form-container {
+    margin: 0 12px;
+  }
+  
+  .register-header {
+    padding: 16px 20px 12px;
+  }
+  
+  .register-main-title {
+    font-size: 16px;
+  }
+  
+  .register-sub-title {
+    font-size: 9px;
+  }
+  
+  .register-form-wrapper {
+    padding: 20px 20px 12px;
+  }
+  
+  .register-info-title {
+    font-size: 14px;
+    margin-bottom: 14px;
+  }
+  
+  .register-form-label {
+    font-size: 13px;
+  }
+  
+  .register-input,
+  .register-password-input {
+    height: 38px;
+    font-size: 13px;
+  }
+  
+  .register-button {
+    height: 40px;
+    font-size: 14px;
+  }
+  
+  .register-login-prompt {
+    padding: 14px 20px;
+  }
+  
+  .register-login-text,
+  .register-login-link {
+    font-size: 13px;
+  }
+  
+  .register-footer {
+    padding: 14px 20px 16px;
+  }
+  
+  .register-footer-link {
+    font-size: 12px;
+  }
+  
+  .register-service-info p {
+    font-size: 11px;
+  }
+}
+
+/* 页面底部 */
+.register-page-footer {
+  background: #f8f9fa;
+  border-top: 1px solid #e0e0e0;
+  padding: 30px 0 20px;
+  margin-top: auto;
+}
+
+.register-footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* 友情链接 */
+.register-footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.register-footer-links a {
+  color: #666;
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.3s ease;
+}
+
+.register-footer-links a:hover {
+  color: #0066cc;
+}
+
+.register-copyright {
+  text-align: center;
+  color: #999;
+  font-size: 12px;
+}
