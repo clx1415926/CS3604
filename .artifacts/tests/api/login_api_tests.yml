@@ -1,0 +1,219 @@
+meta:
+  name: "API 测试用例 - 用户登录"
+  base_url: "http://localhost:8080/api/v1"
+  notes: "覆盖账号/扫码登录、验证码、会话、登出、维护窗口与密码找回的关键场景。"
+
+sequence:
+  - id: l01_get_captcha
+    endpoint: GET /auth/captcha
+    request:
+      query: { type: "image" }
+    expect:
+      status: 200
+      body:
+        captcha_id: present
+        type: "image"
+
+  - id: l02_verify_captcha
+    endpoint: POST /auth/captcha/verify
+    depends_on: l01_get_captcha
+    request:
+      body:
+        captcha_id: "{{ l01_get_captcha.body.captcha_id }}"
+        captcha_code: "ABCD"
+    expect:
+      status: 200
+      body:
+        verified: true
+
+  - id: l03_login_username_success
+    endpoint: POST /auth/login
+    request:
+      body:
+        identifier: "testuser123"
+        password: "Password123!"
+        remember_me: true
+    expect:
+      status: 200
+      body:
+        session_id: uuid
+        user_id: present
+        remember_expires_at: present
+
+  - id: l04_session_status
+    endpoint: GET /auth/session
+    depends_on: l03_login_username_success
+    request:
+      headers:
+        Authorization: "Bearer {{ l03_login_username_success.body.session_id }}"
+    expect:
+      status: 200
+      body:
+        session_id: "{{ l03_login_username_success.body.session_id }}"
+        user_id: present
+
+  - id: l05_logout
+    endpoint: POST /auth/logout
+    depends_on: l03_login_username_success
+    request:
+      headers:
+        Authorization: "Bearer {{ l03_login_username_success.body.session_id }}"
+    expect:
+      status: 204
+
+  - id: l06_login_phone_success
+    endpoint: POST /auth/login
+    request:
+      body:
+        identifier: "13812345678"
+        password: "Password123!"
+    expect:
+      status: 200
+      body:
+        session_id: uuid
+
+  - id: l07_login_email_success
+    endpoint: POST /auth/login
+    request:
+      body:
+        identifier: "user@example.com"
+        password: "Password123!"
+    expect:
+      status: 200
+      body:
+        session_id: uuid
+
+  - id: l08_login_wrong_password
+    endpoint: POST /auth/login
+    request:
+      body:
+        identifier: "testuser123"
+        password: "Wrong_123"
+    expect:
+      status: 401
+      error: INVALID_CREDENTIALS
+
+  - id: l09_login_requires_captcha
+    endpoint: POST /auth/login
+    depends_on: l02_verify_captcha
+    request:
+      headers:
+        x-suspicious: "1"
+      body:
+        identifier: "testuser123"
+        password: "Password123!"
+        captcha_id: "{{ l01_get_captcha.body.captcha_id }}"
+        captcha_code: "ABCD"
+    expect:
+      status: 200
+      body:
+        session_id: uuid
+
+  - id: l10_qr_generate
+    endpoint: GET /auth/qrcode
+    request:
+      body: {}
+    expect:
+      status: 200
+      body:
+        qrcode_id: present
+        expires_at: present
+
+  - id: l11_qr_status_unscanned
+    endpoint: GET /auth/qrcode/{qrcode_id}/status
+    depends_on: l10_qr_generate
+    request:
+      path_params:
+        qrcode_id: "{{ l10_qr_generate.body.qrcode_id }}"
+    expect:
+      status: 200
+      body:
+        status: "unscanned"
+
+  - id: l12_qr_status_scanned
+    endpoint: GET /auth/qrcode/{qrcode_id}/status
+    depends_on: l10_qr_generate
+    request:
+      headers:
+        x-dev-scan: "1"
+      path_params:
+        qrcode_id: "{{ l10_qr_generate.body.qrcode_id }}"
+    expect:
+      status: 200
+      body:
+        status: "scanned"
+
+  - id: l13_qr_status_confirmed
+    endpoint: GET /auth/qrcode/{qrcode_id}/status
+    depends_on: l12_qr_status_scanned
+    request:
+      headers:
+        x-dev-confirm: "1"
+      path_params:
+        qrcode_id: "{{ l10_qr_generate.body.qrcode_id }}"
+    expect:
+      status: 200
+      body:
+        status: "confirmed"
+        session_id: present
+
+  - id: l14_maintenance_window_block
+    endpoint: POST /auth/login
+    request:
+      headers:
+        x-simulate-time: "2025-01-05T02:30:00Z"
+      body:
+        identifier: "testuser123"
+        password: "Password123!"
+    expect:
+      status: 503
+      error: MAINTENANCE_WINDOW
+
+negative_cases:
+  - id: n01_identifier_format_error
+    endpoint: POST /auth/login
+    request:
+      body:
+        identifier: "bad%mail"
+        password: "Password123!"
+    expect:
+      status: 400
+      error: LOGIN_IDENTIFIER_INVALID_FORMAT
+
+  - id: n02_missing_password
+    endpoint: POST /auth/login
+    request:
+      body:
+        identifier: "testuser123"
+    expect:
+      status: 400
+      error: PASSWORD_REQUIRED
+
+  - id: n03_captcha_invalid
+    endpoint: POST /auth/login
+    depends_on: l01_get_captcha
+    request:
+      headers:
+        x-suspicious: "1"
+      body:
+        identifier: "testuser123"
+        password: "Password123!"
+        captcha_id: "{{ l01_get_captcha.body.captcha_id }}"
+        captcha_code: "ZZZZ"
+    expect:
+      status: 403
+      error: CAPTCHA_REQUIRED
+
+  - id: n04_account_locked_after_failures
+    endpoint: POST /auth/login
+    request:
+      body:
+        identifier: "testuser123"
+        password: "wrong1"
+    expect:
+      status: 401
+      error: INVALID_CREDENTIALS
+    repeat: 4
+    final_expect:
+      status: 403
+      error: ACCOUNT_LOCKED

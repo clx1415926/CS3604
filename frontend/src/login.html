@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>中国铁路12306 - 欢迎登录</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="login-body">
+    <header class="site-header">
+      <div class="container">
+        <div class="brand">
+          <span class="logo">◎</span>
+          <span class="title">中国铁路12306</span>
+        </div>
+        <nav class="nav">
+          <a href="/">首页</a>
+          <a href="/index.html">注册</a>
+          <a href="/login.html" class="active">登录</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="login-hero">
+      <div class="container login-layout">
+        <!-- 左侧宣传与二维码下载 -->
+        <section class="hero-left">
+          <h1>铁路12306 - 中国铁路官方APP</h1>
+          <h2>尽享精彩出行服务</h2>
+          <ul class="hero-list" aria-label="应用特色">
+            <li>个人行程提醒</li>
+            <li>积分兑换</li>
+            <li>餐饮·特产</li>
+            <li>车站大屏</li>
+          </ul>
+          <div class="hero-qrcode">
+            <img src="register.png" alt="扫码下载铁路12306APP二维码" />
+            <div class="qrcode-desc">扫描左侧二维码<br/>安装 铁路12306</div>
+          </div>
+        </section>
+
+        <!-- 右侧登录面板 -->
+        <section class="login-panel" aria-labelledby="login-tabs">
+          <div class="tabs" id="login-tabs" role="tablist">
+            <button class="tab active" role="tab" aria-selected="true" aria-controls="tab-account" id="tab-account-btn">账户登录</button>
+            <button class="tab" role="tab" aria-selected="false" aria-controls="tab-qr" id="tab-qr-btn">扫码登录</button>
+          </div>
+
+          <!-- 账户登录 -->
+          <div id="tab-account" class="tab-content active" role="tabpanel" aria-labelledby="tab-account-btn">
+            <form id="login-form" autocomplete="off">
+              <div class="input-group">
+                <span class="input-icon">👤</span>
+                <input type="text" id="identifier" name="identifier" placeholder="用户名/邮箱/手机号" aria-label="用户名或邮箱或手机号" required />
+              </div>
+
+              <div class="input-group">
+                <span class="input-icon">🔒</span>
+                <input type="password" id="password" name="password" placeholder="密码" aria-label="密码" required />
+              </div>
+
+              <div class="captcha-row" id="captcha-row" hidden>
+                <div class="captcha-box">
+                  <img id="captcha-image" alt="图形验证码" />
+                  <button type="button" id="captcha-refresh" class="link">刷新验证码</button>
+                </div>
+                <input type="text" id="captcha_code" placeholder="请输入验证码" aria-label="图形验证码" />
+              </div>
+
+              <label class="checkbox remember">
+                <input type="checkbox" id="remember_me" /> 记住我
+              </label>
+
+              <button type="submit" class="primary login-btn" id="login-btn">立即登录</button>
+              <div class="login-links">
+                <a href="/index.html" class="link">注册12306</a>
+                <a href="#" id="forgot-password" class="link">忘记密码</a>
+              </div>
+              <div class="login-hint" id="login-hint">铁路12306服务时间：每日5:00-次日1:00；周二5:00-24:00</div>
+              <div class="error" id="login-error" aria-live="polite"></div>
+              <div class="status" id="login-status" aria-live="polite"></div>
+            </form>
+          </div>
+
+          <!-- 扫码登录 -->
+          <div id="tab-qr" class="tab-content" role="tabpanel" aria-labelledby="tab-qr-btn">
+            <div class="qr-area">
+              <div class="qr-box">
+                <img id="qr-image" alt="登录二维码" />
+              </div>
+              <div class="qr-status" id="qr-status">二维码未生成</div>
+              <div class="qr-actions">
+                <button id="qr-generate" class="secondary">生成二维码</button>
+                <button id="qr-refresh" class="secondary" disabled>刷新</button>
+                <!-- 开发辅助：模拟扫描/确认 -->
+                <button id="qr-mock-scan" class="link" disabled>模拟扫描</button>
+                <button id="qr-mock-confirm" class="link" disabled>模拟确认</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 中部手机宣传图 -->
+        <section class="hero-phone">
+          <img src="login.png" alt="铁路12306手机应用展示" />
+        </section>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-links">
+        <div class="partners">
+          <span>友情链接：</span>
+          <a href="#">中国铁路微信公众号</a>
+          <a href="#">12306 公益公众号</a>
+          <a href="#">铁路12306</a>
+        </div>
+        <p class="copyright">© 中国铁路客户服务中心</p>
+      </div>
+    </footer>
+
+    <script src="login.js"></script>
+  </body>
+  </html>

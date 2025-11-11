@@ -1,0 +1,47 @@
+meta:
+  name: "前端 UI 测试用例 - 注册流程"
+  scope: [accessibility, validation, flow]
+
+cases:
+  - id: ui01_focus_management
+    description: "校验错误时，焦点移动到首个错误字段，并朗读错误信息"
+    expect: { focusMoved: true, ariaAlert: true }
+
+  - id: ui02_username_live_validation
+    description: "用户名输入实时校验与可用性查询"
+    steps:
+      - type: input
+        field: username
+        value: "1abc"
+        expect: { error: "用户名必须以字母开头" }
+      - type: input
+        field: username
+        value: "testuser123"
+        expect: { valid: true }
+
+  - id: ui03_password_strength_meter
+    description: "密码强度条显示，至少两类字符达到合格"
+    steps:
+      - type: input
+        field: password
+        value: "123456"
+        expect: { strength: "弱" }
+      - type: input
+        field: password
+        value: "MyPass_123"
+        expect: { strength: "强" }
+
+  - id: ui04_sms_countdown
+    description: "短信验证码 60s 倒计时与 5 分钟失效提示"
+    expect: { countdown: 60, ttlMinutes: 5 }
+
+  - id: ui05_terms_must_checked
+    description: "未勾选条款与隐私政策不可继续"
+    steps:
+      - type: click
+        button: next
+        expect: { blocked: true, error: "请勾选同意12306服务条款与隐私权政策" }
+
+  - id: ui06_progress_indicator
+    description: "进度指示器显示当前步骤与已完成步骤"
+    expect: { visible: true, currentStep: "手机验证" }

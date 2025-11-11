@@ -1,0 +1,35 @@
+{
+  "name": "12306-registration-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "12306 用户注册接口服务桩，与 .artifacts/api_interface.yml 对齐，并包含单元测试",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "jest --runInBand",
+    "send-code": "node src/cli/sendCode.js",
+    "verify-code": "node src/cli/sendCode.js --verify",
+    "fp:phone:request": "node src/cli/forgotPassword.js --flow phone --action request",
+    "fp:phone:verify": "node src/cli/forgotPassword.js --flow phone --action verify",
+    "fp:email:request": "node src/cli/forgotPassword.js --flow email --action request"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "nedb-promises": "^6.2.3",
+    "superagent": "^8.1.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3",
+    "puppeteer": "^23.7.1"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "roots": [
+      "<rootDir>/test"
+    ],
+    "verbose": true,
+    "setupFilesAfterEnv": [
+      "<rootDir>/test/setup.clean-db.js"
+    ]
+  }
+}

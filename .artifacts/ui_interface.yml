@@ -1,0 +1,438 @@
+meta:
+  name: "12306用户注册与登录_UI接口规范"
+  version: "1.2.0"
+  generated_at: "2025-11-11T00:00:00Z"
+  source_doc: "e:\\cs3604\\12306\\12306_用户注册功能_详细需求文档.md"
+  source_doc_login: "e:\\cs3604\\12306\\12306_用户登录功能_详细需求文档.md"
+  source_doc_password: "e:\\cs3604\\12306\\12306_密码管理功能_详细需求文档.md"
+
+principles:
+  layout:
+    - 单列表单布局，字段标签右对齐
+    - 头部/面包屑/主体/底部结构
+  states:
+    - 成功: 绿色边框 + 绿色勾选图标
+    - 错误: 红色边框 + 红色警告图标
+    - 警告: 橙色边框 + 橙色感叹号图标
+    - 默认: 灰色边框
+  accessibility:
+    keyboard: { tab_order: logical, focus_visible: true }
+    screen_reader: { label_for: true, aria_attributes: appropriate }
+    contrast: { meets_wcag: true }
+
+pages:
+  registration:
+    breadcrumb: "客运首页 > 注册"
+    steps:
+      - id: account_info
+        title: "账户信息填写"
+        fields:
+          username:
+            type: text
+            required: true
+            placeholder: "请输入用户名（字母开头，6-30位）"
+            validate:
+              pattern: "^[A-Za-z][A-Za-z0-9_]{5,29}$"
+              on_blur: true
+              server_check: "/api/v1/users/username/check"
+            messages:
+              success: ""
+              error_format: "用户名只能由字母、数字和_组成，须以字母开头！"
+              error_length: "用户名长度不能少于6个字符！"
+              error_taken: "该用户名已经占用，请重新选择用户名！"
+
+          password:
+            type: password
+            required: true
+            placeholder: "请输入密码（6-20位，仅字母/数字/下划线）"
+            validate:
+              allowed_chars_pattern: "^[_A-Za-z0-9]{6,20}$"
+              min_length: 6
+              max_length: 20
+              min_categories: 2
+              categories: [letters, digits, underscore]
+              not_equal_to: username
+              strength_meter: true
+            messages:
+              success: ""
+              error_illegal_char: "包含非法字符（仅允许字母、数字、下划线）"
+              error_weak: "格式错误，必须且只能包含字母，数字，下划线中的两种或两种以上！"
+              error_same_as_username: "密码不能与用户名相同！"
+
+          confirm_password:
+            type: password
+            required: true
+            validate:
+              equals_to: password
+            messages:
+              success: "密码确认成功"
+              error_mismatch: "确认密码与密码不同！"
+
+          name:
+            type: text
+            required: true
+            placeholder: "请输入真实姓名"
+
+          id_type:
+            type: select
+            required: true
+            options: [居民身份证, 护照, 港澳居民来往内地通行证, 台湾居民来往大陆通行证]
+
+          id_number:
+            type: text
+            required: true
+            validate:
+              by_id_type:
+                居民身份证:
+                  pattern: "^(\\d{17}[\\dXx])$"
+                  algorithm: "ISO 7064 MOD 11-2"
+                默认:
+                  pattern: "^[A-Za-z0-9]{5,20}$"
+            messages:
+              success: ""
+              error_format: "请输入正确的身份证号码格式"
+
+          phone_country_code:
+            type: select
+            required: true
+            options: ["+86", "+852", "+853", "+886"]
+
+          phone_number:
+            type: text
+            required: true
+            validate:
+              pattern_e164: "^\\+?\\d{6,15}$"
+              server_check: "/api/v1/users/phone/check"
+            messages:
+              success: ""
+              error_invalid: "请输入正确的手机号"
+              error_taken: "该手机号已被注册，请尝试找回账户或联系客服"
+
+          email:
+            type: text
+            required: false
+            validate:
+              pattern: "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
+
+          traveler_type:
+            type: select
+            required: false
+            options: [成人, 儿童]
+
+        terms_checkbox:
+          label: "我已阅读并同意遵守《中国铁路客户服务中心网站服务条款》《隐私权政策》"
+          links:
+            terms: "/api/v1/terms"
+            privacy: "/api/v1/terms"
+          required: true
+        actions:
+          primary_button:
+            label: "下一步"
+            disabled_until_valid: true
+          secondary_button:
+            label: "取消"
+            navigate: "首页"
+
+      - id: phone_verification
+        title: "手机验证"
+        components:
+          send_code_button:
+            label: "获取验证码"
+            countdown_seconds: 60
+            api: "/api/v1/registration/sessions/{session_id}/sms/send"
+            rate_limit_hint: "每日最多发送10次验证码"
+          sms_code_input:
+            type: text
+            placeholder: "请输入6位验证码"
+            validate:
+              pattern: "^\\d{6}$"
+          verify_button:
+            label: "验证"
+            api: "/api/v1/registration/sessions/{session_id}/sms/verify"
+        messages:
+          success: "手机验证成功"
+          error_mismatch: "验证码错误，请重新输入"
+          error_expired: "验证码已过期，请重新获取"
+
+      - id: identity_verification
+        title: "身份核验"
+        content:
+          instruction: "将提交姓名与证件信息进行实名校验"
+        actions:
+          verify_button:
+            label: "开始核验"
+            api: "/api/v1/registration/sessions/{session_id}/identity/verify"
+        messages:
+          success: "身份信息验证通过"
+          error_format: "请输入正确的身份证号码格式"
+          error_mismatch: "姓名与证件号码不匹配，请核实后重新输入"
+          error_failed: "身份信息验证失败，请联系客服"
+
+      - id: terms_confirm
+        title: "服务条款确认"
+        components:
+          checkbox:
+            label: "我已阅读并同意遵守《中国铁路客户服务中心网站服务条款》《隐私权政策》"
+            links:
+              terms_link: "https://www.12306.cn/terms"
+              privacy_link: "https://www.12306.cn/privacy"
+        actions:
+          accept_button:
+            label: "确认并继续"
+            api: "/api/v1/registration/sessions/{session_id}/terms"
+
+      - id: complete
+        title: "注册完成"
+        content:
+          success_message: "账户创建成功，您可以正常使用12306服务"
+        actions:
+          go_to_login:
+            label: "前往登录"
+          navigate: "/login"
+
+  login:
+    breadcrumb: "客运首页 > 登录"
+    tabs:
+      - id: account
+        title: "账号登录"
+      - id: qrcode
+        title: "扫码登录"
+    account:
+      layout:
+        width: 400px
+        centered: true
+      fields:
+        identifier:
+          type: text
+          required: true
+          placeholder: "请输入用户名/手机号/邮箱"
+          validate:
+            patterns:
+              username: "^[A-Za-z][A-Za-z0-9_]{5,29}$"
+              phone: "^1[3-9]\\d{9}$"
+              email: "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
+            auto_detect: true
+          messages:
+            error_invalid: "请输入正确的用户名/手机号/邮箱格式"
+        password:
+          type: password
+          required: true
+          placeholder: "请输入密码"
+        captcha:
+          visible_when: "server_requires_captcha"
+          components:
+            image:
+              src_api: "/api/v1/auth/captcha?type=image"
+              alt: "图形验证码"
+              refresh_button: { label: "换一张", action: "refresh" }
+            audio:
+              src_api: "/api/v1/auth/captcha?type=audio"
+              label: "语音验证码"
+            code_input:
+              type: text
+              validate:
+                pattern: "^[A-Za-z0-9]{4,6}$"
+              messages:
+                error_invalid: "验证码错误"
+        remember_me:
+          type: checkbox
+          label: "记住登录状态"
+      actions:
+        primary_button:
+          label: "立即登录"
+          loading_label: "登录中..."
+          disabled_when:
+            - identifier.invalid
+            - password.empty
+            - account_locked
+          api: "/api/v1/auth/login"
+      messages:
+        success: "登录成功"
+        error_invalid_credentials: "用户名或密码错误"
+        error_account_locked: "账户已被锁定，请30分钟后重试或联系客服"
+        maintenance: "系统维护中，服务时间：每日5:00-次日1:00；周二5:00-24:00"
+      behaviors:
+        on_login_failed:
+          clear_fields: [password]
+          keep_fields: [identifier]
+        on_captcha_required:
+          show_component: captcha
+
+    qrcode:
+      layout:
+        width: 400px
+        centered: true
+      components:
+        qrcode_image:
+          src_api: "/api/v1/auth/qrcode"
+          expires_hint: "二维码在2分钟内有效"
+        status_indicator:
+          states: [未扫描, 已扫描待确认, 已确认, 已过期]
+        refresh_button:
+          label: "刷新二维码"
+          api: "/api/v1/auth/qrcode/{qrcode_id}/refresh"
+      polling:
+        api: "/api/v1/auth/qrcode/{qrcode_id}/status"
+        interval_seconds: 2
+        on_status:
+          unscanned: { message: "请使用12306 APP扫码确认" }
+          scanned: { message: "请在APP中确认登录" }
+          confirmed: { message: "登录成功，正在跳转..." }
+          expired: { message: "二维码已过期，请刷新重试" }
+      messages:
+        cancel: "登录已取消"
+
+    password_recovery:
+      layout:
+        tabs: [人脸找回, 手机找回, 邮箱找回]
+      phone:
+        fields:
+          phone_number:
+            type: text
+            placeholder: "请输入注册手机号"
+          id_type:
+            type: select
+            options: [居民身份证, 护照, 港澳居民来往内地通行证, 台湾居民来往大陆通行证]
+          id_number:
+            type: text
+        components:
+          send_code_button:
+            label: "获取验证码"
+            countdown_seconds: 60
+            api: "/api/v1/auth/password/phone/request"
+          sms_code_input:
+            type: text
+            placeholder: "请输入6位验证码"
+            validate:
+              pattern: "^\\d{6}$"
+          verify_button:
+            label: "验证"
+            api: "/api/v1/auth/password/phone/verify"
+          new_password:
+            type: password
+            placeholder: "请输入新密码（至少8位，含大小写字母、数字、特殊字符）"
+            validate:
+              min_length: 8
+              categories_required: [uppercase, lowercase, digit, special]
+              allowed_specials: "!@#$%^&*()-_=+[]{};:,.?/\\|"
+              strength_meter: true
+          confirm_new_password:
+            type: password
+            validate:
+              equals_to: new_password
+        actions:
+          reset_submit:
+            label: "提交"
+            api: "/api/v1/auth/password/reset"
+        messages:
+          code_sent: "验证码已发送至138****8000"
+          success: "密码重置成功"
+          code_expired: "验证码已过期，请重新获取"
+          code_mismatch: "验证码错误，请重新输入"
+          phone_id_mismatch: "手机号码与注册信息不匹配"
+          new_password_weak: "密码强度不足，请包含大小写字母、数字和特殊字符，长度至少8位"
+        flow:
+          - 获取验证码 -> 验证 -> 设置新密码 -> 提交
+      email:
+        fields:
+          email: { type: text, placeholder: "请输入注册邮箱" }
+          id_type: { type: select, options: [居民身份证, 护照, 港澳居民来往内地通行证, 台湾居民来往大陆通行证] }
+          id_number: { type: text }
+        actions:
+          submit:
+            label: "提交"
+            api: "/api/v1/auth/password/email/request"
+        messages:
+          sent: "重置邮件已发送"
+          link_ttl: "重置链接在24小时内有效"
+          link_expired: "重置链接已过期"
+      face:
+        actions:
+          start:
+            label: "开始人脸识别找回"
+            api: "/api/v1/auth/password/face/start"
+        polling:
+          api: "/api/v1/auth/password/face/{qrcode_id}/status"
+          interval_seconds: 2
+          on_status:
+            unscanned: { message: "请使用12306 APP扫码确认" }
+            scanned: { message: "请在APP中确认身份" }
+            confirmed: { message: "身份确认成功，请设置新密码" }
+            expired: { message: "二维码已过期，请刷新重试" }
+        messages:
+          face_failed: "人脸识别失败"
+          face_locked: "人脸识别功能已锁定，30分钟后再试"
+        flow:
+          - 生成App二维码 -> 扫码与确认 -> 设置新密码
+
+  account_security:
+    breadcrumb: "我的12306 > 账户安全 > 登录密码"
+    password_change:
+      title: "修改登录密码"
+      fields:
+        old_password:
+          type: password
+          required: true
+          placeholder: "请输入原密码"
+        new_password:
+          type: password
+          required: true
+          placeholder: "请输入新密码（至少8位，含大小写字母、数字、特殊字符）"
+          validate:
+            min_length: 8
+            categories_required: [uppercase, lowercase, digit, special]
+            allowed_specials: "!@#$%^&*()-_=+[]{};:,.?/\\|"
+            not_equal_to: old_password
+            strength_meter: true
+        confirm_new_password:
+          type: password
+          required: true
+          validate:
+            equals_to: new_password
+      actions:
+        submit:
+          label: "确认"
+          api: "/api/v1/auth/password/change"
+      messages:
+        success: "密码修改成功"
+        wrong_old: "原密码错误"
+        weak_new: "密码强度不足，请包含大小写字母、数字和特殊字符，长度至少8位"
+        same_as_old: "新密码不能与原密码相同"
+        change_locked: "修改密码功能已锁定，10分钟后再试"
+
+interactions:
+  real_time_validation:
+    - username.on_blur -> client_format_check -> server_unique_check
+    - password.on_input -> strength_meter_update
+    - confirm_password.on_input -> equality_check
+    - phone_number.on_blur -> client_format_check -> server_unique_check
+  error_handling:
+    - network_error -> 保留已填写信息 + 提供重试按钮
+    - server_error -> 显示错误代码，建议稍后重试或联系客服
+  progress_indicator:
+    steps_order: [账户信息填写, 手机验证, 身份核验, 服务条款确认, 注册完成]
+  login_flow:
+    - account.identifier.on_blur -> client_format_check
+    - login.submit -> server_login -> success | invalid_credentials | captcha_required | locked | maintenance
+    - qrcode.tab.open -> get_qrcode -> poll_status (每2秒)
+    - qrcode.status.confirmed -> auto_redirect
+
+strings:
+  buttons:
+    next: "下一步"
+    cancel: "取消"
+    get_code: "获取验证码"
+    verify: "验证"
+    accept: "确认并继续"
+    go_to_login: "前往登录"
+    login: "立即登录"
+    refresh_qrcode: "刷新二维码"
+  tooltips:
+    username_rule: "字母开头，6-30位，仅字母/数字/下划线"
+    password_rule: "长度6-20位，需至少包含两种字符类别：字母/数字/下划线"
+    sms_limit: "同一手机号每日最多发送10次验证码"
+  messages:
+    login_success: "登录成功"
+    login_failed: "用户名或密码错误"
+    account_locked: "账户已被锁定，请30分钟后重试或联系客服"
+    maintenance: "系统维护中，服务时间：每日5:00-次日1:00；周二5:00-24:00"

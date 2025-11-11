@@ -1,0 +1,193 @@
+meta:
+  name: "API 测试用例 - 用户注册"
+  base_url: "http://localhost:8080/api/v1"
+  notes: "以接口规范为准，若实际服务路径不同请在执行前调整。"
+
+sequence:
+  - id: s01_check_username_valid
+    endpoint: GET /users/username/check
+    request:
+      query: { username: "testuser123" }
+    expect:
+      status: 200
+      body:
+        available: true
+
+  - id: s02_check_username_taken
+    endpoint: GET /users/username/check
+    request:
+      query: { username: "existinguser" }
+    expect:
+      status: 200
+      body:
+        available: false
+        suggestions: present
+
+  - id: s03_check_phone_available
+    endpoint: GET /users/phone/check
+    request:
+      query: { phone_country_code: "+86", phone_number: "13812345678" }
+    expect:
+      status: 200
+      body:
+        available: true
+
+  - id: s04_create_session
+    endpoint: POST /registration/sessions
+    request:
+      body: {}
+    expect:
+      status: 201
+      body:
+        session_id: uuid
+        progress:
+          account_info_completed: false
+
+  - id: s05_submit_account_info_valid
+    endpoint: PATCH /registration/sessions/{session_id}/account
+    depends_on: s04_create_session
+    request:
+      path_params:
+        session_id: "{{ s04_create_session.body.session_id }}"
+      body:
+        username: "testuser123"
+        password: "MyPass_123"
+        name: "张三"
+        id_type: "居民身份证"
+        id_number: "110101199001011234"
+        phone_country_code: "+86"
+        phone_number: "13812345678"
+        email: "test@example.com"
+        traveler_type: "成人"
+    expect:
+      status: 200
+      body:
+        account_info_completed: true
+        validations:
+          username: { ok: true }
+          password: { ok: true }
+          id: { ok: true }
+          phone: { ok: true }
+
+  - id: s06_send_sms
+    endpoint: POST /registration/sessions/{session_id}/sms/send
+    depends_on: s05_submit_account_info_valid
+    request:
+      path_params:
+        session_id: "{{ s04_create_session.body.session_id }}"
+      body:
+        phone_country_code: "+86"
+        phone_number: "13812345678"
+    expect:
+      status: 200
+      body:
+        status: "sent"
+        countdown_seconds: 60
+        ttl_minutes: 5
+
+  - id: s07_verify_sms_success
+    endpoint: POST /registration/sessions/{session_id}/sms/verify
+    depends_on: s06_send_sms
+    request:
+      path_params:
+        session_id: "{{ s04_create_session.body.session_id }}"
+      body:
+        code: "123456"
+    expect:
+      status: 200
+      body:
+        phone_verified: true
+
+  - id: s08_verify_identity_success
+    endpoint: POST /registration/sessions/{session_id}/identity/verify
+    depends_on: s07_verify_sms_success
+    request:
+      path_params:
+        session_id: "{{ s04_create_session.body.session_id }}"
+      body:
+        id_type: "居民身份证"
+        id_number: "110101199001011234"
+        name: "张三"
+    expect:
+      status: 200
+      body:
+        identity_verified: true
+
+  - id: s09_accept_terms
+    endpoint: POST /registration/sessions/{session_id}/terms
+    depends_on: s08_verify_identity_success
+    request:
+      path_params:
+        session_id: "{{ s04_create_session.body.session_id }}"
+      body:
+        terms_version: "v2025.11_服务条款"
+        privacy_version: "v2025.11_隐私权政策"
+        accepted: true
+    expect:
+      status: 200
+      body:
+        terms_accepted: true
+
+  - id: s10_complete_registration
+    endpoint: POST /registration/sessions/{session_id}/complete
+    depends_on: s09_accept_terms
+    request:
+      path_params:
+        session_id: "{{ s04_create_session.body.session_id }}"
+      body: {}
+    expect:
+      status: 201
+      body:
+        user_id: uuid
+        username: "testuser123"
+        status: "active"
+
+negative_cases:
+  - id: n01_username_format_error
+    endpoint: GET /users/username/check
+    request:
+      query: { username: "123test" }
+    expect:
+      status: 400
+      error: USERNAME_INVALID_FORMAT
+
+  - id: n02_password_weak
+    endpoint: PATCH /registration/sessions/{session_id}/account
+    request:
+      path_params:
+        session_id: "{{ s04_create_session.body.session_id }}"
+      body:
+        username: "testuser123"
+        password: "123456"
+        name: "张三"
+        id_type: "居民身份证"
+        id_number: "110101199001011234"
+        phone_country_code: "+86"
+        phone_number: "13812345678"
+    expect:
+      status: 400
+      error: PASSWORD_WEAK
+
+  - id: n03_sms_mismatch
+    endpoint: POST /registration/sessions/{session_id}/sms/verify
+    request:
+      path_params:
+        session_id: "{{ s04_create_session.body.session_id }}"
+      body:
+        code: "654321"
+    expect:
+      status: 400
+      error: SMS_CODE_MISMATCH
+
+  - id: n04_id_name_mismatch
+    endpoint: POST /registration/sessions/{session_id}/identity/verify
+    request:
+      path_params:
+        session_id: "{{ s04_create_session.body.session_id }}"
+      body:
+        id_type: "居民身份证"
+        id_number: "110101199001011234"
+        name: "李四"
+    expect:
+      status: 422
+      error: ID_NAME_MISMATCH

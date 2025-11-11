@@ -1,0 +1,7 @@
+{"user_id":"650203ee-7467-44a4-a5fb-4da5e43128f7","username":"testuser123","phone_country_code":"+86","phone_number":"13812345678","phone_key":"+86:13812345678","email":"test@example.com","password_hash":"3542927848fd1576e177180bee65b4fad4bca5d9031e7794edce2fcd9b636b6a","password_salt":"e8313954a2c916bd55581a8d01fa9918","name":"张三","id_type":"居民身份证","id_number":"110101199001011234","traveler_type":"成人","created_at":1762866448141,"_id":"f8cLCsmKkYuKrvRU"}
+{"$$indexCreated":{"fieldName":"username","unique":true,"sparse":false}}
+{"$$indexCreated":{"fieldName":"email","unique":true,"sparse":false}}
+{"$$indexCreated":{"fieldName":"phone_key","unique":true,"sparse":false}}
+{"$$indexCreated":{"fieldName":"username","unique":true}}
+{"$$indexCreated":{"fieldName":"email","unique":true}}
+{"$$indexCreated":{"fieldName":"phone_key","unique":true}}

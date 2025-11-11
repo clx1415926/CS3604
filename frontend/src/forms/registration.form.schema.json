@@ -1,0 +1,54 @@
+{
+  "meta": {
+    "name": "12306 注册表单 Schema",
+    "version": "2025.11",
+    "source": ".artifacts/ui_interface.yml"
+  },
+  "pages": [
+    {
+      "id": "account_info",
+      "title": "账户信息填写",
+      "fields": [
+        { "name": "username", "type": "text", "minLength": 6, "maxLength": 30, "pattern": "^[A-Za-z][A-Za-z0-9_]{5,29}$", "required": true },
+        { "name": "password", "type": "password", "minLength": 8, "allowed": "[_A-Za-z0-9]", "categoriesAtLeast": 2, "required": true },
+        { "name": "name", "type": "text", "required": true },
+        { "name": "id_type", "type": "select", "options": ["居民身份证", "护照", "港澳居民来往大陆通行证"], "required": true },
+        { "name": "id_number", "type": "text", "required": true },
+        { "name": "phone_country_code", "type": "select", "options": ["+86", "+852", "+853", "+886"], "required": true },
+        { "name": "phone_number", "type": "tel", "required": true },
+        { "name": "email", "type": "email", "required": false },
+        { "name": "traveler_type", "type": "select", "options": ["成人", "学生", "儿童", "残疾军人/伤残人民警察"], "required": true }
+      ]
+    },
+    {
+      "id": "phone_verify",
+      "title": "手机验证",
+      "fields": [
+        { "name": "sms_code", "type": "text", "length": 6, "pattern": "^\\d{6}$", "required": true }
+      ],
+      "constraints": { "countdownSeconds": 60, "ttlMinutes": 5 }
+    },
+    {
+      "id": "identity_verify",
+      "title": "身份核验",
+      "fields": [
+        { "name": "id_type", "type": "select", "required": true },
+        { "name": "id_number", "type": "text", "required": true },
+        { "name": "name", "type": "text", "required": true }
+      ]
+    },
+    {
+      "id": "terms_confirm",
+      "title": "条款确认",
+      "fields": [
+        { "name": "accept_terms", "type": "checkbox", "required": true },
+        { "name": "accept_privacy", "type": "checkbox", "required": true }
+      ]
+    },
+    {
+      "id": "complete",
+      "title": "完成注册",
+      "fields": []
+    }
+  ]
+}

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>中国铁路12306 - 用户注册</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container">
+        <div class="brand">
+          <span class="logo">◎</span>
+          <span class="title">中国铁路12306</span>
+        </div>
+        <nav class="nav">
+          <a href="#">首页</a>
+          <a href="#">客运首页</a>
+          <a href="#" class="active">注册</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container">
+      <div class="breadcrumb">客运首页 > 注册</div>
+
+      <section class="card">
+        <h1 class="card-title">账户信息</h1>
+
+        <div class="steps">
+          <div class="step active" data-step="account">账户信息填写</div>
+          <div class="step" data-step="phone">手机验证</div>
+          <div class="step" data-step="identity">身份核验</div>
+          <div class="step" data-step="terms">服务条款确认</div>
+          <div class="step" data-step="complete">注册完成</div>
+        </div>
+
+        <form id="account-form" class="form-grid" autocomplete="off">
+          <div class="form-row">
+            <label for="username">用户名：</label>
+            <div class="field">
+              <input id="username" name="username" type="text" placeholder="字母开头，6-30位" required />
+              <div class="hint">字母开头，6-30位，仅字母/数字/下划线</div>
+              <div class="error" id="username-error"></div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label for="password">登录密码：</label>
+            <div class="field">
+              <input id="password" name="password" type="password" placeholder="6-20位，仅字母/数字/下划线" required />
+              <div class="strength">
+                <span class="bar" id="strength-bar"></span>
+                <span class="text" id="strength-text">弱</span>
+              </div>
+              <div class="error" id="password-error"></div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label for="confirm_password">确认密码：</label>
+            <div class="field">
+              <input id="confirm_password" name="confirm_password" type="password" required />
+              <div class="error" id="confirm-error"></div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label for="name">姓名：</label>
+            <div class="field">
+              <input id="name" name="name" type="text" placeholder="请输入真实姓名" required />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label for="id_type">证件类型：</label>
+            <div class="field">
+              <select id="id_type" name="id_type" required>
+                <option value="居民身份证">居民身份证</option>
+                <option value="护照">护照</option>
+                <option value="港澳居民来往内地通行证">港澳居民来往内地通行证</option>
+                <option value="台湾居民来往大陆通行证">台湾居民来往大陆通行证</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label for="id_number">证件号码：</label>
+            <div class="field">
+              <input id="id_number" name="id_number" type="text" required />
+              <div class="error" id="id-error"></div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label for="traveler_type">乘客类型：</label>
+            <div class="field">
+              <select id="traveler_type" name="traveler_type">
+                <option value="成人">成人</option>
+                <option value="儿童">儿童</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label for="phone_country_code">手机号：</label>
+            <div class="field phone-field">
+              <select id="phone_country_code" name="phone_country_code">
+                <option value="+86">+86</option>
+                <option value="+852">+852</option>
+                <option value="+853">+853</option>
+                <option value="+886">+886</option>
+              </select>
+              <input id="phone_number" name="phone_number" type="tel" required />
+              <div class="error" id="phone-error"></div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label for="email">电子邮箱：</label>
+            <div class="field">
+              <input id="email" name="email" type="email" placeholder="可选" />
+            </div>
+          </div>
+
+          <div class="form-row checkbox-row">
+            <label></label>
+            <div class="field">
+              <label class="checkbox">
+                <input type="checkbox" id="terms" /> 我已阅读并同意遵守《中国铁路客户服务中心网站服务条款》《隐私权政策》
+              </label>
+              <div class="error" id="terms-error"></div>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button type="submit" class="primary">下一步</button>
+          </div>
+        </form>
+
+        <form id="phone-form" class="form-grid hidden">
+          <div class="form-row">
+            <label>发送方式：</label>
+            <div class="field">
+              <label class="radio"><input type="radio" name="code_channel" value="sms" checked /> 短信</label>
+              <label class="radio" style="margin-left:12px"><input type="radio" name="code_channel" value="email" /> 邮件</label>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label>验证码：</label>
+            <div class="field sms-field">
+              <input id="sms_code" type="text" placeholder="请输入6位验证码" />
+              <button id="send_code" type="button">获取验证码</button>
+              <span id="countdown" class="countdown"></span>
+            </div>
+            <div class="error" id="code-error"></div>
+            <div class="status" id="code-status"></div>
+          </div>
+
+          <div class="actions">
+            <button id="verify_code" type="button" class="primary">验证</button>
+          </div>
+        </form>
+
+        <form id="identity-form" class="form-grid hidden">
+          <div class="form-row">
+            <label>身份核验：</label>
+            <div class="field">
+              <button id="verify_identity" type="button">开始核验</button>
+              <div class="error" id="identity-error"></div>
+              <div class="status" id="identity-status"></div>
+            </div>
+          </div>
+        </form>
+
+        <form id="terms-form" class="form-grid hidden">
+          <div class="form-row">
+            <label>条款确认：</label>
+            <div class="field">
+              <button id="accept_terms" type="button">确认并继续</button>
+            </div>
+          </div>
+        </form>
+
+        <div id="complete-section" class="complete hidden">
+          <p>账户创建成功，正在为您跳转到登录页…</p>
+          <button id="goto_login">前往登录</button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <p>© 中国铁路客户服务中心</p>
+      </div>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+  </html>

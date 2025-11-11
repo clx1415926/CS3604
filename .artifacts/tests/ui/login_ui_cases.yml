@@ -1,0 +1,52 @@
+meta:
+  name: "前端UI测试用例 - 登录"
+  notes: "覆盖账号/扫码登录界面交互、可访问性与反馈"
+
+cases:
+  - id: ui01_tabs_switch
+    description: "登录页在 '账号登录' 与 '扫码登录' 标签间切换"
+    steps:
+      - 打开登录页
+      - 点击切换到扫码登录页签
+      - 验证二维码区域可见
+
+  - id: ui02_account_login_validation
+    description: "输入框实时校验：用户名/手机号/邮箱格式"
+    steps:
+      - 输入用户名 "1abc" 应显示格式错误
+      - 输入手机号 "13812345678" 应通过
+      - 输入邮箱 "bad%mail" 应显示格式错误
+
+  - id: ui03_password_strength_meter
+    description: "密码强度条显示"
+    steps:
+      - 输入 "123456" 强度提示为弱
+      - 输入 "Password_123" 强度提示为强
+
+  - id: ui04_captcha_flow
+    description: "需要验证码时展示图片并校验"
+    steps:
+      - 勾选 '我不是机器人' 或点击刷新验证码
+      - 输入验证码并提交
+      - 错误时置红并清空输入框
+
+  - id: ui05_qr_states
+    description: "二维码状态切换：unscanned->scanned->confirmed->expired"
+    steps:
+      - 初始显示状态提示 '请使用12306App扫码'
+      - 模拟APP扫码后显示 '已扫码，请在App确认'
+      - 模拟确认后自动跳转
+      - 超时后显示 '二维码已过期，请刷新'
+
+  - id: ui06_remember_me
+    description: "勾选记住我后7天内保持登录"
+    steps:
+      - 勾选记住我并登录成功
+      - 刷新页面后仍保持登录状态
+
+  - id: ui07_accessibility
+    description: "可访问性：键盘导航、ARIA标签、对比度、屏幕阅读器文案"
+    steps:
+      - Tab顺序符合预期
+      - 输入框与按钮具有可读label与aria-describedby
+      - 高对比度模式下文本可读

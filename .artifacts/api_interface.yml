@@ -1,0 +1,620 @@
+meta:
+  name: "12306用户注册与登录_API接口库"
+  version: "1.2.0"
+  generated_at: "2025-11-11T00:00:00Z"
+  source_doc: "e:\\cs3604\\12306\\12306_用户注册功能_详细需求文档.md"
+  source_doc_login: "e:\\cs3604\\12306\\12306_用户登录功能_详细需求文档.md"
+  source_doc_password: "e:\\cs3604\\12306\\12306_密码管理功能_详细需求文档.md"
+
+conventions:
+  style: "REST + JSON"
+  base_path: "/api/v1"
+  http_status:
+    success: [200, 201, 204]
+    client_error: [400, 401, 403, 404, 409, 429]
+    server_error: [500]
+  rate_limit:
+    default: "60 req/min/IP"
+  idempotency:
+    guidelines: "对易重试操作（短信发送、校验）使用幂等键或窗口限制"
+
+security:
+  auth:
+    public_endpoints: ["/registration/sessions", "/users/username/check", "/users/phone/check", "/terms"]
+    protected_endpoints: ["/registration/sessions/*"]
+  csrf: "前端需携带防CSRF令牌（如同源策略或CSRF Token）"
+
+endpoints:
+  - id: check_username
+    name: "用户名唯一性与格式检查"
+    method: GET
+    path: "/users/username/check"
+    query:
+      username: { type: string, required: true }
+    responses:
+      200:
+        body:
+          available: boolean
+          suggestions: [string]
+        examples:
+          success:
+            available: true
+            suggestions: []
+          taken:
+            available: false
+            suggestions: ["testuser1234", "test_user_123", "testuser_abc"]
+      400:
+        error: USERNAME_INVALID_FORMAT
+        message: "用户名只能由字母、数字和_组成，须以字母开头！"
+
+  - id: check_phone
+    name: "手机号唯一性检查"
+    method: GET
+    path: "/users/phone/check"
+    query:
+      phone_country_code: { type: string, required: true }
+      phone_number: { type: string, required: true }
+    responses:
+      200:
+        body:
+          available: boolean
+          recovery_link: string
+        examples:
+          available:
+            available: true
+            recovery_link: null
+          taken:
+            available: false
+            recovery_link: "https://www.12306.cn/recover-account"
+
+  - id: create_registration_session
+    name: "创建注册会话（多步骤流程入口）"
+    method: POST
+    path: "/registration/sessions"
+    body:
+      client_context: { type: object, required: false }
+    responses:
+      201:
+        body:
+          session_id: string
+          expires_at: datetime
+          progress:
+            account_info_completed: false
+            phone_verified: false
+            identity_verified: false
+            terms_accepted: false
+
+  - id: submit_account_info
+    name: "提交账户信息（用户名、密码、实名、联系方式）"
+    method: PATCH
+    path: "/registration/sessions/{session_id}/account"
+    body:
+      username: string
+      password: string
+      name: string
+      id_type: string
+      id_number: string
+      phone_country_code: string
+      phone_number: string
+      email: { type: string, required: false }
+      traveler_type: { type: string, required: false }
+    responses:
+      200:
+        body:
+          account_info_completed: true
+          validations:
+            username: { ok: boolean, message: string }
+            password: { ok: boolean, strength: "弱|中|强", message: string }
+            id: { ok: boolean, message: string }
+            phone: { ok: boolean, message: string }
+      400:
+        error: [USERNAME_INVALID_FORMAT, PASSWORD_WEAK, PHONE_INVALID, ID_INVALID_FORMAT]
+      409:
+        error: [USERNAME_TAKEN, PHONE_TAKEN]
+
+  - id: send_sms_code
+    name: "发送手机验证码（6位数字，5分钟有效）"
+    method: POST
+    path: "/registration/sessions/{session_id}/sms/send"
+    body:
+      phone_country_code: string
+      phone_number: string
+    responses:
+      200:
+        body:
+          status: "sent"
+          countdown_seconds: 60
+          ttl_minutes: 5
+      429:
+        error: [SMS_TOO_FREQUENT, SMS_DAILY_LIMIT_REACHED]
+
+  - id: verify_sms_code
+    name: "验证手机验证码"
+    method: POST
+    path: "/registration/sessions/{session_id}/sms/verify"
+    body:
+      code: string
+    responses:
+      200:
+        body:
+          phone_verified: true
+          message: "手机验证成功"
+      400:
+        error: [SMS_CODE_MISMATCH, SMS_CODE_EXPIRED]
+
+  - id: verify_identity
+    name: "实名身份核验"
+    method: POST
+    path: "/registration/sessions/{session_id}/identity/verify"
+    body:
+      id_type: string
+      id_number: string
+      name: string
+    responses:
+      200:
+        body:
+          identity_verified: true
+          message: "身份信息验证通过"
+      400:
+        error: [ID_INVALID_FORMAT]
+      422:
+        error: [ID_NAME_MISMATCH, ID_VERIFICATION_FAILED]
+
+  - id: accept_terms
+    name: "服务条款与隐私政策确认"
+    method: POST
+    path: "/registration/sessions/{session_id}/terms"
+    body:
+      terms_version: string
+      privacy_version: string
+      accepted: boolean
+    responses:
+      200:
+        body:
+          terms_accepted: true
+
+  - id: complete_registration
+    name: "完成注册，创建账户"
+    method: POST
+    path: "/registration/sessions/{session_id}/complete"
+    body: {}
+    responses:
+      201:
+        body:
+          user_id: string
+          username: string
+          status: "active"
+      400:
+        error: "MISSING_REQUIRED_STEPS"
+        details:
+          required: [account_info_completed, phone_verified, identity_verified, terms_accepted]
+
+  - id: get_terms_links
+    name: "获取服务条款与隐私政策链接"
+    method: GET
+    path: "/terms"
+    responses:
+      200:
+        body:
+          terms_link: "https://www.12306.cn/terms"
+          privacy_link: "https://www.12306.cn/privacy"
+
+  # ===== 登录相关接口 =====
+  - id: login_password
+    name: "账号密码登录（用户名/手机号/邮箱）"
+    method: POST
+    path: "/auth/login"
+    body:
+      identifier_type: { type: string, enum: [username, phone, email], required: false }
+      identifier: { type: string, required: true }
+      password: { type: string, required: true }
+      captcha_id: { type: string, required: false }
+      captcha_code: { type: string, required: false }
+      remember_me: { type: boolean, required: false, default: false }
+    responses:
+      200:
+        body:
+          session_id: string
+          user_id: string
+          remember_expires_at: datetime
+          redirect: string
+          message: "登录成功"
+      400:
+        error: [LOGIN_IDENTIFIER_INVALID_FORMAT]
+      401:
+        error: [INVALID_CREDENTIALS]
+      403:
+        error: [CAPTCHA_REQUIRED, CAPTCHA_INVALID, ACCOUNT_LOCKED]
+      503:
+        error: [MAINTENANCE_WINDOW]
+
+  - id: logout
+    name: "退出登录"
+    method: POST
+    path: "/auth/logout"
+    headers:
+      Authorization: { type: string, required: true, description: "Bearer token 或 Session ID" }
+    responses:
+      204:
+        body: {}
+
+  - id: get_session_status
+    name: "获取当前登录会话状态"
+    method: GET
+    path: "/auth/session"
+    headers:
+      Authorization: { type: string, required: true }
+    responses:
+      200:
+        body:
+          session_id: string
+          user_id: string
+          last_active_at: datetime
+          idle_timeout_minutes: 30
+          absolute_expires_at: datetime
+      401:
+        error: [SESSION_EXPIRED]
+
+  - id: get_captcha
+    name: "获取图形验证码（可选语音）"
+    method: GET
+    path: "/auth/captcha"
+    query:
+      type: { type: string, enum: [image, audio], required: false }
+    responses:
+      200:
+        body:
+          captcha_id: string
+          type: string
+          image_url: string
+          audio_url: string
+          expires_at: datetime
+
+  - id: verify_captcha
+    name: "验证图形验证码"
+    method: POST
+    path: "/auth/captcha/verify"
+    body:
+      captcha_id: string
+      captcha_code: string
+    responses:
+      200:
+        body:
+          verified: true
+      400:
+        error: [CAPTCHA_INVALID]
+
+  - id: get_qrcode
+    name: "生成扫码登录二维码（2分钟有效）"
+    method: GET
+    path: "/auth/qrcode"
+    responses:
+      200:
+        body:
+          qrcode_id: string
+          image_data: string
+          expires_at: datetime
+          poll_interval_seconds: 2
+
+  - id: poll_qrcode_status
+    name: "轮询二维码状态"
+    method: GET
+    path: "/auth/qrcode/{qrcode_id}/status"
+    responses:
+      200:
+        body:
+          status: "unscanned|scanned|confirmed|expired"
+          message: string
+          session_id: { type: string, required: false }
+      410:
+        error: [QR_EXPIRED]
+
+  - id: refresh_qrcode
+    name: "刷新二维码"
+    method: POST
+    path: "/auth/qrcode/{qrcode_id}/refresh"
+    responses:
+      200:
+        body:
+          qrcode_id: string
+          image_data: string
+          expires_at: datetime
+
+  - id: password_reset_phone_request
+    name: "手机号找回密码-请求验证码"
+    method: POST
+    path: "/auth/password/phone/request"
+    body:
+      phone_number: string
+      id_type: string
+      id_number: string
+    responses:
+      200:
+        body:
+          status: sent
+          ttl_minutes: 5
+          countdown_seconds: 60
+          sent_to_masked: string
+          message: "验证码已发送至138****8000"
+      429:
+        error: [SMS_TOO_FREQUENT, SMS_DAILY_LIMIT_REACHED]
+      422:
+        error: [ID_INVALID_FORMAT, ID_NAME_MISMATCH, PHONE_ID_MISMATCH, ID_VERIFICATION_FAILED]
+
+  - id: password_reset_phone_verify
+    name: "手机号找回密码-验证验证码"
+    method: POST
+    path: "/auth/password/phone/verify"
+    body:
+      phone_number: string
+      code: string
+    responses:
+      200:
+        body:
+          reset_token: string
+      400:
+        error: [SMS_CODE_EXPIRED, SMS_CODE_MISMATCH]
+
+  - id: password_reset_email_request
+    name: "邮箱找回密码-发送重置链接"
+    method: POST
+    path: "/auth/password/email/request"
+    body:
+      email: string
+      id_type: string
+      id_number: string
+    responses:
+      200:
+        body:
+          status: sent
+          message: "重置邮件已发送"
+      422:
+        error: [ID_INVALID_FORMAT, ID_NAME_MISMATCH, ID_VERIFICATION_FAILED]
+
+  - id: password_reset
+    name: "设置新密码"
+    method: POST
+    path: "/auth/password/reset"
+    body:
+      reset_token: string
+      new_password: string
+    responses:
+      200:
+        body:
+          success: true
+          message: "密码重置成功"
+
+  - id: password_reset_face_start
+    name: "人脸识别找回密码-启动（生成App二维码）"
+    method: GET
+    path: "/auth/password/face/start"
+    responses:
+      200:
+        body:
+          qrcode_id: string
+          image_data: string
+          expires_at: datetime
+          poll_interval_seconds: 2
+
+  - id: password_reset_face_confirm
+    name: "人脸识别找回密码-确认"
+    method: POST
+    path: "/auth/password/face/confirm"
+    body:
+      qrcode_id: string
+    responses:
+      200:
+        body:
+          reset_token: string
+      403:
+        error: [FACE_VERIFICATION_FAILED, FACE_LOCKED]
+
+  - id: password_reset_face_status
+    name: "人脸识别找回密码-状态轮询"
+    method: GET
+    path: "/auth/password/face/{qrcode_id}/status"
+    responses:
+      200:
+        body:
+          status: "unscanned|scanned|confirmed|expired"
+          message: string
+      403:
+        error: [FACE_LOCKED]
+      410:
+        error: [QR_EXPIRED]
+
+  - id: password_change
+    name: "登录后修改密码"
+    method: POST
+    path: "/auth/password/change"
+    headers:
+      Authorization: { type: string, required: true, description: "Bearer token 或 Session ID" }
+    body:
+      old_password: { type: string, required: true }
+      new_password: { type: string, required: true }
+    responses:
+      200:
+        body:
+          success: true
+          message: "密码修改成功"
+      400:
+        error: [NEW_PASSWORD_WEAK]
+      401:
+        error: [ORIGINAL_PASSWORD_INVALID]
+      409:
+        error: [NEW_PASSWORD_SAME_AS_OLD]
+      403:
+        error: [CHANGE_LOCKED]
+
+state_machine:
+  name: "RegistrationFlow"
+  states: [draft, account_completed, phone_verified, identity_verified, terms_accepted, completed]
+  transitions:
+    - from: draft
+      to: account_completed
+      via: submit_account_info
+    - from: account_completed
+      to: phone_verified
+      via: verify_sms_code
+    - from: phone_verified
+      to: identity_verified
+      via: verify_identity
+    - from: identity_verified
+      to: terms_accepted
+      via: accept_terms
+    - from: terms_accepted
+      to: completed
+      via: complete_registration
+
+state_machine_login:
+  name: "LoginFlow"
+  states: [start, captcha_required, authenticated, locked, maintenance]
+  transitions:
+    - from: start
+      to: captcha_required
+      via: get_captcha
+    - from: start
+      to: authenticated
+      via: login_password
+    - from: start
+      to: locked
+      via: login_password
+    - from: start
+      to: maintenance
+      via: login_password
+
+state_machine_qr_login:
+  name: "ScanLoginFlow"
+  states: [qrcode_generated, unscanned, scanned, confirmed, expired]
+  transitions:
+    - from: qrcode_generated
+      to: unscanned
+      via: get_qrcode
+    - from: unscanned
+      to: scanned
+      via: poll_qrcode_status
+    - from: scanned
+      to: confirmed
+      via: poll_qrcode_status
+    - from: any
+      to: expired
+      via: poll_qrcode_status
+
+errors:
+  codes:
+    USERNAME_INVALID_FORMAT: { http_status: 400, message: "用户名只能由字母、数字和_组成，须以字母开头！" }
+    USERNAME_TAKEN: { http_status: 409, message: "该用户名已经占用，请重新选择用户名！" }
+    PASSWORD_WEAK: { http_status: 400, message: "密码不满足强度要求" }
+    PASSWORD_ILLEGAL_CHAR: { http_status: 400, message: "包含非法字符（仅允许字母、数字、下划线）" }
+    PASSWORD_SAME_AS_USERNAME: { http_status: 400, message: "密码不能与用户名相同！" }
+    PHONE_INVALID: { http_status: 400, message: "请输入正确的手机号" }
+    PHONE_TAKEN: { http_status: 409, message: "该手机号已被注册，请尝试找回账户或联系客服" }
+    SMS_TOO_FREQUENT: { http_status: 429, message: "短信发送过于频繁，请稍后再试" }
+    SMS_DAILY_LIMIT_REACHED: { http_status: 429, message: "短信发送次数已达上限，请稍后再试" }
+    SMS_CODE_EXPIRED: { http_status: 400, message: "验证码已过期，请重新获取" }
+    SMS_CODE_MISMATCH: { http_status: 400, message: "验证码错误，请重新输入" }
+    ID_INVALID_FORMAT: { http_status: 400, message: "请输入正确的身份证号码格式" }
+    ID_NAME_MISMATCH: { http_status: 422, message: "姓名与证件号码不匹配，请核实后重新输入" }
+    ID_VERIFICATION_FAILED: { http_status: 422, message: "身份信息验证失败，请联系客服" }
+    NETWORK_ERROR: { http_status: 400, message: "网络连接异常，请检查网络后重试" }
+    SERVER_ERROR: { http_status: 500, message: "系统繁忙，请稍后重试" }
+    LOGIN_IDENTIFIER_INVALID_FORMAT: { http_status: 400, message: "请输入正确的用户名/手机号/邮箱格式" }
+    USER_NOT_FOUND: { http_status: 401, message: "用户名不存在或账户未激活" }
+    INVALID_CREDENTIALS: { http_status: 401, message: "用户名或密码错误" }
+    CAPTCHA_REQUIRED: { http_status: 403, message: "需要图形验证码" }
+    CAPTCHA_INVALID: { http_status: 403, message: "验证码错误，请重试" }
+    ACCOUNT_LOCKED: { http_status: 403, message: "账户已被锁定，请30分钟后重试或联系客服" }
+    SESSION_EXPIRED: { http_status: 401, message: "登录已过期，请重新登录" }
+    MAINTENANCE_WINDOW: { http_status: 503, message: "系统维护中，服务时间：每日5:00-次日1:00；周二5:00-24:00" }
+    QR_EXPIRED: { http_status: 410, message: "二维码已过期，请刷新重试" }
+    PHONE_ID_MISMATCH: { http_status: 422, message: "手机号码与注册信息不匹配" }
+    RESET_TOKEN_INVALID: { http_status: 400, message: "重置令牌无效或已使用" }
+    RESET_TOKEN_EXPIRED: { http_status: 400, message: "重置令牌已过期，请重新申请" }
+    EMAIL_LINK_EXPIRED: { http_status: 410, message: "重置链接已过期" }
+    ORIGINAL_PASSWORD_INVALID: { http_status: 401, message: "原密码错误" }
+    NEW_PASSWORD_SAME_AS_OLD: { http_status: 409, message: "新密码不能与原密码相同" }
+    NEW_PASSWORD_WEAK: { http_status: 400, message: "密码强度不足，请包含大小写字母、数字和特殊字符，长度至少8位" }
+    FACE_VERIFICATION_FAILED: { http_status: 403, message: "人脸识别失败，请重试" }
+    FACE_LOCKED: { http_status: 403, message: "人脸识别功能已锁定，30分钟后再试" }
+    CHANGE_LOCKED: { http_status: 403, message: "修改密码功能已锁定，10分钟后再试" }
+
+rate_limits:
+  sms_send:
+    per_phone_per_day: 10
+    per_ip_per_minute: 5
+  username_check:
+    per_ip_per_minute: 60
+  login_attempts:
+    per_identifier_per_minute: 10
+    per_ip_per_minute: 60
+  qrcode_poll:
+    per_qrcode_per_minute: 30
+    recommended_interval_seconds: 2
+  password_change_attempts:
+    per_user_per_minute: 5
+    lock_after_attempts: 3
+  password_reset_face_poll:
+    per_session_per_minute: 30
+
+examples:
+  password_reset_phone_success:
+    request:
+      phone_number: "13800138000"
+      id_type: "居民身份证"
+      id_number: "110101199001011234"
+    response:
+      status: "sent"
+      ttl_minutes: 5
+      countdown_seconds: 60
+      sent_to_masked: "138****8000"
+      message: "验证码已发送至138****8000"
+  password_change_success:
+    request:
+      old_password: "OldPass123!"
+      new_password: "NewPass123@"
+    response:
+      success: true
+      message: "密码修改成功"
+  submit_account_info_success:
+    request:
+      username: "testuser123"
+      password: "MyPass_123"
+      name: "张三"
+      id_type: "居民身份证"
+      id_number: "110101199001011234"
+      phone_country_code: "+86"
+      phone_number: "13812345678"
+      email: "test@example.com"
+      traveler_type: "成人"
+    response:
+      account_info_completed: true
+      validations:
+        username: { ok: true, message: "" }
+        password: { ok: true, strength: "强", message: "" }
+        id: { ok: true, message: "" }
+        phone: { ok: true, message: "" }
+  login_success_username:
+    request:
+      identifier_type: "username"
+      identifier: "testuser123"
+      password: "Password123!"
+      remember_me: true
+    response:
+      session_id: "c2c35a1e-1111-2222-3333-444455556666"
+      user_id: "b1b25b2b-aaaa-bbbb-cccc-ddddeeeeffff"
+      remember_expires_at: "2025-11-18T08:00:00Z"
+      message: "登录成功"
+  login_failed_wrong_password:
+    request:
+      identifier_type: "username"
+      identifier: "testuser123"
+      password: "wrongpassword"
+    response:
+      error: "INVALID_CREDENTIALS"
+      message: "用户名或密码错误"
+  qr_login_flow:
+    steps:
+      - get_qrcode -> { qrcode_id: "qr123", expires_at: "2025-11-11T08:02:00Z" }
+      - poll_qrcode_status(unscanned) -> { status: "unscanned" }
+      - poll_qrcode_status(scanned) -> { status: "scanned" }
+      - poll_qrcode_status(confirmed) -> { status: "confirmed", session_id: "c2c35a1e-..." }
