@@ -1,0 +1,68 @@
+- type: Backend
+  id: API-GET-QueryStations
+  route: GET /api/stations
+  description: "根据用户输入关键词，提供站点自动完成建议。"
+  input:
+    type: QueryParams
+    params:
+      keyword: string
+  output:
+    success:
+      statusCode: 200
+      body:
+        - { name: "北京", code: "BJP" }
+        - { name: "北京南", code: "VNP" }
+  dependencies:
+    - DB-FindStations
+  acceptanceCriteria:
+    - "请求 /api/stations?keyword=bj 应返回北京相关的站点列表。"
+  changeLog:
+    - date: "2025-11-11"
+      description: "初始创建。"
+
+- type: Backend
+  id: API-GET-QueryTickets
+  route: GET /api/tickets
+  description: "核心车票查询接口，根据条件返回车次列表及余票信息。"
+  input:
+    type: QueryParams
+    params:
+      fromStation: string
+      toStation: string
+      departDate: string
+      trainTypes: array # (e.g., ["G", "D", "Z"])
+      seatTypes: array # (e.g., ["一等座", "二等座"])
+      sortBy: string # (e.g., "depart_time", "duration", "arrival_time")
+  output:
+    success:
+      statusCode: 200
+      body:
+        trains:
+          - trainNo: "G27"
+            fromStation: "北京南"
+            toStation: "上海虹桥"
+            departTime: "19:00"
+            arriveTime: "04:35"
+            duration: "3小时35分"
+            seats:
+              - type: "二等座"
+                count: "有"
+              - type: "一等座"
+                count: "无"
+              - type: "软卧"
+                count: "--"
+              - type: "硬卧"
+                count: "5"
+        stations:
+          - "北京南"
+          - "北京"
+          - "北京西"
+  dependencies:
+    - DB-FindTrainListByRoute
+    - DB-FindSeatStatusForTrains
+  acceptanceCriteria:
+    - "当所有参数合法时，应返回 200 OK 和车次数据。"
+    - "当缺少必要参数时，应返回 400 Bad Request。"
+  changeLog:
+    - date: "2025-11-11"
+      description: "初始创建。"
