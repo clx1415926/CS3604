@@ -1,0 +1,41 @@
+- type: Frontend
+  id: UI-HomePage
+  description: "12306 首页：展示品牌与服务信息，提供五个功能入口，并实现登录态拦截与可访问性支持。"
+  properties:
+    - name: onNavigate
+      type: function
+      description: "导航到目标功能页面的回调。"
+    - name: onLoginRequired
+      type: function
+      description: "未登录访问受限入口时触发的提示与引导处理。"
+    - name: onError
+      type: function
+      description: "路由或网络错误时的统一错误提示处理。"
+  state:
+    - loginStatus
+    - metadataLoading
+    - metadataError
+    - serviceHours
+    - officialSafetyTip
+    - friendLinks
+    - compliance
+    - accessibility
+  dependencies:
+    - API-GET-HomeMetadata
+    - get_session_status
+  acceptanceCriteria:
+    - "首屏渲染显示品牌标识与欢迎语。"
+    - "显示服务时间说明：每日5:00至次日1:00（周二为5:00至24:00）。"
+    - "显示官方安全提示关于官方APP与授权。"
+    - "渲染五个按钮：登录注册、车票查询、订单管理、乘客管理、个人信息。"
+    - "无登录态点击管理类按钮时，弹出登录提示并引导至登录/注册，不进入实际页面。"
+    - "登录后点击管理类按钮应成功跳转到对应页面。"
+    - "键盘导航Tab顺序：登录注册→车票查询→订单管理→乘客管理→个人信息；Enter/Space可触发。"
+    - "手机屏宽（≤768px）时纵向排列，按钮触控尺寸≥44px，文本不溢出。"
+    - "底部显示友情链接与版权备案信息，并展示适老化无障碍服务入口说明。"
+    - "路由解析失败或网络错误时显示错误提示，并提供重试与返回首页。"
+    - "点击‘登录注册’按钮时，应跳转登录/注册页面并显示正确标题与面包屑。"
+    - "未登录点击‘车票查询’按钮时，应成功跳转到车票查询页面并展示查询表单。"
+  changeLog:
+    - date: "2025-11-13"
+      description: "初始创建。"
