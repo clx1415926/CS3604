@@ -4,9 +4,6 @@ const router = express.Router();
 // @InterfaceID: API-GET-QueryStations
 router.get('/api/stations', (req, res) => {
   const { keyword } = req.query;
-  if (!keyword) {
-    return res.json([]);
-  }
   const stations = [
     { name: "北京", code: "BJP" },
     { name: "北京南", code: "VNP" },
@@ -32,9 +29,12 @@ router.get('/api/stations', (req, res) => {
     { name: "长沙", code: "CSQ" },
     { name: "长沙南", code: "CWQ" },
   ];
-  const filteredStations = stations.filter(station =>
-    station.name.includes(keyword) || station.code.toLowerCase().includes(keyword.toLowerCase())
-  );
+  if (!keyword) {
+    return res.json(stations.map(s => s.name));
+  }
+  const filteredStations = stations
+    .filter(station => station.name.includes(keyword) || station.code.toLowerCase().includes(keyword.toLowerCase()))
+    .map(s => s.name);
   res.json(filteredStations);
 });
 

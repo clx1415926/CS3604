@@ -187,20 +187,29 @@ const allStations = [...new Set(tickets.trains.flatMap(t => [t.fromStation, t.to
 // @InterfaceID: API-GET-QueryTickets
 router.get('/api/tickets', (req, res) => {
     const { fromStation, toStation, departDate, trainTypes, seatTypes, sortBy } = req.query;
+    const fromStationsParam = req.query.fromStations;
+    const toStationsParam = req.query.toStations;
 
     if (!fromStation || !toStation || !departDate) {
         return res.status(400).json({ error: 'Missing required query parameters' });
     }
 
+    const fromStationsFilter = fromStationsParam
+        ? (Array.isArray(fromStationsParam) ? fromStationsParam : String(fromStationsParam).split(','))
+        : null;
+    const toStationsFilter = toStationsParam
+        ? (Array.isArray(toStationsParam) ? toStationsParam : String(toStationsParam).split(','))
+        : null;
+
     let filteredTrains = tickets.trains.filter(train =>
-        train.fromStation === fromStation &&
-        train.toStation === toStation &&
-        train.date === departDate
+        train.date === departDate &&
+        (train.fromStation === fromStation || train.fromStation.includes(fromStation)) &&
+        (train.toStation === toStation || train.toStation.includes(toStation))
     );
 
     // Filter by train types
     if (trainTypes && trainTypes.length > 0) {
-        const types = Array.isArray(trainTypes) ? trainTypes : [trainTypes];
+        const types = Array.isArray(trainTypes) ? trainTypes : String(trainTypes).split(',');
         filteredTrains = filteredTrains.filter(train => {
             const trainInitial = train.trainNo.charAt(0).toUpperCase();
             return types.includes(trainInitial);
@@ -209,10 +218,18 @@ router.get('/api/tickets', (req, res) => {
 
     // Filter by seat types
     if (seatTypes && seatTypes.length > 0) {
-        const types = Array.isArray(seatTypes) ? seatTypes : [seatTypes];
+        const types = Array.isArray(seatTypes) ? seatTypes : String(seatTypes).split(',');
         filteredTrains = filteredTrains.filter(train =>
             train.seats.some(seat => types.includes(seat.type) && (seat.count === '有' || parseInt(seat.count) > 0))
         );
+    }
+
+    if (fromStationsFilter && fromStationsFilter.length > 0) {
+        filteredTrains = filteredTrains.filter(train => fromStationsFilter.includes(train.fromStation));
+    }
+
+    if (toStationsFilter && toStationsFilter.length > 0) {
+        filteredTrains = filteredTrains.filter(train => toStationsFilter.includes(train.toStation));
     }
 
     // Sort results
@@ -234,7 +251,8 @@ router.get('/api/tickets', (req, res) => {
         }
     }
 
-    res.json({ trains: filteredTrains });
+    const stationsList = [...new Set(filteredTrains.flatMap(t => [t.fromStation, t.toStation]))];
+    res.json({ trains: filteredTrains, stations: stationsList });
 });
 
 // @InterfaceID: API-GET-Stations
