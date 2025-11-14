@@ -1,0 +1,25 @@
+- type: Database
+  id: DB-GetServiceHours
+  description: "获取购票相关业务的服务时间窗口说明（每日5:00至次日1:00；周二为5:00至24:00）。"
+  dependencies:
+    - none
+  acceptanceCriteria:
+    - "成功查询后返回规范化的服务时间字符串，覆盖周二特殊规则。"
+    - "返回数据用于首页展示与其他模块维护窗口提示的统一来源。"
+  changeLog:
+    - date: "2025-11-13"
+      description: "初始创建。"
+
+- type: Database
+  id: DB-GetSiteMetadata
+  description: "获取首页展示的站点元信息（官方提示、友情链接、版权备案、适老化无障碍入口说明）。"
+  dependencies:
+    - DB-GetServiceHours
+  acceptanceCriteria:
+    - "应包含品牌欢迎语、官方安全提示文案。"
+    - "应包含友情链接列表（名称与URL）。"
+    - "应包含备案信息（公安备案、ICP备案）。"
+    - "应包含无障碍与适老化服务入口说明。"
+  changeLog:
+    - date: "2025-11-13"
+      description: "初始创建。"

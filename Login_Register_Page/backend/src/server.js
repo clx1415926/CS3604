@@ -8,8 +8,8 @@ const db = require('./db');
 const app = express();
 app.use(express.json());
 
-// 静态页面服务：前端位于 ../../frontend/src
-const staticDir = path.resolve(__dirname, '../../frontend/src');
+// 静态页面服务：前端位于 ../../frontend
+const staticDir = path.resolve(__dirname, '../../frontend');
 app.use(express.static(staticDir));
 
 // In-memory stores

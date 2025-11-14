@@ -1,0 +1,108 @@
+requirements:
+  - requirementId: REQ-001
+    description: "首页与导航"
+    interfaces:
+      - interfaceId: API-GET-HomeMetadata
+        interfaceType: Backend
+        acceptanceCriteria:
+          - criteriaIndex: 1
+            description: "成功返回包含服务时间与官方提示的信息体"
+            testCases:
+              - testFile: "Home_Page/backend/test/routes/site.test.js"
+                testName: "should return 200 and include serviceHours and officialSafetyTip"
+                status: "pending"
+          - criteriaIndex: 2
+            description: "friendLinks 至少包含铁路相关官方站点条目"
+            testCases:
+              - testFile: "Home_Page/backend/test/routes/site.test.js"
+                testName: "should include at least one railway official friend link"
+                status: "pending"
+          - criteriaIndex: 3
+            description: "compliance 提供公安备案与ICP备案信息"
+            testCases:
+              - testFile: "Home_Page/backend/test/routes/site.test.js"
+                testName: "should include compliance policeRecord and icpRecord"
+                status: "pending"
+          - criteriaIndex: 4
+            description: "accessibility 提供适老化无障碍入口说明"
+            testCases:
+              - testFile: "Home_Page/backend/test/routes/site.test.js"
+                testName: "should include accessibility elderlyServiceEntry and description"
+                status: "pending"
+      - interfaceId: UI-HomePage
+        interfaceType: Frontend
+        acceptanceCriteria:
+          - criteriaIndex: 1
+            description: "首屏渲染显示品牌标识与欢迎语"
+            testCases:
+              - testFile: "Home_Page/frontend/test/components/HomePage.test.tsx"
+                testName: "should render brand and welcome text on first paint"
+                status: "pending"
+          - criteriaIndex: 2
+            description: "显示服务时间说明"
+            testCases:
+              - testFile: "Home_Page/frontend/test/components/HomePage.test.tsx"
+                testName: "should display service hours text"
+                status: "pending"
+          - criteriaIndex: 3
+            description: "显示官方安全提示关于官方APP与授权"
+            testCases:
+              - testFile: "Home_Page/frontend/test/components/HomePage.test.tsx"
+                testName: "should display official safety tip about authorized app"
+                status: "pending"
+          - criteriaIndex: 4
+            description: "渲染五个入口按钮并具备可访问名称"
+            testCases:
+              - testFile: "Home_Page/frontend/test/components/HomePage.test.tsx"
+                testName: "should render five accessible buttons with names"
+                status: "pending"
+          - criteriaIndex: 5
+            description: "未登录点击管理类按钮拦截并引导至登录/注册"
+            testCases:
+              - testFile: "Home_Page/frontend/test/components/HomePage.test.tsx"
+                testName: "should intercept and prompt login for management buttons when not logged in"
+                status: "pending"
+          - criteriaIndex: 6
+            description: "登录后点击管理类按钮成功跳转到对应页面"
+            testCases:
+              - testFile: "Home_Page/frontend/test/components/HomePage.test.tsx"
+                testName: "should navigate to management pages after login"
+                status: "pending"
+          - criteriaIndex: 7
+            description: "键盘导航Tab顺序与Enter/Space触发"
+            testCases:
+              - testFile: "Home_Page/frontend/test/components/HomePage.test.tsx"
+                testName: "should support keyboard navigation in defined order"
+                status: "pending"
+          - criteriaIndex: 8
+            description: "手机屏宽纵向堆叠且触控尺寸≥44px"
+            testCases:
+              - testFile: "Home_Page/frontend/test/components/HomePage.test.tsx"
+                testName: "should stack vertically on small screens and keep min touch size"
+                status: "pending"
+          - criteriaIndex: 9
+            description: "底部展示友情链接与版权备案信息及无障碍入口说明"
+            testCases:
+              - testFile: "Home_Page/frontend/test/components/HomePage.test.tsx"
+                testName: "should display friend links and compliance info in footer"
+                status: "pending"
+          - criteriaIndex: 10
+            description: "路由解析失败或网络错误时错误提示并提供重试与返回首页"
+            testCases:
+              - testFile: "Home_Page/frontend/test/components/HomePage.test.tsx"
+                testName: "should show error feedback and retry/home actions on navigation failure"
+                status: "pending"
+          - criteriaIndex: 11
+            description: "点击‘登录注册’按钮跳转登录/注册页面"
+            testCases:
+              - testFile: "Home_Page/frontend/test/components/HomePage.test.tsx"
+                testName: "should navigate to login/register when clicking button"
+                status: "pending"
+          - criteriaIndex: 12
+            description: "未登录点击‘车票查询’按钮跳转到车票查询页面并展示查询表单"
+            testCases:
+              - testFile: "Home_Page/frontend/test/components/HomePage.test.tsx"
+                testName: "should navigate to ticket search without login"
+                status: "pending"
+    coverageStatus: "full"
+    coveragePercentage: 100
