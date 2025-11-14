@@ -9,8 +9,10 @@ const app = express();
 app.use(express.json());
 
 // 静态页面服务：前端位于 ../../frontend
-const staticDir = path.resolve(__dirname, '../../frontend');
+const staticDir = path.resolve(__dirname, '../../frontend/src');
 app.use(express.static(staticDir));
+const staticRoot = path.resolve(__dirname, '../../');
+app.use(express.static(staticRoot));
 
 // In-memory stores
 const sessions = new Map();
