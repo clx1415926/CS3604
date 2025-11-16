@@ -7,6 +7,9 @@ router.get('/map', (req, res) => {
   const seats = [
     { seat_no: '16A', column: 'A', window: true, occupied: false },
     { seat_no: '16B', column: 'B', window: false, occupied: false },
+    { seat_no: '16C', column: 'C', window: false, occupied: false },
+    { seat_no: '16D', column: 'D', window: false, occupied: false },
+    { seat_no: '16F', column: 'F', window: true, occupied: false },
   ];
   res.json({ train_id, travel_date, seat_class, carriage_no, seats });
 });

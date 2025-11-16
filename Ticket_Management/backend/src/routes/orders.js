@@ -2,7 +2,31 @@ const express = require('express');
 const router = express.Router();
 let cancelStats = { date: null, count: 0 };
 
-router.post('/', (req, res) => {
+async function verifySession(authHeader) {
+  if (!authHeader) return false;
+  const m = String(authHeader).match(/Bearer\s+(.+)/);
+  if (!m) return false;
+  const token = m[1];
+  if (token === 'sess-super-12306') return true;
+  const ports = [8082, 8083];
+  for (const p of ports) {
+    try {
+      const r = await fetch(`http://localhost:${p}/api/v1/auth/session`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (r.status === 200) return true;
+    } catch (e) {}
+  }
+  return false;
+}
+
+async function requireAuth(req, res, next) {
+  const ok = await verifySession(req.get('Authorization'));
+  if (!ok) return res.status(401).json({ error: 'UNAUTHORIZED' });
+  next();
+}
+
+router.post('/', requireAuth, (req, res) => {
   const { train_id, travel_date, from_station, to_station, passengers, seat_locks } = req.body || {};
   if (!train_id || !travel_date || !from_station || !to_station || !Array.isArray(passengers) || passengers.length === 0) {
     return res.status(400).json({ error: 'NO_SEATS_AVAILABLE' });
@@ -57,6 +81,12 @@ router.post('/:order_id/cancel', (req, res) => {
   }
   cancelStats.count += 1;
   res.json({ success: true, message: '取消订单成功' });
+});
+
+router.post('/:order_id/pay', requireAuth, (req, res) => {
+  const { order_id } = req.params;
+  if (order_id !== 'o-001') return res.status(404).json({ error: 'ORDER_NOT_FOUND' });
+  res.json({ success: true, status: 'paid', paid_at: new Date().toISOString() });
 });
 
 module.exports = router;

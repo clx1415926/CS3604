@@ -31,6 +31,10 @@ module.exports = {
     const found = await accounts.findOne({ phone_key: phoneKey(cc, num) });
     return !found;
   },
+  async findByUserId(user_id) {
+    if (!user_id) return null;
+    return accounts.findOne({ user_id });
+  },
   async findByUsername(username) {
     if (!username) return null;
     return accounts.findOne({ username });

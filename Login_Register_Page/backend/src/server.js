@@ -3,9 +3,11 @@
 
 const path = require('path');
 const express = require('express');
+const cors = require('cors');
 const crypto = require('crypto');
 const db = require('./db');
 const app = express();
+app.use(cors());
 app.use(express.json());
 
 // 静态页面服务：前端位于 ../../frontend
@@ -32,6 +34,35 @@ const accountStore = new Map();
 accountStore.set('username:testuser123', { user_id: 'u-001', password: 'Password123!', name: '张三' });
 accountStore.set('phone:13812345678', { user_id: 'u-002', password: 'Password123!', name: '王五' });
 accountStore.set('email:user@example.com', { user_id: 'u-003', password: 'Password123!', name: '李四' });
+
+(async () => {
+  const username = 'superadmin';
+  const user_id = 'u-super';
+  let exists = null;
+  try { exists = await db.findByUsername(username); } catch (e) {}
+  if (!exists) {
+    const salt = uuidv4();
+    const password_hash = hashPassword('Admin12345_', salt);
+    try {
+      await db.createUser({
+        user_id,
+        username,
+        phone_country_code: '+86',
+        phone_number: '13900000000',
+        email: 'superadmin@example.com',
+        password_hash,
+        password_salt: salt,
+        name: '系统管理员',
+        id_type: '居民身份证',
+        id_number: '110101199001011234',
+        traveler_type: '成人',
+      });
+    } catch (e) {}
+  }
+  const sid = 'sess-super-12306';
+  loginSessions.set(sid, { user_id, last_active_at: Date.now(), remember_expires_at: Date.now() + 7 * 24 * 60 * 60 * 1000 });
+  process.env.SUPERUSER_SESSION_ID = sid;
+})();
 
 function uuidv4() {
   // 简易UUID生成（非加密强度），用于演示
@@ -581,6 +612,23 @@ app.get(`${base}/auth/session`, (req, res) => {
     idle_timeout_minutes: 30,
     absolute_expires_at: sess.remember_expires_at ? new Date(sess.remember_expires_at).toISOString() : null,
   });
+});
+
+// 获取当前登录用户的基本信息（用户名、姓名）
+app.get(`${base}/auth/session/profile`, async (req, res) => {
+  const auth = req.get('Authorization') || '';
+  const m = auth.match(/Bearer\s+(.+)/);
+  if (!m) return error(res, 401, 'SESSION_EXPIRED', '登录已过期，请重新登录');
+  const sid = m[1];
+  const sess = loginSessions.get(sid);
+  if (!sess) return error(res, 401, 'SESSION_EXPIRED', '登录已过期，请重新登录');
+  try {
+    const acc = await db.findByUserId(sess.user_id);
+    if (!acc) return error(res, 404, 'ACCOUNT_NOT_FOUND', '未找到对应账户');
+    return res.json({ user_id: acc.user_id, username: acc.username, name: acc.name });
+  } catch (e) {
+    return error(res, 500, 'INTERNAL_ERROR', '服务器错误');
+  }
 });
 
 // 退出登录

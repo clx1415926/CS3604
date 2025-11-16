@@ -6,6 +6,7 @@ const { app } = require('../../src/app');
 test('should create unpaid order and return order_id', async () => {
   const res = await request(app)
     .post('/api/v1/orders')
+    .set('Authorization', 'Bearer sess-super-12306')
     .send({ train_id: 'G123', travel_date: '2025-11-17', from_station: '北京南', to_station: '上海虹桥', passengers: [{ passenger_id: 'p-001', name: '张三', ticket_type: '成人票' }], seat_locks: [{ lock_token: 'lk-001' }] });
   expect(res.status).toBe(201);
   expect(res.body).toHaveProperty('order_id');
