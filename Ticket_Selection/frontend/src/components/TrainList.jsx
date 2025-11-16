@@ -69,7 +69,7 @@ function TrainList({ trains }) {
                             <td className="seat-cell"><span className="seat-none">--</span></td>
                             <td className="price">¥{(train.startingPrice ?? train.starting_price)}起</td>
                             <td className="action-cell">
-                                <button className="book-btn">预订</button>
+                                <a className="book-btn" href="http://localhost:5174/#order-filling">预订</a>
                             </td>
                         </tr>
                     );

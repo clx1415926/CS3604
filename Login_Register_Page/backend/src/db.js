@@ -14,7 +14,8 @@ const accounts = Datastore.create({ filename: dbPath, autoload: true });
 
 // Indexes to enforce uniqueness
 accounts.ensureIndex({ fieldName: 'username', unique: true }).catch(() => {});
-accounts.ensureIndex({ fieldName: 'email', unique: true }).catch(() => {});
+// email 使用稀疏索引，允许文档缺少该字段；避免多个 null 值触发唯一性冲突
+accounts.ensureIndex({ fieldName: 'email', unique: true, sparse: true }).catch(() => {});
 accounts.ensureIndex({ fieldName: 'phone_key', unique: true }).catch(() => {});
 
 function phoneKey(cc, num) { return `${cc || '+86'}:${num}`; }
@@ -49,7 +50,6 @@ module.exports = {
       phone_country_code: user.phone_country_code || '+86',
       phone_number: user.phone_number,
       phone_key: phoneKey(user.phone_country_code || '+86', user.phone_number),
-      email: user.email || null,
       password_hash: user.password_hash,
       password_salt: user.password_salt,
       name: user.name,
@@ -58,6 +58,15 @@ module.exports = {
       traveler_type: user.traveler_type,
       created_at: Date.now(),
     };
+    // 仅当提供 email 时才写入该字段，避免以 null 参与唯一索引
+    if (user.email) {
+      doc.email = user.email;
+    }
     return accounts.insert(doc);
+  },
+  async updatePasswordByUserId(user_id, password_hash, password_salt) {
+    if (!user_id || !password_hash || !password_salt) throw new Error('updatePasswordByUserId: invalid params');
+    const num = await accounts.update({ user_id }, { $set: { password_hash, password_salt, updated_at: Date.now() } }, { multi: false });
+    return num > 0;
   }
 };

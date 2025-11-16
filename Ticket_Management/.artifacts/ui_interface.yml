@@ -1,0 +1,139 @@
+meta:
+  name: "12306订单管理_UI接口规范"
+  version: "1.0.0"
+  generated_at: "2025-11-16T00:00:00Z"
+  source_doc: "e:\\cs3604\\12306\\12306_订单管理_需求文档.md"
+
+principles:
+  layout:
+    - 页头/导航/内容/页脚结构，内容区卡片式呈现
+  states:
+    - 加载: 显示处理提示并禁用按钮
+    - 错误: 弹窗或提示条显示错误信息
+    - 成功: 弹窗或提示条显示成功信息
+  accessibility:
+    keyboard: { tab_order: logical, focus_visible: true }
+    screen_reader: { aria_labels: appropriate }
+    contrast: { meets_wcag: true }
+
+pages:
+  order_filling:
+    url: "https://kyfw.12306.cn/otn/confirmPassenger/initDc"
+    sections:
+      train_info:
+        elements: [车次号, 出发站→到达站, 出发/到达时间, 出发日期]
+      passengers_select:
+        source_api: "/api/v1/contacts"
+        card_fields: [姓名, 证件类型, 证件号(脱敏)]
+        interaction:
+          select_checkbox: { type: checkbox, on_select: "添加到订单" }
+      seat_selection_entry:
+        modal: "seat_selection"
+    actions:
+      submit_order:
+        label: "提交订单"
+        disabled_until:
+          - passengers_selected
+          - seats_locked
+        api: "/api/v1/orders"
+    messages:
+      loading: "正在处理，请稍候..."
+    acceptanceCriteria:
+      - 页面顶部显示所选车次的详细信息（车次号、站点、时间、日期）。
+      - 页面显示常用联系人列表，卡片含姓名/证件类型/证件号脱敏。
+      - "提交订单"按钮在未选择乘车人或未锁定座位时保持禁用。
+
+  seat_selection:
+    url: "modal://seat_selection"
+    components:
+      seat_class_tabs:
+        options: [商务座, 一等座, 二等座, 软卧, 硬卧]
+        on_change: "刷新座位图"
+      seat_map:
+        api: "/api/v1/seats/map"
+        columns: [A, B, C, D, E, F]
+        window_icon: true
+      confirm_button:
+        label: "确认"
+        api: "/api/v1/seats/lock"
+    flow:
+      - 选择席别 -> 加载座位图 -> 选择座位 -> 确认锁定 -> 返回订单页
+    acceptanceCriteria:
+      - 席别标签页可切换，选中态高亮；切换刷新座位图。
+      - 座位图显示列A-F与靠窗标识；点击后高亮选中。
+      - 点击"确认"调用锁座接口并返回订单页。
+
+  order_management:
+    url: "https://kyfw.12306.cn/otn/view/train_order.html"
+    tabs: [未完成订单, 未出行订单, 历史订单]
+    default_tab: 未完成订单
+    list_api: "/api/v1/orders"
+    card_layout:
+      fields:
+        - 订票日期
+        - 车次信息: [出发站, 到达站, 车次号, 出发时间]
+        - 乘客信息: [姓名, 证件类型]
+        - 席位信息: [席别, 车厢座位号]
+        - 票价信息: [票种, 价格, 折扣]
+        - 订单状态
+    actions:
+      cancel:
+        label: "取消订单"
+        confirm_modal: "cancel_confirm_dialog"
+        api: "/api/v1/orders/{order_id}/cancel"
+      pay:
+        label: "去支付"
+        navigate: "支付页(占位)"
+    hints:
+      warm_tips:
+        - "请在支付时限内完成支付"
+        - "一天内取消订单次数上限为3次"
+    acceptanceCriteria:
+      - 默认显示"未完成订单"标签页。
+      - 订单卡片显示订票日期、车次/乘客/席位/价格/状态。
+      - 点击"取消订单"弹出确认对话框并调用取消接口。
+
+  cancel_confirm_dialog:
+    url: "modal://cancel_confirm"
+    title: "您确认取消订单吗？"
+    content:
+      warning_icon: true
+      warning_text: "一天内取消次数上限为3次，超过限制将无法取消"
+    actions:
+      confirm:
+        label: "确定"
+        api: "/api/v1/orders/{order_id}/cancel"
+      cancel:
+        label: "取消"
+    acceptanceCriteria:
+      - 显示标题"您确认取消订单吗？"与取消限制提示。
+      - 点击"确定"调用取消接口；点击"取消"关闭对话框。
+
+  cancel_success_modal:
+    url: "modal://cancel_success"
+    title: "取消订单"
+    content:
+      success_icon: true
+      success_text: "取消订单成功"
+    actions:
+      ok:
+        label: "确定"
+        navigate: "返回车票查询页或刷新订单列表"
+    acceptanceCriteria:
+      - 显示"取消订单成功"并提供"确定"按钮返回或刷新。
+
+interactions:
+  flows:
+    - 选择乘车人 -> 确认温馨提示 -> 选择席别 -> 选座 -> 确认锁定 -> 提交订单 -> 跳转订单管理
+    - 订单管理页 -> 点击取消 -> 确认对话框 -> 成功提示 -> 返回查询或刷新列表
+  error_handling:
+    - 网络错误弹窗，保持已选信息并提供重试
+    - 异步操作进行中禁用按钮，防止重复提交
+
+dependencies:
+  - API-GET-Contacts
+  - API-GET-SeatMap
+  - API-POST-SeatLock
+  - API-POST-OrderCreate
+  - API-GET-Orders
+  - API-POST-OrderCancel

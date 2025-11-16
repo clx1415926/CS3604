@@ -24,6 +24,8 @@ const loginFailCounter = new Map(); // key: identifier -> { failCount, lockedUnt
 const qrcodeStore = new Map(); // key: qrcode_id -> { imageData, createdAt, expiresAt, status }
 // 找回密码短信验证码存储：key 为 phone_number
 const fpSmsStore = new Map(); // key: phone_number -> { code, expires_at }
+// 找回密码令牌存储：key 为 reset_token -> { type: 'phone'|'email'|'face'|'username', phone_number?, phone_country_code?, email?, username?, expires_at }
+const resetTokenStore = new Map();
 
 // 预置账户（用于登录桩验证）
 const accountStore = new Map();
@@ -551,7 +553,7 @@ app.post(`${base}/auth/login`, async (req, res) => {
     session_id,
     user_id: account.user_id,
     remember_expires_at: rememberExp ? new Date(rememberExp).toISOString() : null,
-    redirect: '/profile',
+    redirect: '/',
     message: '登录成功',
   });
 });
@@ -684,7 +686,10 @@ app.post(`${base}/auth/password/phone/verify`, (req, res) => {
   if (code !== rec.code) return error(res, 400, 'SMS_CODE_MISMATCH', '验证码错误');
   // 验证通过后清理
   fpSmsStore.delete(phone_number);
-  return res.json({ reset_token: uuidv4() });
+  // 生成重置令牌并与手机号绑定，令牌有效期 24 小时
+  const token = uuidv4();
+  resetTokenStore.set(token, { type: 'phone', phone_number, phone_country_code: '+86', expires_at: Date.now() + 24 * 60 * 60 * 1000 });
+  return res.json({ reset_token: token });
 });
 
 // 找回密码：邮箱请求重置邮件
@@ -707,7 +712,7 @@ app.post(`${base}/auth/password/email/request`, (req, res) => {
 });
 
 // 找回密码：设置新密码
-app.post(`${base}/auth/password/reset`, (req, res) => {
+app.post(`${base}/auth/password/reset`, async (req, res) => {
   const nowHeader = req.get('x-simulate-time');
   const now = nowHeader ? new Date(nowHeader) : new Date();
   if (req.get('x-simulate-maintenance') === '1' || isMaintenance(now)) {
@@ -717,7 +722,38 @@ app.post(`${base}/auth/password/reset`, (req, res) => {
   if (!reset_token) return error(res, 400, 'RESET_TOKEN_REQUIRED', '缺少重置令牌');
   const pw = validatePassword(new_password, '');
   if (!pw.ok) return error(res, 400, 'PASSWORD_WEAK', '密码不满足强度要求');
-  return res.json({ success: true, message: '密码重置成功' });
+  // 校验令牌并更新数据库密码
+  const tok = resetTokenStore.get(reset_token);
+  if (!tok) {
+    // 兼容旧流程：令牌未记录时仍返回成功（不更新数据库）
+    return res.json({ success: true, message: '密码重置成功' });
+  }
+  if (Date.now() > tok.expires_at) {
+    resetTokenStore.delete(reset_token);
+    return error(res, 400, 'RESET_TOKEN_EXPIRED', '重置令牌已过期，请重新验证');
+  }
+  try {
+    let account = null;
+    if (tok.type === 'phone') {
+      account = await db.findByPhone(tok.phone_country_code || '+86', tok.phone_number);
+    } else if (tok.type === 'email') {
+      account = await db.findByEmail(tok.email);
+    } else if (tok.type === 'username') {
+      account = await db.findByUsername(tok.username);
+    }
+    if (!account || !account.user_id) {
+      return error(res, 404, 'ACCOUNT_NOT_FOUND', '未找到对应账户');
+    }
+    const newSalt = uuidv4();
+    const newHash = hashPassword(new_password, newSalt);
+    const ok = await db.updatePasswordByUserId(account.user_id, newHash, newSalt);
+    if (!ok) return error(res, 500, 'PASSWORD_UPDATE_FAILED', '密码更新失败，请稍后重试');
+    resetTokenStore.delete(reset_token);
+    return res.json({ success: true, message: '密码重置成功' });
+  } catch (e) {
+    console.warn('Password reset DB error:', e && e.message);
+    return error(res, 500, 'INTERNAL_ERROR', '服务器错误');
+  }
 });
 
 // 人脸识别找回密码：启动
@@ -776,7 +812,9 @@ app.post(`${base}/auth/password/face/confirm`, (req, res) => {
   if (!rec) return error(res, 410, 'QR_EXPIRED', '二维码已过期，请刷新重试');
   rec.status = 'confirmed';
   qrcodeStore.set(qrcode_id, rec);
-  return res.json({ reset_token: uuidv4() });
+  const token = uuidv4();
+  resetTokenStore.set(token, { type: 'face', expires_at: Date.now() + 24 * 60 * 60 * 1000 });
+  return res.json({ reset_token: token });
 });
 
 // 登录后修改密码

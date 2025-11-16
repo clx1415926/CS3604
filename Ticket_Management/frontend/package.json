@@ -1,0 +1,23 @@
+{
+  "name": "ticket-management-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.tsx",
+  "scripts": {
+    "dev": "vite --port 5174",
+    "test": "vitest --run"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.4.2",
+    "@testing-library/react": "^16.3.0",
+    "@vitejs/plugin-react": "^4.0.0",
+    "jsdom": "^22.0.0",
+    "typescript": "^5.0.4",
+    "vite": "^4.3.9",
+    "vitest": "^1.5.0"
+  }
+}
