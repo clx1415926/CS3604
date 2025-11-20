@@ -5,6 +5,8 @@
   "main": "src/index.tsx",
   "scripts": {
     "dev": "vite --port 5174",
+    "build": "vite build",
+    "serve": "vite preview --port 5175",
     "test": "vitest --run"
   },
   "dependencies": {

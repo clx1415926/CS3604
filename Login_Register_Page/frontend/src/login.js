@@ -40,7 +40,7 @@ async function fetchCaptcha() {
   if (!res.ok) return;
   const data = await res.json();
   currentCaptchaId = data.captcha_id;
-  captchaImg.src = `data:image/png;base64,${data.image_data}`;
+  captchaImg.src = data.image_url || (data.image_data ? `data:image/png;base64,${data.image_data}` : '');
   show(captchaRow);
 }
 
@@ -94,8 +94,11 @@ loginForm.addEventListener('submit', async (e) => {
     // 简单存储 session_id 用于后续接口（演示）
     sessionStorage.setItem('session_id', session_id);
     setTimeout(() => {
-      // 对接后端静态页面，此处跳转至主页或模拟个人中心
-      window.location.href = redirect || '/';
+      const home = (window && window.HOME_URL) || 'http://localhost:8080/';
+      const base = redirect || home;
+      const sep = base.includes('?') ? '&' : '?';
+      const next = `${base}${sep}sid=${encodeURIComponent(session_id)}`;
+      window.location.href = next;
     }, 500);
   } catch (err) {
     setText(loginError, '网络错误，请稍后再试');

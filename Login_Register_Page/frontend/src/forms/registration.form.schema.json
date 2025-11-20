@@ -10,7 +10,7 @@
       "title": "账户信息填写",
       "fields": [
         { "name": "username", "type": "text", "minLength": 6, "maxLength": 30, "pattern": "^[A-Za-z][A-Za-z0-9_]{5,29}$", "required": true },
-        { "name": "password", "type": "password", "minLength": 8, "allowed": "[_A-Za-z0-9]", "categoriesAtLeast": 2, "required": true },
+        { "name": "password", "type": "password", "minLength": 8, "maxLength": 20, "allowed": "[_A-Za-z0-9]", "categoriesAtLeast": 2, "required": true },
         { "name": "name", "type": "text", "required": true },
         { "name": "id_type", "type": "select", "options": ["居民身份证", "护照", "港澳居民来往大陆通行证"], "required": true },
         { "name": "id_number", "type": "text", "required": true },

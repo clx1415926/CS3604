@@ -50,18 +50,24 @@ function validateUsernameLocal(u) {
   return /^[A-Za-z][A-Za-z0-9_]{5,29}$/.test(u);
 }
 function passwordStrength(p, username) {
-  const allowed = /^[_A-Za-z0-9]{6,20}$/;
-  if (!allowed.test(p)) return { ok: false, reason: 'illegal' };
-  if (p === username) return { ok: false, reason: 'same' };
+  const len = p.length;
+  const allowedChars = /^[_A-Za-z0-9]+$/;
   const hasLetter = /[A-Za-z]/.test(p);
   const hasDigit = /\d/.test(p);
   const hasUnderscore = /_/.test(p);
   const categories = [hasLetter, hasDigit, hasUnderscore].filter(Boolean).length;
-  const len = p.length;
   let strength = '弱', width = 40, color = '#e74c3c';
+  let ok = false;
+  let message = '';
+  if (len < 8) { message = '密码长度不足，需为8-20位'; }
+  else if (len > 20) { message = '密码长度过长，需为8-20位'; }
+  else if (!allowedChars.test(p)) { message = '密码包含非法字符，仅允许字母、数字、下划线'; }
+  else if (p === username) { message = '密码不能与用户名相同'; }
+  else if (categories < 2) { message = '需至少包含两种字符类型（字母、数字、下划线）'; }
+  else { ok = true; }
   if (len >= 8 && categories >= 2) { strength = '中'; width = 80; color = '#f5a623'; }
   if (len >= 12 && categories === 3) { strength = '强'; width = 120; color = '#2ecc71'; }
-  return { ok: len >= 6 && categories >= 2, strength, width, color };
+  return { ok, strength, width, color, message };
 }
 function validateIdLocal(type, num) {
   if (type === '居民身份证') return /^(\d{17}[\dXx])$/.test(num);
@@ -104,11 +110,7 @@ passwordInput.addEventListener('input', () => {
   strengthBar.style.setProperty('--strength-w', `${r.width}px`);
   strengthBar.style.setProperty('--strength-color', r.color);
   strengthText.textContent = r.strength;
-  if (!r.ok) {
-    setError('password-error', '格式错误，必须且只能包含字母，数字，下划线中的两种或两种以上！');
-  } else {
-    setError('password-error', '');
-  }
+  setError('password-error', r.ok ? '' : r.message || '密码格式不正确');
 });
 
 confirmInput.addEventListener('input', () => {
@@ -153,7 +155,8 @@ accountForm.addEventListener('submit', async (evt) => {
 
   if (!validateUsernameLocal(username)) { setError('username-error', '用户名只能由字母、数字和_组成，须以字母开头！'); return; }
   const pw = passwordStrength(password, username);
-  if (!pw.ok || confirm !== password) { setError('password-error', '格式错误，必须且只能包含字母，数字，下划线中的两种或两种以上！'); return; }
+  if (!pw.ok) { setError('password-error', pw.message || '密码格式不正确'); return; }
+  if (confirm !== password) { setError('confirm-error', '确认密码与密码不同！'); return; }
   const okId = validateIdLocal(id_type, id_number);
   if (!okId) { setError('id-error', '请输入正确的身份证号码格式'); return; }
   if (!validatePhoneLocal(phone_country_code, phone_number)) { setError('phone-error', '请输入正确的手机号'); return; }

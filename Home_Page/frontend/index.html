@@ -24,8 +24,8 @@
     <!-- 功能入口区 -->
     <nav class="actions" aria-label="主要功能入口">
       <a class="btn primary" href="http://localhost:8082/login.html" role="button" aria-label="登录注册">登录注册</a>
-      <a class="btn primary" href="http://localhost:5173/index.html" role="button" aria-label="车票查询">车票查询</a>
-      <button class="btn" aria-label="订单管理" disabled>订单管理</button>
+      <a class="btn primary" id="link-ticket" href="http://localhost:5173/index.html" role="button" aria-label="车票查询">车票查询</a>
+      <button class="btn" id="btn-orders" aria-label="订单管理" disabled>订单管理</button>
       <button class="btn" aria-label="乘客管理" disabled>乘客管理</button>
       <button class="btn" aria-label="个人信息" disabled>个人信息</button>
     </nav>
@@ -41,4 +41,45 @@
       <div class="a11y">适老化无障碍服务</div>
     </footer>
   </body>
-  </html>
+  <script>
+    (function(){
+      try {
+        var params = new URLSearchParams(window.location.search || '');
+        var sid = params.get('sid');
+        if (sid) {
+          try { localStorage.setItem('SESSION_ID', sid); } catch(e) {}
+          var cleanUrl = window.location.origin + window.location.pathname;
+          window.history.replaceState({}, document.title, cleanUrl);
+        }
+        var storedSid = sid || (function(){ try { return localStorage.getItem('SESSION_ID'); } catch(e) { return null; } })();
+        if (storedSid) {
+          fetch('http://localhost:8082/api/v1/auth/session/profile', { headers: { Authorization: 'Bearer ' + storedSid } })
+            .then(function(r){ return r.json().then(function(d){ return { ok: r.ok, data: d }; }); })
+            .then(function(res){
+              if (res.ok && res.data && (res.data.username || res.data.name)) {
+                var w = document.querySelector('.welcome');
+                if (w) w.textContent = '欢迎，' + (res.data.username || '') + (res.data.name ? '（' + res.data.name + '）' : '');
+              }
+            })
+            .catch(function(){});
+        }
+        var ticket = document.getElementById('link-ticket');
+        if (ticket) {
+          var sidForLink = (function(){ try { return localStorage.getItem('SESSION_ID'); } catch(e){ return null; } })();
+          if (sidForLink) {
+            ticket.href = 'http://localhost:5173/index.html?sid=' + encodeURIComponent(sidForLink);
+          }
+        }
+        var btn = document.getElementById('btn-orders');
+        if (btn) {
+          btn.removeAttribute('disabled');
+          btn.addEventListener('click', function(){
+            var sid2 = (function(){ try { return localStorage.getItem('SESSION_ID'); } catch(e) { return null; } })();
+            if (sid2) { window.location.href = 'http://localhost:3001/?sid=' + encodeURIComponent(sid2); }
+            else { window.location.href = 'http://localhost:8082/login.html'; }
+          });
+        }
+      } catch (e) {}
+    })();
+  </script>
+</html>

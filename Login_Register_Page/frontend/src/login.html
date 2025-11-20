@@ -14,7 +14,7 @@
           <span class="title">中国铁路12306</span>
         </div>
         <nav class="nav">
-          <a href="/">首页</a>
+          <a id="nav-home" href="http://localhost:8080/">首页</a>
           <a href="/index.html">注册</a>
           <a href="/login.html" class="active">登录</a>
         </nav>
@@ -120,5 +120,14 @@
     </footer>
 
     <script src="login.js"></script>
+    <script>
+      (function(){
+        try{
+          var HOME_URL = (window && window.HOME_URL) || 'http://localhost:8080/';
+          var a = document.getElementById('nav-home');
+          if(a) a.setAttribute('href', HOME_URL);
+        }catch(e){}
+      })();
+    </script>
   </body>
   </html>

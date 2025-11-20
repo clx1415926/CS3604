@@ -1,4 +1,5 @@
 import React from 'react';
+const HOME_URL = import.meta.env?.VITE_HOME_URL || 'http://localhost:8080/';
 
 const Header = () => {
   return (
@@ -9,7 +10,7 @@ const Header = () => {
           <span className="title">中国铁路12306</span>
         </div>
         <nav className="nav">
-          <a href="#">首页</a>
+          <a href={HOME_URL}>首页</a>
           <a href="#">客运首页</a>
           <a href="#" className="active">车票</a>
         </nav>

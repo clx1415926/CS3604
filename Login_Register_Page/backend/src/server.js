@@ -87,16 +87,16 @@ function validateEmailLogin(login) {
   return /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(login);
 }
 function validatePassword(p, username) {
-  if (typeof p !== 'string') return { ok: false, reason: 'PASSWORD_WEAK' };
-  if (p.length < 8) return { ok: false, reason: 'PASSWORD_WEAK' };
-  if (!/^[_A-Za-z0-9]+$/.test(p)) return { ok: false, reason: 'PASSWORD_ILLEGAL_CHAR' };
-  if (p === username) return { ok: false, reason: 'PASSWORD_SAME_AS_USERNAME' };
+  if (typeof p !== 'string') return { ok: false, reason: 'PASSWORD_WEAK', detail: '密码不能为空' };
+  if (p.length < 8) return { ok: false, reason: 'PASSWORD_LENGTH_SHORT', detail: '密码长度不足，需为8-20位' };
+  if (p.length > 20) return { ok: false, reason: 'PASSWORD_LENGTH_LONG', detail: '密码长度过长，需为8-20位' };
+  if (!/^[_A-Za-z0-9]+$/.test(p)) return { ok: false, reason: 'PASSWORD_ILLEGAL_CHAR', detail: '密码包含非法字符，仅允许字母、数字、下划线' };
+  if (p === username) return { ok: false, reason: 'PASSWORD_SAME_AS_USERNAME', detail: '密码不能与用户名相同' };
   const hasLetter = /[A-Za-z]/.test(p);
   const hasDigit = /\d/.test(p);
   const hasUnderscore = /_/.test(p);
   const categories = [hasLetter, hasDigit, hasUnderscore].filter(Boolean).length;
-  if (categories < 2) return { ok: false, reason: 'PASSWORD_WEAK' };
-  // 计算强度
+  if (categories < 2) return { ok: false, reason: 'PASSWORD_CATEGORY_FEW', detail: '需至少包含两种字符类型（字母、数字、下划线）' };
   let strength = '中';
   if (p.length >= 12 && categories === 3) strength = '强';
   if (p.length < 10 && categories === 2) strength = '弱';
@@ -255,7 +255,7 @@ app.patch(`${base}/registration/sessions/:session_id/account`, async (req, res) 
   const usernameAvailable = await db.isUsernameAvailable(username);
   if (!usernameAvailable) return error(res, 409, 'USERNAME_TAKEN', '该用户名已经占用，请重新选择用户名！');
   const pw = validatePassword(password, username);
-  if (!pw.ok) return error(res, 400, pw.reason, '密码不满足强度要求');
+  if (!pw.ok) return error(res, 400, pw.reason, pw.detail || '密码不满足强度要求');
   if (!name || !id_type || !id_number) return error(res, 400, 'ID_REQUIRED', '缺少身份信息');
   if (!validateId(id_type, id_number)) return error(res, 400, 'ID_INVALID_FORMAT', '请输入正确的身份证号码格式');
   if (!phone_country_code || !phone_number) return error(res, 400, 'PHONE_REQUIRED', '缺少手机号');
@@ -474,12 +474,14 @@ app.get(`${base}/auth/captcha`, (req, res) => {
   const type = (req.query && req.query.type) || 'image';
   const captcha_id = uuidv4();
   const code = 'ABCD';
-  const expiresAt = Date.now() + 2 * 60 * 1000; // 2分钟
+  const expiresAt = Date.now() + 2 * 60 * 1000;
   captchaStore.set(captcha_id, { code, expiresAt, verified: false });
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="40"><rect width="100%" height="100%" fill="#ffffff"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="20" fill="#333333">${code}</text></svg>`;
+  const image_url = `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
   const payload = {
     captcha_id,
     type,
-    image_url: `data:image/png;base64,${Buffer.from('PNG').toString('base64')}`,
+    image_url,
     audio_url: '',
     expires_at: new Date(expiresAt).toISOString(),
   };
@@ -584,7 +586,7 @@ app.post(`${base}/auth/login`, async (req, res) => {
     session_id,
     user_id: account.user_id,
     remember_expires_at: rememberExp ? new Date(rememberExp).toISOString() : null,
-    redirect: '/',
+    redirect: process.env.HOME_URL || 'http://localhost:8080/',
     message: '登录成功',
   });
 });
@@ -769,7 +771,7 @@ app.post(`${base}/auth/password/reset`, async (req, res) => {
   const { reset_token, new_password } = req.body || {};
   if (!reset_token) return error(res, 400, 'RESET_TOKEN_REQUIRED', '缺少重置令牌');
   const pw = validatePassword(new_password, '');
-  if (!pw.ok) return error(res, 400, 'PASSWORD_WEAK', '密码不满足强度要求');
+  if (!pw.ok) return error(res, 400, pw.reason, pw.detail || '密码不满足强度要求');
   // 校验令牌并更新数据库密码
   const tok = resetTokenStore.get(reset_token);
   if (!tok) {

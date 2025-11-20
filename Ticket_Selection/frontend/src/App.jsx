@@ -25,9 +25,16 @@ function App() {
                 const response = await fetch(`http://localhost:3000/api/stations`);
                 const data = await response.json();
                 const list = Array.isArray(data) ? data.map(s => s.name ?? s) : (data.stations || []);
-                setStations(list);
+                const fallback = [
+                    '北京','北京南','北京西','上海','上海虹桥','上海南','广州','广州南','深圳','深圳北',
+                    '成都','成都东','重庆','重庆西','杭州','杭州东','南京','南京南','西安','西安北','武汉','长沙','长沙南'
+                ];
+                setStations((list && list.length > 0) ? list : fallback);
             } catch (e) {
-                setStations([]);
+                setStations([
+                    '北京','北京南','北京西','上海','上海虹桥','上海南','广州','广州南','深圳','深圳北',
+                    '成都','成都东','重庆','重庆西','杭州','杭州东','南京','南京南','西安','西安北','武汉','长沙','长沙南'
+                ]);
             } finally {
                 setStationsLoaded(true);
             }
