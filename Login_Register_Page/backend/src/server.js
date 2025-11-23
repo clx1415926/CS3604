@@ -15,17 +15,26 @@ const staticDir = path.resolve(__dirname, '../../frontend/src');
 app.use(express.static(staticDir));
 const staticRoot = path.resolve(__dirname, '../../');
 app.use(express.static(staticRoot));
+// 顶层 img 资源目录挂载到 /img，便于页面引入统一素材
+const projectImgDir = path.resolve(__dirname, '../../../img');
+app.use('/img', express.static(projectImgDir));
 
 // In-memory stores
 const sessions = new Map();
-const loginSessions = new Map(); // key: session_id -> { user_id, last_active_at, remember_expires_at }
+const loginSessions = new Map(); // key: session_id -> { user_id, last_active_at }
 const smsRate = new Map(); // key: phone_number -> { lastSentAt, countDate, count }
 const emailRate = new Map(); // key: email -> { lastSentAt, countDate, count }
-const captchaStore = new Map(); // key: captcha_id -> { code, expiresAt, verified }
+// 图形验证码功能已移除
 const loginFailCounter = new Map(); // key: identifier -> { failCount, lockedUntil }
 const qrcodeStore = new Map(); // key: qrcode_id -> { imageData, createdAt, expiresAt, status }
+// 登录二次验证（短信）流程存储
+// key: flow_id -> { user_id, login_key, identifier_type, identifier, phone_country_code, phone_number, created_at,
+//                    id_fail_count, locked_until, code, code_expires_at }
+const login2FAFlows = new Map();
 // 找回密码短信验证码存储：key 为 phone_number
 const fpSmsStore = new Map(); // key: phone_number -> { code, expires_at }
+// 忘记密码身份校验失败计数与锁定：key 为 phone_number
+const idVerifyFailStore = new Map(); // key: phone_number -> { count, lockedUntil }
 // 找回密码令牌存储：key 为 reset_token -> { type: 'phone'|'email'|'face'|'username', phone_number?, phone_country_code?, email?, username?, expires_at }
 const resetTokenStore = new Map();
 
@@ -60,7 +69,8 @@ accountStore.set('email:user@example.com', { user_id: 'u-003', password: 'Passwo
     } catch (e) {}
   }
   const sid = 'sess-super-12306';
-  loginSessions.set(sid, { user_id, last_active_at: Date.now(), remember_expires_at: Date.now() + 7 * 24 * 60 * 60 * 1000 });
+  // 预置会话不再包含“记住我”相关字段
+  loginSessions.set(sid, { user_id, last_active_at: Date.now() });
   process.env.SUPERUSER_SESSION_ID = sid;
 })();
 
@@ -162,10 +172,7 @@ function isMaintenance(now) {
   return hour >= 1 && hour < 5;
 }
 
-function requireCaptcha(identifier) {
-  const rec = loginFailCounter.get(identifier);
-  return rec && rec.failCount >= 3;
-}
+// 图形验证码功能已移除
 
 function isLocked(identifier) {
   const rec = loginFailCounter.get(identifier);
@@ -469,36 +476,7 @@ app.get(`${base}/terms`, (req, res) => {
 
 // ===== 登录相关桩接口 =====
 
-// 获取图形验证码
-app.get(`${base}/auth/captcha`, (req, res) => {
-  const type = (req.query && req.query.type) || 'image';
-  const captcha_id = uuidv4();
-  const code = 'ABCD';
-  const expiresAt = Date.now() + 2 * 60 * 1000;
-  captchaStore.set(captcha_id, { code, expiresAt, verified: false });
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="40"><rect width="100%" height="100%" fill="#ffffff"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="20" fill="#333333">${code}</text></svg>`;
-  const image_url = `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
-  const payload = {
-    captcha_id,
-    type,
-    image_url,
-    audio_url: '',
-    expires_at: new Date(expiresAt).toISOString(),
-  };
-  return res.json(payload);
-});
-
-// 验证图形验证码
-app.post(`${base}/auth/captcha/verify`, (req, res) => {
-  const { captcha_id, captcha_code } = req.body || {};
-  const rec = captchaStore.get(captcha_id);
-  if (!rec || Date.now() > rec.expiresAt || String(captcha_code).toUpperCase() !== rec.code) {
-    return error(res, 400, 'CAPTCHA_INVALID', '验证码错误或已过期');
-  }
-  rec.verified = true;
-  captchaStore.set(captcha_id, rec);
-  return res.json({ verified: true });
-});
+// 图形验证码相关接口已移除
 
 // 登录（用户名/手机号/邮箱 + 密码）
 app.post(`${base}/auth/login`, async (req, res) => {
@@ -511,9 +489,6 @@ app.post(`${base}/auth/login`, async (req, res) => {
     identifier_type,
     identifier,
     password,
-    captcha_id,
-    captcha_code,
-    remember_me,
   } = req.body || {};
   if (!identifier) return error(res, 400, 'LOGIN_IDENTIFIER_INVALID_FORMAT', '请输入正确的用户名/手机号/邮箱格式');
   if (!password) return error(res, 400, 'PASSWORD_REQUIRED', '请输入密码');
@@ -532,14 +507,7 @@ app.post(`${base}/auth/login`, async (req, res) => {
     return error(res, 403, 'ACCOUNT_LOCKED', '账户已被锁定，请30分钟后重试或联系客服');
   }
 
-  // 可疑行为：需要验证码（例如失败次数>=3，或请求头标识）
-  const suspicious = req.get('x-suspicious') === '1' || requireCaptcha(key);
-  if (suspicious) {
-    const rec = captchaStore.get(captcha_id);
-    if (!rec || !rec.verified || String(captcha_code).toUpperCase() !== rec.code) {
-      return error(res, 403, 'CAPTCHA_REQUIRED', '需要图形验证码');
-    }
-  }
+  // 图形验证码校验步骤已移除
 
   // 先查数据库
   let account = null;
@@ -575,29 +543,41 @@ app.post(`${base}/auth/login`, async (req, res) => {
 
   // 成功登录
   resetFail(key);
-  // 为确保下游订单系统基于令牌的持久化不丢失，使用用户维度的稳定会话ID
-  // 稳定会话ID格式：sid-<user_id>
-  const session_id = `sid-${account.user_id}`;
-  const rememberExp = remember_me ? Date.now() + 7 * 24 * 60 * 60 * 1000 : null; // 7天
-  const existing = loginSessions.get(session_id);
-  if (existing) {
-    existing.last_active_at = Date.now();
-    existing.remember_expires_at = rememberExp;
-    loginSessions.set(session_id, existing);
-  } else {
-    loginSessions.set(session_id, {
+  // 强制：登录二次短信验证流程（所有登录均需走2FA；如需关闭，设置环境变量 FORCE_LOGIN_2FA=0）
+  if (process.env.FORCE_LOGIN_2FA !== '0') {
+    const flow_id = uuidv4();
+    let phone_number = null; let phone_country_code = '+86';
+    try {
+      const acc = await db.findByUserId(account.user_id);
+      if (acc && acc.phone_number) { phone_number = acc.phone_number; phone_country_code = acc.phone_country_code || '+86'; }
+    } catch (e) {}
+    // 预置账户兜底手机号（如需要，可在 accountStore 中补充 phone_number 字段）
+    if (!phone_number) {
+      const fb = accountStore.get(key);
+      if (fb && fb.phone_number) phone_number = fb.phone_number;
+    }
+    login2FAFlows.set(flow_id, {
       user_id: account.user_id,
-      last_active_at: Date.now(),
-      remember_expires_at: rememberExp,
+      login_key: key,
+      identifier_type: type,
+      identifier,
+      phone_country_code,
+      phone_number,
+      created_at: Date.now(),
+      id_fail_count: 0,
+      locked_until: 0,
+      code: null,
+      code_expires_at: 0,
     });
+    const masked = phone_number ? `${String(phone_number).slice(0,3)}****${String(phone_number).slice(-4)}` : '***********';
+    return res.json({ need_sms_verification: true, flow_id, masked_phone: masked, ttl_minutes: 5, message: '为保障账户安全，需进行短信身份验证' });
   }
-  return res.json({
-    session_id,
-    user_id: account.user_id,
-    remember_expires_at: rememberExp ? new Date(rememberExp).toISOString() : null,
-    redirect: process.env.HOME_URL || 'http://localhost:8080/',
-    message: '登录成功',
-  });
+  // 当 FORCE_LOGIN_2FA=0 时，允许直接登录返回会话
+  const session_id = `sid-${account.user_id}`;
+  const existing = loginSessions.get(session_id);
+  if (existing) { existing.last_active_at = Date.now(); loginSessions.set(session_id, existing); }
+  else { loginSessions.set(session_id, { user_id: account.user_id, last_active_at: Date.now() }); }
+  return res.json({ session_id, user_id: account.user_id, redirect: process.env.HOME_URL || 'http://localhost:8080/', message: '登录成功' });
 });
 
 // 获取会话状态
@@ -621,7 +601,6 @@ app.get(`${base}/auth/session`, (req, res) => {
     user_id: sess.user_id,
     last_active_at: new Date(sess.last_active_at).toISOString(),
     idle_timeout_minutes: 30,
-    absolute_expires_at: sess.remember_expires_at ? new Date(sess.remember_expires_at).toISOString() : null,
   });
 });
 
@@ -684,7 +663,7 @@ app.get(`${base}/auth/qrcode/:id/status`, (req, res) => {
   const payload = { status: rec.status, message: '', session_id: undefined };
   if (rec.status === 'confirmed') {
     const session_id = uuidv4();
-    loginSessions.set(session_id, { user_id: 'u-qr', last_active_at: now, remember_expires_at: null });
+    loginSessions.set(session_id, { user_id: 'u-qr', last_active_at: now });
     payload.session_id = session_id;
   }
   return res.json(payload);
@@ -700,6 +679,133 @@ app.post(`${base}/auth/qrcode/:id/refresh`, (req, res) => {
   return res.json({ qrcode_id: id, image_data: imageData, expires_at: new Date(expiresAt).toISOString() });
 });
 
+// ===== 登录二次验证（短信）接口 =====
+
+// 身份证后4位校验并自动发送验证码
+app.post(`${base}/auth/login/2fa/id-check`, async (req, res) => {
+  const { flow_id, id_last4, id_last4_hash } = req.body || {};
+  const nowHeader = req.get('x-simulate-time');
+  const now = nowHeader ? new Date(nowHeader) : new Date();
+  if (!flow_id) return error(res, 400, 'FLOW_ID_REQUIRED', '缺少流程ID');
+  const flow = login2FAFlows.get(flow_id);
+  if (!flow) return error(res, 404, 'FLOW_NOT_FOUND', '验证流程不存在或已过期');
+  if (flow.locked_until && Date.now() < flow.locked_until) {
+    return error(res, 403, 'ACCOUNT_LOCKED', '账户已被锁定，请30分钟后重试或联系客服');
+  }
+  // 获取真实身份证号码
+  let id_number = null;
+  try {
+    const acc = await db.findByUserId(flow.user_id);
+    if (acc && acc.id_number) id_number = acc.id_number;
+  } catch (e) {}
+  // 预置账户兜底
+  if (!id_number) {
+    const fb = accountStore.get(flow.login_key);
+    if (fb && fb.id_number) id_number = fb.id_number;
+  }
+  const last4 = id_number ? String(id_number).slice(-4) : '';
+  // 支持明文后4位或哈希后4位（提升传输安全）
+  let matched = false;
+  if (typeof id_last4 === 'string' && /^[0-9]{4}$/.test(id_last4)) {
+    matched = (last4 && String(id_last4) === last4);
+  } else if (typeof id_last4_hash === 'string' && id_last4_hash.length === 64) {
+    const h = crypto.createHash('sha256').update(String(last4)).digest('hex');
+    matched = (last4 && h === id_last4_hash);
+  } else {
+    return error(res, 400, 'ID_LAST4_INVALID_FORMAT', '请输入4位数字');
+  }
+  if (!matched) {
+    flow.id_fail_count = (flow.id_fail_count || 0) + 1;
+    login2FAFlows.set(flow_id, flow);
+    if (flow.id_fail_count >= 3) {
+      flow.locked_until = Date.now() + 30 * 60 * 1000;
+      login2FAFlows.set(flow_id, flow);
+      const key = flow.login_key || `user:${flow.user_id}`;
+      const rec = loginFailCounter.get(key) || { failCount: 0, lockedUntil: 0 };
+      rec.lockedUntil = Date.now() + 30 * 60 * 1000;
+      loginFailCounter.set(key, rec);
+      return error(res, 403, 'ACCOUNT_LOCKED', '错误次数过多，账户已锁定30分钟');
+    }
+    return error(res, 400, 'ID_LAST4_MISMATCH', '身份证后4位不匹配');
+  }
+
+  // 通过校验后自动发送短信验证码（速率/每日上限与注册短信一致）
+  const phone_number = flow.phone_number;
+  if (!phone_number) return error(res, 400, 'PHONE_NOT_FOUND', '未找到绑定手机号');
+  const rate = smsRate.get(phone_number) || { lastSentAt: 0, countDate: new Date(now).toDateString(), count: 0 };
+  const nowDateStr = new Date(now).toDateString();
+  if (rate.countDate !== nowDateStr) { rate.countDate = nowDateStr; rate.count = 0; }
+  if (now.getTime() - rate.lastSentAt < 60 * 1000) return error(res, 429, 'SMS_TOO_FREQUENT', '短信发送过于频繁，请稍后再试');
+  if (rate.count >= 10) return error(res, 429, 'SMS_DAILY_LIMIT_REACHED', '短信发送次数已达上限，请稍后再试');
+  rate.lastSentAt = now.getTime(); rate.count += 1; smsRate.set(phone_number, rate);
+  const code = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
+  flow.code = code; flow.code_expires_at = Date.now() + 5 * 60 * 1000; login2FAFlows.set(flow_id, flow);
+  if (process.env.OTP_DEV_LOG !== '0') {
+    console.log(`[DEV] 登录2FA 短信验证码 ${code} 已生成并“发送”到 +86${phone_number} (flow ${flow_id})`);
+  }
+  const leak = req.get('x-dev-debug') === '1' || req.query.dev === '1' || process.env.DEV_OTP_LEAK === '1';
+  const payload = { sent: true, countdown_seconds: 60, ttl_minutes: 5 };
+  if (leak) payload.dev_code = code;
+  return res.json(payload);
+});
+
+// 重新发送验证码
+app.post(`${base}/auth/login/2fa/resend`, (req, res) => {
+  const { flow_id } = req.body || {};
+  const nowHeader = req.get('x-simulate-time');
+  const now = nowHeader ? new Date(nowHeader) : new Date();
+  if (!flow_id) return error(res, 400, 'FLOW_ID_REQUIRED', '缺少流程ID');
+  const flow = login2FAFlows.get(flow_id);
+  if (!flow) return error(res, 404, 'FLOW_NOT_FOUND', '验证流程不存在或已过期');
+  if (flow.locked_until && Date.now() < flow.locked_until) {
+    return error(res, 403, 'ACCOUNT_LOCKED', '账户已被锁定，请30分钟后重试或联系客服');
+  }
+  const phone_number = flow.phone_number;
+  if (!phone_number) return error(res, 400, 'PHONE_NOT_FOUND', '未找到绑定手机号');
+  const rate = smsRate.get(phone_number) || { lastSentAt: 0, countDate: new Date(now).toDateString(), count: 0 };
+  const nowDateStr = new Date(now).toDateString();
+  if (rate.countDate !== nowDateStr) { rate.countDate = nowDateStr; rate.count = 0; }
+  if (now.getTime() - rate.lastSentAt < 60 * 1000) return error(res, 429, 'SMS_TOO_FREQUENT', '短信发送过于频繁，请稍后再试');
+  if (rate.count >= 10) return error(res, 429, 'SMS_DAILY_LIMIT_REACHED', '短信发送次数已达上限，请稍后再试');
+  rate.lastSentAt = now.getTime(); rate.count += 1; smsRate.set(phone_number, rate);
+  const code = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
+  flow.code = code; flow.code_expires_at = Date.now() + 5 * 60 * 1000; login2FAFlows.set(flow_id, flow);
+  if (process.env.OTP_DEV_LOG !== '0') {
+    console.log(`[DEV] 登录2FA 重新发送验证码 ${code} 已生成并“发送”到 +86${phone_number} (flow ${flow_id})`);
+  }
+  const leak = req.get('x-dev-debug') === '1' || req.query.dev === '1' || process.env.DEV_OTP_LEAK === '1';
+  const payload = { sent: true, countdown_seconds: 60, ttl_minutes: 5 };
+  if (leak) payload.dev_code = code;
+  return res.json(payload);
+});
+
+// 校验验证码并完成登录
+app.post(`${base}/auth/login/2fa/verify`, (req, res) => {
+  const { flow_id, code } = req.body || {};
+  if (!flow_id) return error(res, 400, 'FLOW_ID_REQUIRED', '缺少流程ID');
+  const flow = login2FAFlows.get(flow_id);
+  if (!flow) return error(res, 404, 'FLOW_NOT_FOUND', '验证流程不存在或已过期');
+  if (flow.locked_until && Date.now() < flow.locked_until) {
+    return error(res, 403, 'ACCOUNT_LOCKED', '账户已被锁定，请30分钟后重试或联系客服');
+  }
+  if (!code) return error(res, 400, 'SMS_CODE_MISMATCH', '验证码错误');
+  if (!flow.code) return error(res, 400, 'SMS_NOT_SENT', '尚未发送验证码');
+  if (Date.now() > flow.code_expires_at) return error(res, 400, 'SMS_CODE_EXPIRED', '验证码已过期，请重新获取');
+  if (String(code) !== String(flow.code)) {
+    incFail(flow.login_key || `user:${flow.user_id}`);
+    const locked = isLocked(flow.login_key || `user:${flow.user_id}`);
+    if (locked) return error(res, 403, 'ACCOUNT_LOCKED', '错误次数过多，账户已锁定30分钟');
+    return error(res, 400, 'SMS_CODE_MISMATCH', '验证码错误');
+  }
+  // 一次性使用
+  flow.code = null; flow.code_expires_at = 0; login2FAFlows.set(flow_id, flow);
+  const session_id = `sid-${flow.user_id}`;
+  const existing = loginSessions.get(session_id);
+  if (existing) { existing.last_active_at = Date.now(); loginSessions.set(session_id, existing); }
+  else { loginSessions.set(session_id, { user_id: flow.user_id, last_active_at: Date.now() }); }
+  return res.json({ session_id, user_id: flow.user_id, redirect: process.env.HOME_URL || 'http://localhost:8080/', message: '登录成功' });
+});
+
 // 找回密码：手机请求验证码
 app.post(`${base}/auth/password/phone/request`, (req, res) => {
   const nowHeader = req.get('x-simulate-time');
@@ -710,15 +816,34 @@ app.post(`${base}/auth/password/phone/request`, (req, res) => {
   const { phone_number, id_type, id_number } = req.body || {};
   if (!validatePhoneNumber(phone_number)) return error(res, 400, 'PHONE_INVALID', '请输入正确的手机号');
   if (!validateId(id_type, id_number)) return error(res, 422, 'ID_INVALID_FORMAT', '请输入正确的身份证号码格式');
-  if (req.get('x-dev-id-mismatch') === '1') {
-    return error(res, 422, 'PHONE_ID_MISMATCH', '手机号码与注册信息不匹配');
+  // 身份信息连续错误锁定：模拟后4位不匹配，通过请求头 x-dev-id-mismatch 控制
+  // 失败3次锁定30分钟，锁定期间所有请求返回 RESET_LOCKED
+  const idFailRec = idVerifyFailStore.get(phone_number) || { count: 0, lockedUntil: 0 };
+  if (idFailRec.lockedUntil && Date.now() < idFailRec.lockedUntil) {
+    return error(res, 403, 'RESET_LOCKED', '身份信息连续错误，找回密码功能已锁定30分钟');
   }
-  // 速率限制（复用注册短信发送速率限制）
-  const rate = smsRate.get(phone_number) || { lastSentAt: 0, countDate: new Date().toDateString(), count: 0 };
-  if (rate.countDate !== new Date().toDateString()) { rate.countDate = new Date().toDateString(); rate.count = 0; }
-  if (Date.now() - rate.lastSentAt < 60 * 1000) return error(res, 429, 'SMS_TOO_FREQUENT', '短信发送过于频繁，请稍后再试');
+  if (req.get('x-dev-id-mismatch') === '1') {
+    idFailRec.count += 1;
+    if (idFailRec.count >= 3) {
+      idFailRec.lockedUntil = Date.now() + 30 * 60 * 1000;
+      idVerifyFailStore.set(phone_number, idFailRec);
+      return error(res, 403, 'RESET_LOCKED', '身份信息连续错误，找回密码功能已锁定30分钟');
+    }
+    idVerifyFailStore.set(phone_number, idFailRec);
+    return error(res, 422, 'PHONE_ID_MISMATCH', '手机号码与注册信息不匹配');
+  } else {
+    // 一次成功后重置失败计数
+    if (idFailRec.count > 0) {
+      idVerifyFailStore.delete(phone_number);
+    }
+  }
+  // 速率限制（复用注册短信发送速率限制），允许通过 x-simulate-time 控制测试时间推进
+  const rate = smsRate.get(phone_number) || { lastSentAt: 0, countDate: new Date(now).toDateString(), count: 0 };
+  const nowDateStr = new Date(now).toDateString();
+  if (rate.countDate !== nowDateStr) { rate.countDate = nowDateStr; rate.count = 0; }
+  if (now.getTime() - rate.lastSentAt < 60 * 1000) return error(res, 429, 'SMS_TOO_FREQUENT', '短信发送过于频繁，请稍后再试');
   if (rate.count >= 10) return error(res, 429, 'SMS_DAILY_LIMIT_REACHED', '短信发送次数已达上限，请稍后再试');
-  rate.lastSentAt = Date.now(); rate.count += 1; smsRate.set(phone_number, rate);
+  rate.lastSentAt = now.getTime(); rate.count += 1; smsRate.set(phone_number, rate);
   // 生成并保存 6 位验证码
   const code = process.env.NODE_ENV === 'test' ? '123456' : generateOtp6();
   fpSmsStore.set(phone_number, { code, expires_at: Date.now() + 5 * 60 * 1000 });
@@ -761,12 +886,13 @@ app.post(`${base}/auth/password/email/request`, (req, res) => {
   const { email, id_type, id_number } = req.body || {};
   if (!validateEmail(email)) return error(res, 400, 'EMAIL_INVALID_FORMAT', '邮箱格式不正确');
   if (!validateId(id_type, id_number)) return error(res, 422, 'ID_INVALID_FORMAT', '请输入正确的身份证号码格式');
-  // 速率限制（复用注册邮件发送速率限制）
-  const rate = emailRate.get(email) || { lastSentAt: 0, countDate: new Date().toDateString(), count: 0 };
-  if (rate.countDate !== new Date().toDateString()) { rate.countDate = new Date().toDateString(); rate.count = 0; }
-  if (Date.now() - rate.lastSentAt < 60 * 1000) return error(res, 429, 'EMAIL_TOO_FREQUENT', '邮件发送过于频繁，请稍后再试');
-  if (rate.count >= 10) return error(res, 429, 'EMAIL_DAILY_LIMIT_REACHED', '邮件发送次数已达上限，请稍后再试');
-  rate.lastSentAt = Date.now(); rate.count += 1; emailRate.set(email, rate);
+  // 速率限制（复用注册邮件发送速率限制），允许通过 x-simulate-time 控制测试时间推进
+  const erate = emailRate.get(email) || { lastSentAt: 0, countDate: new Date(now).toDateString(), count: 0 };
+  const nowDateStr2 = new Date(now).toDateString();
+  if (erate.countDate !== nowDateStr2) { erate.countDate = nowDateStr2; erate.count = 0; }
+  if (now.getTime() - erate.lastSentAt < 60 * 1000) return error(res, 429, 'EMAIL_TOO_FREQUENT', '邮件发送过于频繁，请稍后再试');
+  if (erate.count >= 10) return error(res, 429, 'EMAIL_DAILY_LIMIT_REACHED', '邮件发送次数已达上限，请稍后再试');
+  erate.lastSentAt = now.getTime(); erate.count += 1; emailRate.set(email, erate);
   return res.json({ status: 'sent', message: '重置邮件已发送' });
 });
 

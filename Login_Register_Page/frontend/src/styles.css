@@ -111,11 +111,7 @@ body { margin: 0; font-family: "Microsoft YaHei", system-ui, -apple-system, Aria
 .input-group input { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 4px; }
 .input-group input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 2px rgba(45,125,210,0.2); }
 
-.captcha-row { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 12px; margin: 8px 0; }
-.captcha-box { display: flex; align-items: center; gap: 8px; }
-.captcha-box img { width: 120px; height: 40px; border: 1px solid #cbd5e0; }
 .link { background: none; border: none; color: #2d7dd2; cursor: pointer; padding: 0; }
-.remember { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; margin: 10px 0; }
 .login-btn { width: 100%; margin-top: 8px; }
 .login-links { display: flex; justify-content: space-between; margin-top: 8px; }
 .login-hint { font-size: 12px; color: #666; margin-top: 8px; }
@@ -134,3 +130,11 @@ body { margin: 0; font-family: "Microsoft YaHei", system-ui, -apple-system, Aria
   .login-layout { grid-template-columns: 1fr; }
   .hero-phone { display: none; }
 }
+
+/* 弹窗样式（复用 Login_Register_Page 组件风格） */
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 999; }
+.modal[hidden] { display: none; }
+.dialog { width: 520px; max-width: 96vw; border-radius: 8px; overflow: hidden; }
+.dialog .card-title { font-weight: 600; color: #2d7dd2; }
+.dialog .actions .primary { min-width: 120px; }
+.dialog .countdown { font-size: 12px; color: #666; align-self: center; }

@@ -1,6 +1,6 @@
 meta:
   name: "数据校验用例 - 用户登录"
-  notes: "校验登录标识、验证码、失败锁定与会话策略"
+  notes: "校验登录标识、失败锁定与会话策略（已移除验证码与记住登录）"
 
 cases:
   identifier_formats:
@@ -17,11 +17,6 @@ cases:
       input: "bad%mail"
       expect: error LOGIN_IDENTIFIER_INVALID_FORMAT
 
-  captcha_rules:
-    min_length: 4
-    max_length: 6
-    charset: "A-Za-z0-9"
-    ttl_minutes: 2
 
   lock_policy:
     max_failures: 5
@@ -29,4 +24,3 @@ cases:
 
   session_policy:
     idle_timeout_minutes: 30
-    remember_me_days: 7

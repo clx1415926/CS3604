@@ -4,22 +4,13 @@ const { app } = require('../src/server');
 describe('12306 用户登录 API', () => {
   let sessionId;
 
-  test('图形验证码获取与验证', async () => {
-    const resCap = await request(app).get('/api/v1/auth/captcha').query({ type: 'image' });
-    expect(resCap.status).toBe(200);
-    const captchaId = resCap.body.captcha_id;
-    expect(captchaId).toBeTruthy();
-    const resVer = await request(app).post('/api/v1/auth/captcha/verify').send({ captcha_id: captchaId, captcha_code: 'ABCD' });
-    expect(resVer.status).toBe(200);
-    expect(resVer.body.verified).toBe(true);
-  });
+  // 图形验证码功能已移除
 
   test('用户名密码登录成功', async () => {
-    const res = await request(app).post('/api/v1/auth/login').send({ identifier: 'testuser123', password: 'Password123!', remember_me: true });
+    const res = await request(app).post('/api/v1/auth/login').send({ identifier: 'testuser123', password: 'Password123!' });
     expect(res.status).toBe(200);
     expect(res.body.session_id).toBeTruthy();
     sessionId = res.body.session_id;
-    expect(res.body.remember_expires_at).toBeTruthy();
   });
 
   test('获取会话状态成功', async () => {

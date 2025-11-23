@@ -55,9 +55,9 @@
 ---
 
 ## 概览（登录与密码管理）
-- 需求总数：8（Must 5，Should 3）
-- 已覆盖：8
-- 覆盖率：100%
+ - 需求总数：6（Must 4，Should 2）
+ - 已覆盖：6
+ - 覆盖率：100%
 
 ## 明细（登录）
 1. 账号密码登录（Must）
@@ -66,42 +66,31 @@
    - UI：LoginForm
    - 测试：l03/l04/l05；AC01/AC02/AC03/AC19/AC20
 
-2. 可疑登录验证码（Must）
-   - 接口：GET /auth/captcha；POST /auth/captcha/verify；POST /auth/login
-   - 数据模型：Captcha
-   - UI：CaptchaWidget
-   - 测试：l01/l02/l09；n03；AC06/AC07
-
-3. 扫码登录（Should）
+2. 扫码登录（Should）
    - 接口：GET /auth/qrcode；GET /auth/qrcode/{id}/status；POST /auth/qrcode/{id}/refresh
    - 数据模型：QRCodeLoginSession
    - UI：QRCodePanel
    - 测试：l10/l11/l12/l13；AC08/AC09/AC10
 
-4. 失败锁定（Must）
+3. 失败锁定（Must）
    - 策略：5次失败锁定30分钟
    - 接口：POST /auth/login
    - 数据模型：LoginAttempt
    - 测试：l08；n04；AC17/AC18
 
-5. 记住我（Should）
-   - 接口：POST /auth/login；GET /auth/session
-   - 数据模型：UserSession
-   - 测试：l03/l04；AC15
-
-6. 维护窗口（Must）
+4. 维护窗口（Must）
    - 接口：POST /auth/login
    - 错误码：MAINTENANCE_WINDOW
    - 测试：l14；AC21
 
-7. 密码找回（Should）
+5. 密码找回（Should）
    - 接口：POST /auth/password/phone/request；POST /auth/password/phone/verify；POST /auth/password/email/request；GET /auth/password/face/start；GET /auth/password/face/status；GET /auth/password/face/{id}/status；POST /auth/password/face/confirm；POST /auth/password/reset
    - 测试（API + UI）：
      - API：p01/p02/p03/p04/p05/p06/p07/p10；n01/n02/n03/n04/n05/n07/n08/n09
      - UI：ui-p01/ui-p02/ui-p03/ui-p04/ui-p06
    - 备注：人脸识别为桩实现，实际集成需对接风控与生物识别服务；维护窗口、速率限制符合数据接口策略。
 
-8. 登录后修改密码（Must）
+6. 登录后修改密码（Must）
    - 接口：POST /auth/password/change
    - 数据模型/规则：PasswordChangeRequest；NEW_PASSWORD_WEAK/NEW_PASSWORD_SAME_AS_OLD 错误码；维护窗口策略
    - 测试（API + UI）：
@@ -112,5 +101,4 @@
 ## 待确认与改进建议（登录）
 - 人脸识别找回密码：仅为服务桩，需明确真实风控与识别服务。
 - 会话过期（非活跃30分钟）：测试需支持模拟非活跃时间推进（建议在会话接口加入测试专用header）。
-- 记住我cookie与跨域安全：网关/前端需统一SameSite、Secure、HttpOnly策略。
  - 修改密码后令牌失效策略：是否立即使当前会话失效，建议在后端与前端统一处理与提示。

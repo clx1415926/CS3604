@@ -77,16 +77,6 @@ mappings:
       feature: [AC01, AC02, AC03, AC19, AC20]
       api: [l03_login_username_success, l06_login_phone_success, l07_login_email_success, l04_session_status, l05_logout]
 
-  - req_id: LOGIN-MUST-CAPTCHA
-    description: "可疑登录需验证码，错误提示并可刷新"
-    interfaces:
-      data: [Captcha]
-      api: [GET /auth/captcha, POST /auth/captcha/verify, POST /auth/login]
-      ui: [CaptchaWidget]
-    tests:
-      feature: [AC06, AC07]
-      api: [l01_get_captcha, l02_verify_captcha, l09_login_requires_captcha, n03_captcha_invalid]
-
   - req_id: LOGIN-SHOULD-QR
     description: "扫码登录流程：二维码生成、状态轮询、确认创建会话、过期刷新"
     interfaces:
@@ -106,16 +96,6 @@ mappings:
     tests:
       feature: [AC17, AC18]
       api: [l08_login_wrong_password, n04_account_locked_after_failures]
-
-  - req_id: LOGIN-SHOULD-REMEMBER
-    description: "记住登录状态最长7天"
-    interfaces:
-      data: [UserSession]
-      api: [POST /auth/login, GET /auth/session]
-      ui: [RememberMe]
-    tests:
-      feature: [AC15]
-      api: [l03_login_username_success, l04_session_status]
 
   - req_id: LOGIN-MUST-MAINTENANCE
     description: "维护窗口禁止登录，返回提示"
@@ -148,8 +128,8 @@ mappings:
       api: [p08_login_then_change_password_success, p09_change_password_success, n06_change_password_wrong_old]
 
 coverage_summary:
-  total_requirements: 14
-  covered: 14
+  total_requirements: 12
+  covered: 12
   gaps:
     - note: "密码提示文案与需求示例略有差异，需产品确认"
     - note: "手机号重复注册时提示文案是否提示找回账号，需确认"

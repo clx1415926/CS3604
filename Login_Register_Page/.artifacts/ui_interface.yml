@@ -218,25 +218,7 @@ pages:
           type: password
           required: true
           placeholder: "请输入密码"
-        captcha:
-          visible_when: "server_requires_captcha"
-          components:
-            image:
-              src_api: "/api/v1/auth/captcha?type=image"
-              alt: "图形验证码"
-              refresh_button: { label: "换一张", action: "refresh" }
-            audio:
-              src_api: "/api/v1/auth/captcha?type=audio"
-              label: "语音验证码"
-            code_input:
-              type: text
-              validate:
-                pattern: "^[A-Za-z0-9]{4,6}$"
-              messages:
-                error_invalid: "验证码错误"
-        remember_me:
-          type: checkbox
-          label: "记住登录状态"
+        # 图形验证码与“记住我”功能已移除，保持简洁安全的登录体验
       actions:
         primary_button:
           label: "立即登录"
@@ -255,8 +237,6 @@ pages:
         on_login_failed:
           clear_fields: [password]
           keep_fields: [identifier]
-        on_captcha_required:
-          show_component: captcha
 
     qrcode:
       layout:
@@ -413,7 +393,7 @@ interactions:
     steps_order: [账户信息填写, 手机验证, 身份核验, 服务条款确认, 注册完成]
   login_flow:
     - account.identifier.on_blur -> client_format_check
-    - login.submit -> server_login -> success | invalid_credentials | captcha_required | locked | maintenance
+    - login.submit -> server_login -> success | invalid_credentials | locked | maintenance
     - qrcode.tab.open -> get_qrcode -> poll_status (每2秒)
     - qrcode.status.confirmed -> auto_redirect
 

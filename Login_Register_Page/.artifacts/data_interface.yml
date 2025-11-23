@@ -46,8 +46,11 @@ enums:
       - PHONE_TAKEN
       - SMS_TOO_FREQUENT
       - SMS_DAILY_LIMIT_REACHED
+      - SMS_NOT_SENT
       - SMS_CODE_EXPIRED
       - SMS_CODE_MISMATCH
+      - EMAIL_TOO_FREQUENT
+      - EMAIL_DAILY_LIMIT_REACHED
       - ID_INVALID_FORMAT
       - ID_NAME_MISMATCH
       - ID_VERIFICATION_FAILED
@@ -57,13 +60,12 @@ enums:
       - LOGIN_IDENTIFIER_INVALID_FORMAT
       - USER_NOT_FOUND
       - INVALID_CREDENTIALS
-      - CAPTCHA_REQUIRED
-      - CAPTCHA_INVALID
       - ACCOUNT_LOCKED
       - MAINTENANCE_WINDOW
       - SESSION_EXPIRED
       # 密码管理相关错误码
       - PHONE_ID_MISMATCH
+      - RESET_LOCKED
       - RESET_TOKEN_INVALID
       - RESET_TOKEN_EXPIRED
       - EMAIL_LINK_EXPIRED
@@ -86,9 +88,7 @@ enums:
     values: [unscanned, scanned, confirmed, expired]
     default: unscanned
 
-  CaptchaType:
-    values: [image, audio]
-    default: image
+
 
 schemas:
   UserAccount:
@@ -272,15 +272,6 @@ schemas:
       password:
         type: string
         description: "明文输入（传输层加密），服务端进行哈希匹配"
-      captcha_id:
-        type: string
-        required: false
-      captcha_code:
-        type: string
-        required: false
-      remember_me:
-        type: boolean
-        default: false
       client_context:
         type: object
         properties:
@@ -301,9 +292,6 @@ schemas:
         required: false
       session_id:
         type: string
-        required: false
-      remember_expires_at:
-        type: datetime
         required: false
       redirect:
         type: string
@@ -332,28 +320,9 @@ schemas:
       idle_timeout_minutes:
         type: integer
         default: 30
-      remember_me:
-        type: boolean
-        default: false
-      absolute_expires_at:
-        type: datetime
-        description: "记住登录：最长保留7天（Scenario 17）。"
 
-  Captcha:
-    description: "图形/语音验证码实体。"
-    fields:
-      captcha_id:
-        type: string
-      type:
-        type: CaptchaType
-      image_url:
-        type: string
-        required: false
-      audio_url:
-        type: string
-        required: false
-      expires_at:
-        type: datetime
+
+
 
   QRCodeLoginSession:
     description: "扫码登录会话（网页端生成二维码，APP确认）。"
@@ -392,7 +361,7 @@ schemas:
       locked_until:
         type: datetime
 
-validation_rules:
+  validation_rules:
   username:
     pattern: "^[A-Za-z][A-Za-z0-9_]{5,29}$"
     unique: true
@@ -434,13 +403,7 @@ validation_rules:
     messages:
       invalid_format: "请输入正确的用户名/手机号/邮箱格式"
 
-  captcha_code:
-    length:
-      min: 4
-      max: 6
-    pattern: "^[A-Za-z0-9]{4,6}$"
-    messages:
-      invalid: "验证码错误"
+
 
   sms_code:
     digits: 6
@@ -456,7 +419,7 @@ validation_rules:
       invalid_format: "请输入正确的身份证号码格式"
       name_mismatch: "姓名与证件号码不匹配，请核实后重新输入"
 
-business_rules:
+  business_rules:
   - 每个手机号只能注册一个账户（唯一约束）
   - 用户名一旦设置不可修改（不可变约束）
   - 未成年人需要监护人协助完成注册（从身份证出生日期推断，建议<14岁提示监护）
@@ -464,8 +427,6 @@ business_rules:
   - 服务端进行唯一性与实名校验（用户名、手机号、身份证信息）
   - 登录失败累计达到5次则锁定账户30分钟（Scenario 16）
   - 扫码登录二维码有效期2分钟，过期需刷新（Scenario 7/8）
-  - 可疑登录需验证码，验证码错误时刷新（Scenario 14/15）
-  - 记住登录状态最长保留7天（Scenario 17）
   - 会话非活跃超过30分钟需重新登录（Scenario 18）
   - 维护时间内登录不可用，并显示维护提示（Scenario 20/21）
 

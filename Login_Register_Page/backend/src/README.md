@@ -19,3 +19,10 @@
 1. 安装依赖：npm i express
 2. 启动：node backend/src/server.js
 3. 基础 URL：http://localhost:8080/api/v1
+
+预览端口与 API Base 说明：
+- 前端预览（开发服务器）默认使用 8081 端口。
+- 若需与前端保持同端口（8081），可在启动后端前设置环境变量 PORT=8081：
+  - Windows PowerShell：`$env:PORT=8081; node backend/src/server.js`
+  - macOS/Linux：`PORT=8081 node backend/src/server.js`
+- 统一之后的 API Base 为：`http://localhost:8081/api/v1`

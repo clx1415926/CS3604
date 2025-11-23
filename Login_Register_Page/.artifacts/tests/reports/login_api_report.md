@@ -1,6 +1,6 @@
 # 登录接口测试报告
 
-本报告基于 `backend/test/login.test.js` 集成测试结果生成，测试覆盖接口：验证码、登录、会话、退出、二维码登录、维护窗口。
+本报告基于 `backend/test/login.test.js` 集成测试结果生成，测试覆盖接口：登录、会话、退出、二维码登录、维护窗口。
 
 ## 测试环境
 - Node.js + Express 本地桩服务（端口：8080）
@@ -12,7 +12,6 @@
 ## 用例摘要与结果
 | 用例 | 说明 | 结果 |
 |---|---|---|
-| 图形验证码获取与验证 | `/auth/captcha` 获取并验证验证码 | 通过 |
 | 用户名密码登录成功 | `/auth/login` 正常登录 | 通过 |
 | 获取会话状态成功 | `/auth/session` 返回会话信息 | 通过 |
 | 非活跃超时会话过期 | `x-nonactive-minutes` 模拟过期 | 通过 |
@@ -25,7 +24,7 @@
 
 ## 结论
 - 共 23 项测试全部通过，接口行为与 `.artifacts/api_interface.yml` 的参数与响应格式一致。
-- 错误码覆盖：`LOGIN_IDENTIFIER_INVALID_FORMAT`、`PASSWORD_REQUIRED`、`INVALID_CREDENTIALS`、`CAPTCHA_REQUIRED`、`ACCOUNT_LOCKED`、`SESSION_EXPIRED`、`MAINTENANCE_WINDOW`、`QR_EXPIRED`。
+- 错误码覆盖：`LOGIN_IDENTIFIER_INVALID_FORMAT`、`PASSWORD_REQUIRED`、`INVALID_CREDENTIALS`、`ACCOUNT_LOCKED`、`SESSION_EXPIRED`、`MAINTENANCE_WINDOW`、`QR_EXPIRED`。
 
 ## 后续建议
 - 衔接真实存储与密码加密（目前为演示桩）。

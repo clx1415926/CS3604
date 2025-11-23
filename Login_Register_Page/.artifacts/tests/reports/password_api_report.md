@@ -8,8 +8,8 @@
 
 ## 接口与结果概览
 1. 手机找回
-   - POST /auth/password/phone/request：成功返回 `status=sent` 与 `ttl_minutes=5`；支持维护窗口阻断（503）、身份证不匹配（422, PHONE_ID_MISMATCH）、速率限制（429, SMS_TOO_FREQUENT）。
-   - POST /auth/password/phone/verify：成功返回 `reset_token`；覆盖验证码错误（400, SMS_CODE_MISMATCH）、过期（400, SMS_CODE_EXPIRED）。
+   - POST /auth/password/phone/request：成功返回 `status=sent` 与 `ttl_minutes=5`；支持维护窗口阻断（503）、身份证不匹配（422, PHONE_ID_MISMATCH）、三次连续身份证不匹配触发锁定（403, RESET_LOCKED）、速率限制（429, SMS_TOO_FREQUENT）、每日上限（429, SMS_DAILY_LIMIT_REACHED）。
+   - POST /auth/password/phone/verify：成功返回 `reset_token`；覆盖验证码错误（400, SMS_CODE_MISMATCH）、过期（400, SMS_CODE_EXPIRED）、验证码重复使用提示（400, SMS_NOT_SENT）。
 2. 邮箱找回
    - POST /auth/password/email/request：成功返回 `status=sent`；覆盖格式错误（400, EMAIL_INVALID_FORMAT）、速率限制（429, EMAIL_TOO_FREQUENT）。
 3. 人脸识别找回
@@ -23,7 +23,7 @@
 
 ## 自动化执行摘要
 - 测试套件：3（注册、登录、密码管理）
-- 用例总数：34
+- 用例总数：37
 - 结果：全部通过（0 失败）
 
 ## 结论与后续

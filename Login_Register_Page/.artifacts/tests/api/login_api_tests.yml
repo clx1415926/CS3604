@@ -1,44 +1,20 @@
 meta:
   name: "API 测试用例 - 用户登录"
-  base_url: "http://localhost:8080/api/v1"
-  notes: "覆盖账号/扫码登录、验证码、会话、登出、维护窗口与密码找回的关键场景。"
+  base_url: "http://localhost:8081/api/v1"
+  notes: "覆盖账号/扫码登录、会话、登出、维护窗口与密码找回的关键场景。"
 
 sequence:
-  - id: l01_get_captcha
-    endpoint: GET /auth/captcha
-    request:
-      query: { type: "image" }
-    expect:
-      status: 200
-      body:
-        captcha_id: present
-        type: "image"
-
-  - id: l02_verify_captcha
-    endpoint: POST /auth/captcha/verify
-    depends_on: l01_get_captcha
-    request:
-      body:
-        captcha_id: "{{ l01_get_captcha.body.captcha_id }}"
-        captcha_code: "ABCD"
-    expect:
-      status: 200
-      body:
-        verified: true
-
   - id: l03_login_username_success
     endpoint: POST /auth/login
     request:
       body:
         identifier: "testuser123"
         password: "Password123!"
-        remember_me: true
     expect:
       status: 200
       body:
         session_id: uuid
         user_id: present
-        remember_expires_at: present
 
   - id: l04_session_status
     endpoint: GET /auth/session
@@ -93,21 +69,6 @@ sequence:
       status: 401
       error: INVALID_CREDENTIALS
 
-  - id: l09_login_requires_captcha
-    endpoint: POST /auth/login
-    depends_on: l02_verify_captcha
-    request:
-      headers:
-        x-suspicious: "1"
-      body:
-        identifier: "testuser123"
-        password: "Password123!"
-        captcha_id: "{{ l01_get_captcha.body.captcha_id }}"
-        captcha_code: "ABCD"
-    expect:
-      status: 200
-      body:
-        session_id: uuid
 
   - id: l10_qr_generate
     endpoint: GET /auth/qrcode
@@ -189,20 +150,7 @@ negative_cases:
       status: 400
       error: PASSWORD_REQUIRED
 
-  - id: n03_captcha_invalid
-    endpoint: POST /auth/login
-    depends_on: l01_get_captcha
-    request:
-      headers:
-        x-suspicious: "1"
-      body:
-        identifier: "testuser123"
-        password: "Password123!"
-        captcha_id: "{{ l01_get_captcha.body.captcha_id }}"
-        captcha_code: "ZZZZ"
-    expect:
-      status: 403
-      error: CAPTCHA_REQUIRED
+  # 图形验证码相关负例已移除
 
   - id: n04_account_locked_after_failures
     endpoint: POST /auth/login

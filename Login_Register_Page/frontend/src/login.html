@@ -5,6 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>中国铁路12306 - 欢迎登录</title>
     <link rel="stylesheet" href="styles.css" />
+    <script>
+      // 在页面加载前声明后端 API 基址，支持通过 ?api_port=XXXX 覆盖端口
+      (function(){
+        try{
+          var params = new URLSearchParams(location.search);
+          var port = params.get('api_port') || '8082';
+          window.API_BASE = 'http://127.0.0.1:' + port + '/api/v1';
+        }catch(e){}
+      })();
+    </script>
   </head>
   <body class="login-body">
     <header class="site-header">
@@ -34,8 +44,8 @@
             <li>车站大屏</li>
           </ul>
           <div class="hero-qrcode">
-            <img src="register.png" alt="扫码下载铁路12306APP二维码" />
-            <div class="qrcode-desc">扫描左侧二维码<br/>安装 铁路12306</div>
+            <img src="/img/登录与注册/official_app_qr.png" alt="扫码下载铁路12306 官方APP 二维码" />
+            <div class="qrcode-desc">扫描二维码<br/>安装 铁路12306 官方APP</div>
           </div>
         </section>
 
@@ -59,17 +69,7 @@
                 <input type="password" id="password" name="password" placeholder="密码" aria-label="密码" required />
               </div>
 
-              <div class="captcha-row" id="captcha-row" hidden>
-                <div class="captcha-box">
-                  <img id="captcha-image" alt="图形验证码" />
-                  <button type="button" id="captcha-refresh" class="link">刷新验证码</button>
-                </div>
-                <input type="text" id="captcha_code" placeholder="请输入验证码" aria-label="图形验证码" />
-              </div>
-
-              <label class="checkbox remember">
-                <input type="checkbox" id="remember_me" /> 记住我
-              </label>
+              <!-- 图形验证码与“记住我”功能已移除，保留简洁登录体验 -->
 
               <button type="submit" class="primary login-btn" id="login-btn">立即登录</button>
               <div class="login-links">
@@ -106,6 +106,46 @@
         </section>
       </div>
     </main>
+
+    <!-- 登录二次验证（短信）弹窗 -->
+    <div id="sms-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="sms-title" hidden>
+      <div class="card dialog">
+        <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
+          <span id="sms-title">身份验证</span>
+          <button id="sms-close" class="link" aria-label="关闭">×</button>
+        </div>
+        <div class="dialog-body" style="padding:16px;">
+          <!-- Step 1: 身份证后4位校验 -->
+          <div id="sms-step-id">
+            <p class="hint">请输入登录账号绑定的证件号后4位</p>
+            <div class="input-group">
+              <span class="input-icon">🪪</span>
+              <input type="text" id="id-last4" inputmode="numeric" pattern="\d{4}" maxlength="4" placeholder="后4位" aria-label="身份证后4位" />
+            </div>
+            <div class="actions">
+              <button id="id-verify" class="primary">验证</button>
+            </div>
+            <div id="sms-error" class="error" aria-live="polite"></div>
+            <div id="sms-status" class="status" aria-live="polite"></div>
+          </div>
+          <!-- Step 2: 短信验证码输入 -->
+          <div id="sms-step-code" hidden>
+            <p class="hint">我们已向绑定手机号 <span id="sms-masked-phone">***********</span> 发送6位数字验证码</p>
+            <div class="input-group">
+              <span class="input-icon">💬</span>
+              <input type="text" id="sms-code" inputmode="numeric" pattern="\d{6}" maxlength="6" placeholder="请输入验证码" aria-label="短信验证码" />
+            </div>
+            <div class="actions" style="gap:12px;">
+              <button id="sms-verify" class="primary">确认登录</button>
+              <button id="sms-resend" class="secondary" disabled>重新发送</button>
+              <span class="countdown" id="sms-countdown" aria-live="polite">剩余 05:00</span>
+            </div>
+            <div id="sms-error-2" class="error" aria-live="polite"></div>
+            <div id="sms-status-2" class="status" aria-live="polite"></div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <footer class="site-footer">
       <div class="container footer-links">

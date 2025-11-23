@@ -208,15 +208,11 @@ endpoints:
       identifier_type: { type: string, enum: [username, phone, email], required: false }
       identifier: { type: string, required: true }
       password: { type: string, required: true }
-      captcha_id: { type: string, required: false }
-      captcha_code: { type: string, required: false }
-      remember_me: { type: boolean, required: false, default: false }
     responses:
       200:
         body:
           session_id: string
           user_id: string
-          remember_expires_at: datetime
           redirect: string
           message: "登录成功"
       400:
@@ -224,7 +220,7 @@ endpoints:
       401:
         error: [INVALID_CREDENTIALS]
       403:
-        error: [CAPTCHA_REQUIRED, CAPTCHA_INVALID, ACCOUNT_LOCKED]
+        error: [ACCOUNT_LOCKED]
       503:
         error: [MAINTENANCE_WINDOW]
 
@@ -251,38 +247,9 @@ endpoints:
           user_id: string
           last_active_at: datetime
           idle_timeout_minutes: 30
-          absolute_expires_at: datetime
       401:
         error: [SESSION_EXPIRED]
 
-  - id: get_captcha
-    name: "获取图形验证码（可选语音）"
-    method: GET
-    path: "/auth/captcha"
-    query:
-      type: { type: string, enum: [image, audio], required: false }
-    responses:
-      200:
-        body:
-          captcha_id: string
-          type: string
-          image_url: string
-          audio_url: string
-          expires_at: datetime
-
-  - id: verify_captcha
-    name: "验证图形验证码"
-    method: POST
-    path: "/auth/captcha/verify"
-    body:
-      captcha_id: string
-      captcha_code: string
-    responses:
-      200:
-        body:
-          verified: true
-      400:
-        error: [CAPTCHA_INVALID]
 
   - id: get_qrcode
     name: "生成扫码登录二维码（2分钟有效）"
@@ -468,11 +435,8 @@ state_machine:
 
 state_machine_login:
   name: "LoginFlow"
-  states: [start, captcha_required, authenticated, locked, maintenance]
+  states: [start, authenticated, locked, maintenance]
   transitions:
-    - from: start
-      to: captcha_required
-      via: get_captcha
     - from: start
       to: authenticated
       via: login_password
@@ -511,6 +475,7 @@ errors:
     PHONE_TAKEN: { http_status: 409, message: "该手机号已被注册，请尝试找回账户或联系客服" }
     SMS_TOO_FREQUENT: { http_status: 429, message: "短信发送过于频繁，请稍后再试" }
     SMS_DAILY_LIMIT_REACHED: { http_status: 429, message: "短信发送次数已达上限，请稍后再试" }
+    SMS_NOT_SENT: { http_status: 400, message: "尚未发送验证码" }
     SMS_CODE_EXPIRED: { http_status: 400, message: "验证码已过期，请重新获取" }
     SMS_CODE_MISMATCH: { http_status: 400, message: "验证码错误，请重新输入" }
     ID_INVALID_FORMAT: { http_status: 400, message: "请输入正确的身份证号码格式" }
@@ -521,13 +486,12 @@ errors:
     LOGIN_IDENTIFIER_INVALID_FORMAT: { http_status: 400, message: "请输入正确的用户名/手机号/邮箱格式" }
     USER_NOT_FOUND: { http_status: 401, message: "用户名不存在或账户未激活" }
     INVALID_CREDENTIALS: { http_status: 401, message: "用户名或密码错误" }
-    CAPTCHA_REQUIRED: { http_status: 403, message: "需要图形验证码" }
-    CAPTCHA_INVALID: { http_status: 403, message: "验证码错误，请重试" }
     ACCOUNT_LOCKED: { http_status: 403, message: "账户已被锁定，请30分钟后重试或联系客服" }
     SESSION_EXPIRED: { http_status: 401, message: "登录已过期，请重新登录" }
     MAINTENANCE_WINDOW: { http_status: 503, message: "系统维护中，服务时间：每日5:00-次日1:00；周二5:00-24:00" }
     QR_EXPIRED: { http_status: 410, message: "二维码已过期，请刷新重试" }
     PHONE_ID_MISMATCH: { http_status: 422, message: "手机号码与注册信息不匹配" }
+    RESET_LOCKED: { http_status: 403, message: "身份信息连续错误，找回密码功能已锁定30分钟" }
     RESET_TOKEN_INVALID: { http_status: 400, message: "重置令牌无效或已使用" }
     RESET_TOKEN_EXPIRED: { http_status: 400, message: "重置令牌已过期，请重新申请" }
     EMAIL_LINK_EXPIRED: { http_status: 410, message: "重置链接已过期" }
@@ -598,11 +562,9 @@ examples:
       identifier_type: "username"
       identifier: "testuser123"
       password: "Password123!"
-      remember_me: true
     response:
       session_id: "c2c35a1e-1111-2222-3333-444455556666"
       user_id: "b1b25b2b-aaaa-bbbb-cccc-ddddeeeeffff"
-      remember_expires_at: "2025-11-18T08:00:00Z"
       message: "登录成功"
   login_failed_wrong_password:
     request:

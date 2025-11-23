@@ -87,6 +87,71 @@ describe('12306 密码管理 API', () => {
     expect(ok2.body.error).toBe('SMS_TOO_FREQUENT');
   });
 
+  test('手机找回：身份证不匹配触发锁定（3次）', async () => {
+    const r1 = await request(app)
+      .post('/api/v1/auth/password/phone/request')
+      .set('x-dev-id-mismatch', '1')
+      .send({ phone_number: '13900003333', id_type: '居民身份证', id_number: '110101199001011234' });
+    expect(r1.status).toBe(422);
+    expect(r1.body.error).toBe('PHONE_ID_MISMATCH');
+
+    const r2 = await request(app)
+      .post('/api/v1/auth/password/phone/request')
+      .set('x-dev-id-mismatch', '1')
+      .send({ phone_number: '13900003333', id_type: '居民身份证', id_number: '110101199001011234' });
+    expect(r2.status).toBe(422);
+    expect(r2.body.error).toBe('PHONE_ID_MISMATCH');
+
+    const r3 = await request(app)
+      .post('/api/v1/auth/password/phone/request')
+      .set('x-dev-id-mismatch', '1')
+      .send({ phone_number: '13900003333', id_type: '居民身份证', id_number: '110101199001011234' });
+    expect(r3.status).toBe(403);
+    expect(r3.body.error).toBe('RESET_LOCKED');
+
+    // 锁定期间再次请求仍返回锁定
+    const r4 = await request(app)
+      .post('/api/v1/auth/password/phone/request')
+      .send({ phone_number: '13900003333', id_type: '居民身份证', id_number: '110101199001011234' });
+    expect(r4.status).toBe(403);
+    expect(r4.body.error).toBe('RESET_LOCKED');
+  });
+
+  test('手机验证码：重复使用提示', async () => {
+    // 先发送与验证一次
+    const req1 = await request(app)
+      .post('/api/v1/auth/password/phone/request')
+      .send({ phone_number: '13900005555', id_type: '居民身份证', id_number: '110101199001011234' });
+    expect(req1.status).toBe(200);
+    const ver1 = await request(app)
+      .post('/api/v1/auth/password/phone/verify')
+      .send({ phone_number: '13900005555', code: '123456' });
+    expect(ver1.status).toBe(200);
+    // 再次提交相同手机号与验证码，提示未发送（已作废）
+    const ver2 = await request(app)
+      .post('/api/v1/auth/password/phone/verify')
+      .send({ phone_number: '13900005555', code: '123456' });
+    expect(ver2.status).toBe(400);
+    expect(ver2.body.error).toBe('SMS_NOT_SENT');
+  });
+
+  test('手机找回：每日上限10次', async () => {
+    const phone = '13900006666';
+    for (let i = 0; i < 10; i++) {
+      const r = await request(app)
+        .post('/api/v1/auth/password/phone/request')
+        .set('x-simulate-time', new Date(Date.now() + i * 61 * 1000).toISOString())
+        .send({ phone_number: phone, id_type: '居民身份证', id_number: '110101199001011234' });
+      expect(r.status).toBe(200);
+    }
+    const r11 = await request(app)
+      .post('/api/v1/auth/password/phone/request')
+      .set('x-simulate-time', new Date(Date.now() + 11 * 61 * 1000).toISOString())
+      .send({ phone_number: phone, id_type: '居民身份证', id_number: '110101199001011234' });
+    expect(r11.status).toBe(429);
+    expect(r11.body.error).toBe('SMS_DAILY_LIMIT_REACHED');
+  });
+
   test('人脸识别找回：二维码与状态切换/过期', async () => {
     const start = await request(app).get('/api/v1/auth/password/face/start');
     expect(start.status).toBe(200);

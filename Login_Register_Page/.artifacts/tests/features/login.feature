@@ -27,17 +27,6 @@ Feature: 12306 用户登录功能
     When 我使用用户名 "unknown_user" 和密码 "Password123!" 登录
     Then 我应当看到错误码 "INVALID_CREDENTIALS"
 
-  # 验证码
-  Scenario: AC06 需要验证码时可以获取并验证
-    Given 我请求图形验证码
-    And 我验证验证码代码 "ABCD" 成功
-    When 我在可疑登录情况下携带验证码登录
-    Then 我应当获得有效会话
-
-  Scenario: AC07 验证码错误提示
-    Given 我请求图形验证码
-    When 我在可疑登录情况下携带错误验证码 "ZZZZ" 登录
-    Then 我应当看到错误码 "CAPTCHA_REQUIRED"
 
   # 扫码登录
   Scenario: AC08 生成二维码并处于未扫码状态
@@ -73,9 +62,6 @@ Feature: 12306 用户登录功能
     Then 我应当获得重置令牌
 
   # 会话与安全
-  Scenario: AC15 记住我7天
-    When 我勾选记住我成功登录
-    Then 我会话的绝对过期时间应在7天内
 
   Scenario: AC16 30分钟非活跃会话过期
     Given 我已登录
