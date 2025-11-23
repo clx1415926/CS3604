@@ -7,13 +7,16 @@ export default function Payment() {
   useEffect(() => {
     const h = window.location.hash || '';
     const m = h.match(/order_id=([^&]+)/);
-    setOrderId(m ? decodeURIComponent(m[1]) : 'o-001');
+    setOrderId((m ? decodeURIComponent(m[1]) : 'o-001').trim());
   }, []);
 
   const pay = async () => {
     setMessage('');
     try {
-      const sid = localStorage.getItem('SESSION_ID') || 'sess-super-12306';
+      const h = window.location.hash || '';
+      const mSid = h.match(/sid=([^&]+)/);
+      const sid = (mSid ? decodeURIComponent(mSid[1]) : (localStorage.getItem('SESSION_ID') || 'sess-super-12306')).trim();
+      try { localStorage.setItem('SESSION_ID', sid); } catch (e) {}
       const r = await fetch(`http://localhost:3001/api/v1/orders/${orderId}/pay`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${sid}` },

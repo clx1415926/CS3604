@@ -44,6 +44,9 @@ requirements:
               - testFile: "frontend/test/components/TrainList.test.tsx"
                 testName: "should render train list correctly"
                 status: "pending"
+              - testFile: "frontend/test/components/TrainList.booking.test.jsx"
+                testName: "should navigate to order page with query parameters - BUG-TS-TrainMismatch-002 Regression"
+                status: "failing"
       - interfaceId: UI-FilterPanel
         interfaceType: Frontend
         acceptanceCriteria:

@@ -1,0 +1,18 @@
+meta:
+  version: 1.0
+  updated: 2025-11-20
+
+interfaces:
+  - id: UI-TrainList
+    feature: "车票查询 - 列车列表与预订按钮"
+    tests:
+      - file: "Ticket_Selection/frontend/test/components/TrainList.booking.test.jsx"
+        description: "should route to passenger selection and seat selection before order submission - BUG-TS-BookingFlow-001 Regression"
+        status: failing
+        bug_id: "BUG-TS-BookingFlow-001"
+  - id: API-POST-OrderCreate
+    feature: "订单创建接口"
+    tests:
+      - file: "Ticket_Management/backend/test/routes/orders.test.js"
+        description: "should create unpaid order and return order_id"
+        status: passing

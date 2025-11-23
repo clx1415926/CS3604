@@ -42,7 +42,8 @@ router.post('/', requireAuth, (req, res) => {
   const order_id = `o-${Date.now()}`;
   const price_total = 576.0;
   const token = req.authToken;
-  const list = ordersByToken.get(token) || [];
+  const key = identityKeyFromToken(token);
+  const list = ordersByToken.get(key) || [];
   list.push({
     order_id,
     booked_at: new Date().toISOString(),
@@ -52,30 +53,34 @@ router.post('/', requireAuth, (req, res) => {
     price_total,
     status: 'unpaid',
   });
-  ordersByToken.set(token, list);
+  ordersByToken.set(key, list);
   res.status(201).json({ order_id, status: 'unpaid', price_total });
 });
 
 router.get('/', async (req, res) => {
   const header = req.get('Authorization');
+  const { status } = req.query || {};
   if (header) {
     const ok = await verifySession(header);
     if (!ok) return res.status(401).json({ error: 'UNAUTHORIZED' });
     const token = String(header).replace(/^Bearer\s+/, '');
-    const orders = ordersByToken.get(token) || [];
+    const key = identityKeyFromToken(token);
+    let orders = ordersByToken.get(key) || [];
+    if (status) {
+      orders = orders.filter(o => String(o.status) === String(status));
+    }
     return res.json({ orders });
   }
-  const orders = [
-    {
-      order_id: 'o-001',
-      booked_at: new Date().toISOString(),
-      train: { code: 'G123', from: '北京南', to: '上海虹桥', depart_time: '08:00', arrive_time: '13:36' },
-      passengers: [{ name: '张三' }],
-      seats: [{ seat_class: '二等座', carriage_no: '10', seat_no: '16A' }],
-      price_total: 576.0,
-      status: 'unpaid',
-    },
-  ];
+  const sample = {
+    order_id: 'o-001',
+    booked_at: new Date().toISOString(),
+    train: { code: 'G123', from: '北京南', to: '上海虹桥', depart_time: '08:00', arrive_time: '13:36' },
+    passengers: [{ name: '张三' }],
+    seats: [{ seat_class: '二等座', carriage_no: '10', seat_no: '16A' }],
+    price_total: 576.0,
+    status: 'unpaid',
+  };
+  const orders = status ? (String(status) === 'unpaid' ? [sample] : []) : [sample];
   res.json({ orders });
 });
 
@@ -86,7 +91,8 @@ router.get('/:order_id', async (req, res) => {
     const ok = await verifySession(header);
     if (!ok) return res.status(401).json({ error: 'UNAUTHORIZED' });
     const token = String(header).replace(/^Bearer\s+/, '');
-    const orders = ordersByToken.get(token) || [];
+    const key = identityKeyFromToken(token);
+    const orders = ordersByToken.get(key) || [];
     const found = orders.find(o => o.order_id === order_id);
     if (!found) return res.status(404).json({ error: 'ORDER_NOT_FOUND' });
     return res.json({ order: found });
@@ -118,17 +124,32 @@ router.post('/:order_id/cancel', (req, res) => {
   const header = req.get('Authorization');
   if (header) {
     const token = String(header).replace(/^Bearer\s+/, '');
-    const list = ordersByToken.get(token) || [];
+    const key = identityKeyFromToken(token);
+    const list = ordersByToken.get(key) || [];
     const after = list.filter(o => o.order_id !== req.params.order_id);
-    ordersByToken.set(token, after);
+    ordersByToken.set(key, after);
   }
   res.json({ success: true, message: '取消订单成功' });
 });
 
 router.post('/:order_id/pay', requireAuth, (req, res) => {
   const { order_id } = req.params;
-  if (order_id !== 'o-001') return res.status(404).json({ error: 'ORDER_NOT_FOUND' });
+  const token = req.authToken;
+  const key = identityKeyFromToken(token);
+  const list = ordersByToken.get(key) || [];
+  const idx = list.findIndex(o => o.order_id === order_id);
+  if (idx === -1) {
+    if (order_id === 'o-001') return res.json({ success: true, status: 'paid', paid_at: new Date().toISOString() });
+    return res.status(404).json({ error: 'ORDER_NOT_FOUND' });
+  }
+  list[idx].status = 'paid';
+  ordersByToken.set(key, list);
   res.json({ success: true, status: 'paid', paid_at: new Date().toISOString() });
 });
 
 module.exports = router;
+function identityKeyFromToken(token) {
+  const m = String(token).match(/^sid-(.+)$/);
+  if (m) return `user:${m[1]}`;
+  return `token:${token}`;
+}

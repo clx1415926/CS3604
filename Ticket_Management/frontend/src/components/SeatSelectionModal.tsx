@@ -27,7 +27,7 @@ export default function SeatSelectionModal({ trainId, travelDate, onConfirm, onC
     const data = await r.json();
     if (r.ok && Array.isArray(data.locks) && data.locks.length > 0) {
       const locks = data.locks;
-      const passengers = [{ passenger_id: 'p-001', name: '系统管理员', ticket_type: '成人票' }];
+      const passengers = [{ passenger_id: 'p-001', name: '', ticket_type: '成人票' }];
       onConfirm(locks, passengers);
       onClose();
     }

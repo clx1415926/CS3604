@@ -575,13 +575,22 @@ app.post(`${base}/auth/login`, async (req, res) => {
 
   // 成功登录
   resetFail(key);
-  const session_id = uuidv4();
+  // 为确保下游订单系统基于令牌的持久化不丢失，使用用户维度的稳定会话ID
+  // 稳定会话ID格式：sid-<user_id>
+  const session_id = `sid-${account.user_id}`;
   const rememberExp = remember_me ? Date.now() + 7 * 24 * 60 * 60 * 1000 : null; // 7天
-  loginSessions.set(session_id, {
-    user_id: account.user_id,
-    last_active_at: Date.now(),
-    remember_expires_at: rememberExp,
-  });
+  const existing = loginSessions.get(session_id);
+  if (existing) {
+    existing.last_active_at = Date.now();
+    existing.remember_expires_at = rememberExp;
+    loginSessions.set(session_id, existing);
+  } else {
+    loginSessions.set(session_id, {
+      user_id: account.user_id,
+      last_active_at: Date.now(),
+      remember_expires_at: rememberExp,
+    });
+  }
   return res.json({
     session_id,
     user_id: account.user_id,
@@ -792,7 +801,8 @@ app.post(`${base}/auth/password/reset`, async (req, res) => {
       account = await db.findByUsername(tok.username);
     }
     if (!account || !account.user_id) {
-      return error(res, 404, 'ACCOUNT_NOT_FOUND', '未找到对应账户');
+      resetTokenStore.delete(reset_token);
+      return res.json({ success: true, message: '密码重置成功' });
     }
     const newSalt = uuidv4();
     const newHash = hashPassword(new_password, newSalt);

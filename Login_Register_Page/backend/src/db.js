@@ -9,8 +9,11 @@ const dataDir = path.resolve(__dirname, '../data');
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
 const dbPath = path.join(dataDir, 'accounts.db');
+const useMemory = process.env.NODE_ENV === 'test';
 
-const accounts = Datastore.create({ filename: dbPath, autoload: true });
+const accounts = useMemory
+  ? Datastore.create({ inMemoryOnly: true })
+  : Datastore.create({ filename: dbPath, autoload: true });
 
 // Indexes to enforce uniqueness
 accounts.ensureIndex({ fieldName: 'username', unique: true }).catch(() => {});

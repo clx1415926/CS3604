@@ -38,6 +38,9 @@ requirements:
               - testFile: "Ticket_Management/backend/test/routes/orders.test.js"
                 testName: "should create unpaid order and return order_id"
                 status: "passed"
+              - testFile: "Ticket_Management/frontend/test/components/OrderFilling.test.tsx"
+                testName: "should submit order successfully after login - BUG-ORD-AUTH-001 Regression"
+                status: "failing"
       - interfaceId: API-GET-Orders
         interfaceType: Backend
         acceptanceCriteria:
@@ -46,6 +49,12 @@ requirements:
             testCases:
               - testFile: "Ticket_Management/backend/test/routes/orders.test.js"
                 testName: "should list orders in unpaid tab with required fields"
+                status: "passed"
+          - criteriaIndex: 4
+            description: "订单应对同一用户跨会话持久化（回归）"
+            testCases:
+              - testFile: "Ticket_Management/backend/test/routes/orders.persistence.test.js"
+                testName: "should persist orders under stable sid per user - BUG-ORD-PERSIST-001"
                 status: "passed"
       - interfaceId: API-GET-OrderDetail
         interfaceType: Backend
@@ -80,6 +89,9 @@ requirements:
             testCases:
               - testFile: "Ticket_Management/frontend/test/components/OrderFilling.test.tsx"
                 testName: "should display selected train info on order filling page"
+                status: "passed"
+              - testFile: "Ticket_Management/frontend/test/components/OrderFilling.test.tsx"
+                testName: "should render train info from query string - BUG-TRAIN-CODE-002 Regression"
                 status: "passed"
           - criteriaIndex: 2
             description: "显示常用联系人列表与字段"

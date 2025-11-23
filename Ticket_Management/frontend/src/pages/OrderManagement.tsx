@@ -5,13 +5,17 @@ import '../index.css';
 export default function OrderManagement() {
   const [orders, setOrders] = useState<any[]>([]);
   const [sid, setSid] = useState<string | null>(null);
-  const params = useMemo(() => new URLSearchParams(window.location.search || ''), []);
-  const prebook = params.get('prebook') === '1';
+  const hash = window.location.hash || '';
+  const hashQuery = (() => { const i = hash.indexOf('?'); return i >= 0 ? hash.slice(i + 1) : ''; })();
+  const paramsHash = useMemo(() => new URLSearchParams(hashQuery), []);
+  const paramsSearch = useMemo(() => new URLSearchParams(window.location.search || ''), []);
+  const getParam = (name: string) => paramsHash.get(name) || paramsSearch.get(name);
+  const prebook = getParam('prebook') === '1';
   const preTrain = {
-    code: params.get('trainNo') || '',
-    from: params.get('fromStation') || '',
-    to: params.get('toStation') || '',
-    date: params.get('date') || '',
+    code: getParam('trainNo') || '',
+    from: getParam('fromStation') || '',
+    to: getParam('toStation') || '',
+    date: getParam('date') || '',
   };
   const [seatClass, setSeatClass] = useState<string>('二等座');
   const [passengerName, setPassengerName] = useState<string>('本人');
@@ -20,15 +24,14 @@ export default function OrderManagement() {
 
   useEffect(() => {
     try {
-      const p = new URLSearchParams(window.location.search || '');
-      const sidParam = p.get('sid');
-      let s = sidParam;
+      const pSearch = new URLSearchParams(window.location.search || '');
+      const pHash = new URLSearchParams(hashQuery);
+      const sidParam = pHash.get('sid') || pSearch.get('sid');
+      let s = sidParam || localStorage.getItem('SESSION_ID') || null;
       if (sidParam) {
         try { localStorage.setItem('SESSION_ID', sidParam); } catch (e) {}
         const clean = window.location.origin + window.location.pathname + window.location.hash;
         window.history.replaceState({}, document.title, clean);
-      } else {
-        s = localStorage.getItem('SESSION_ID');
       }
       setSid(s || null);
     } catch (e) { setSid(null); }
@@ -36,7 +39,7 @@ export default function OrderManagement() {
 
   async function refreshOrders() {
     try {
-      const r = await fetch('http://localhost:3001/api/v1/orders?status=unpaid', { headers: sid ? { Authorization: 'Bearer ' + sid } : {} });
+      const r = await fetch('http://localhost:3001/api/v1/orders', { headers: sid ? { Authorization: 'Bearer ' + sid } : {} });
       if (r.ok) {
         const data = await r.json();
         if (Array.isArray(data.orders)) setOrders(data.orders);
@@ -71,7 +74,7 @@ export default function OrderManagement() {
 
   async function cancelOrder(id: string) {
     if (!confirm('确认删除该订单吗？删除后不可恢复')) return;
-    const r = await fetch(`http://localhost:3001/api/v1/orders/${id}/cancel`, { method: 'POST' });
+    const r = await fetch(`http://localhost:3001/api/v1/orders/${id}/cancel`, { method: 'POST', headers: sid ? { Authorization: 'Bearer ' + sid } : {} });
     if (r.ok) { setOrders(prev => prev.filter(o => o.order_id !== id)); await refreshOrders(); }
   }
 
