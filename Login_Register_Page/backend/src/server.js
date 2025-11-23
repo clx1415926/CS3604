@@ -10,11 +10,17 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 静态页面服务：前端位于 ../../frontend
+// 静态页面服务
+// 1) 前端页面与脚本：../../frontend/src
 const staticDir = path.resolve(__dirname, '../../frontend/src');
 app.use(express.static(staticDir));
+// 2) Login_Register_Page 根目录（如 login.png、register.png 等）
 const staticRoot = path.resolve(__dirname, '../../');
 app.use(express.static(staticRoot));
+// 3) 项目顶层的 img 资源目录：../../../img 挂载到 /img
+//    这样 login.html 可以直接引用 /img/登录与注册/xxx.png
+const projectImgDir = path.resolve(__dirname, '../../../img');
+app.use('/img', express.static(projectImgDir));
 
 // In-memory stores
 const sessions = new Map();
@@ -28,6 +34,23 @@ const qrcodeStore = new Map(); // key: qrcode_id -> { imageData, createdAt, expi
 const fpSmsStore = new Map(); // key: phone_number -> { code, expires_at }
 // 找回密码令牌存储：key 为 reset_token -> { type: 'phone'|'email'|'face'|'username', phone_number?, phone_country_code?, email?, username?, expires_at }
 const resetTokenStore = new Map();
+// 登录挑战（两步验证）存储：challenge_id -> { user_id, identifier_key, phone_country_code, phone_number, id_last4, failCount, lockedUntil, sms: { code, expires_at, used }, created_at }
+const loginChallenges = new Map();
+
+// 登录流程使用的加密密钥（RSA-OAEP，临时密钥用于演示加密传输身份证后4位）
+let loginCryptoPubPem = null;
+let loginCryptoPrivPem = null;
+try {
+  const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
+    modulusLength: 2048,
+    publicKeyEncoding: { type: 'spki', format: 'pem' },
+    privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+  });
+  loginCryptoPubPem = publicKey;
+  loginCryptoPrivPem = privateKey;
+} catch (e) {
+  console.warn('RSA key generation failed:', e && e.message);
+}
 
 // 预置账户（用于登录桩验证）
 const accountStore = new Map();
@@ -60,7 +83,8 @@ accountStore.set('email:user@example.com', { user_id: 'u-003', password: 'Passwo
     } catch (e) {}
   }
   const sid = 'sess-super-12306';
-  loginSessions.set(sid, { user_id, last_active_at: Date.now(), remember_expires_at: Date.now() + 7 * 24 * 60 * 60 * 1000 });
+  // 移除“记住我”功能后，开发预置会话的 remember_expires_at 也设为 null
+  loginSessions.set(sid, { user_id, last_active_at: Date.now(), remember_expires_at: null });
   process.env.SUPERUSER_SESSION_ID = sid;
 })();
 
@@ -294,7 +318,8 @@ app.patch(`${base}/registration/sessions/:session_id/account`, async (req, res) 
 });
 
 function generateOtp6() {
-  const n = Math.floor(Math.random() * 1000000);
+  // 使用加密安全随机数生成 6 位验证码
+  const n = crypto.randomInt(0, 1000000);
   return String(n).padStart(6, '0');
 }
 
@@ -470,37 +495,27 @@ app.get(`${base}/terms`, (req, res) => {
 // ===== 登录相关桩接口 =====
 
 // 获取图形验证码
+// 已废弃：图形验证码接口（保留空壳以兼容旧前端，但不再强制使用）
 app.get(`${base}/auth/captcha`, (req, res) => {
-  const type = (req.query && req.query.type) || 'image';
   const captcha_id = uuidv4();
-  const code = 'ABCD';
-  const expiresAt = Date.now() + 2 * 60 * 1000;
-  captchaStore.set(captcha_id, { code, expiresAt, verified: false });
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="40"><rect width="100%" height="100%" fill="#ffffff"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="20" fill="#333333">${code}</text></svg>`;
-  const image_url = `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
-  const payload = {
-    captcha_id,
-    type,
-    image_url,
-    audio_url: '',
-    expires_at: new Date(expiresAt).toISOString(),
-  };
-  return res.json(payload);
+  const expiresAt = Date.now() + 2 * 60 * 1000; // 2分钟
+  captchaStore.set(captcha_id, { code: 'ABCD', expiresAt, verified: true });
+  return res.json({ captcha_id, type: 'image', image_data: Buffer.from('PNG').toString('base64'), expires_at: new Date(expiresAt).toISOString() });
 });
 
 // 验证图形验证码
 app.post(`${base}/auth/captcha/verify`, (req, res) => {
-  const { captcha_id, captcha_code } = req.body || {};
-  const rec = captchaStore.get(captcha_id);
-  if (!rec || Date.now() > rec.expiresAt || String(captcha_code).toUpperCase() !== rec.code) {
-    return error(res, 400, 'CAPTCHA_INVALID', '验证码错误或已过期');
-  }
-  rec.verified = true;
-  captchaStore.set(captcha_id, rec);
   return res.json({ verified: true });
 });
 
+// 提供登录加密公钥（RSA-OAEP）
+app.get(`${base}/auth/login/pubkey`, (req, res) => {
+  if (!loginCryptoPubPem) return error(res, 500, 'CRYPTO_KEY_MISSING', '服务器未准备好加密密钥');
+  return res.json({ public_key_pem: loginCryptoPubPem });
+});
+
 // 登录（用户名/手机号/邮箱 + 密码）
+// 登录初始化：校验用户名/密码，创建登录挑战，前端弹窗要求输入身份证后4位
 app.post(`${base}/auth/login`, async (req, res) => {
   const nowHeader = req.get('x-simulate-time');
   const now = nowHeader ? new Date(nowHeader) : new Date();
@@ -511,9 +526,6 @@ app.post(`${base}/auth/login`, async (req, res) => {
     identifier_type,
     identifier,
     password,
-    captcha_id,
-    captcha_code,
-    remember_me,
   } = req.body || {};
   if (!identifier) return error(res, 400, 'LOGIN_IDENTIFIER_INVALID_FORMAT', '请输入正确的用户名/手机号/邮箱格式');
   if (!password) return error(res, 400, 'PASSWORD_REQUIRED', '请输入密码');
@@ -531,15 +543,7 @@ app.post(`${base}/auth/login`, async (req, res) => {
   if (isLocked(key)) {
     return error(res, 403, 'ACCOUNT_LOCKED', '账户已被锁定，请30分钟后重试或联系客服');
   }
-
-  // 可疑行为：需要验证码（例如失败次数>=3，或请求头标识）
-  const suspicious = req.get('x-suspicious') === '1' || requireCaptcha(key);
-  if (suspicious) {
-    const rec = captchaStore.get(captcha_id);
-    if (!rec || !rec.verified || String(captcha_code).toUpperCase() !== rec.code) {
-      return error(res, 403, 'CAPTCHA_REQUIRED', '需要图形验证码');
-    }
-  }
+  // 图形验证码流程已移除，不再强制要求
 
   // 先查数据库
   let account = null;
@@ -573,22 +577,128 @@ app.post(`${base}/auth/login`, async (req, res) => {
     return error(res, 401, 'INVALID_CREDENTIALS', '用户名或密码错误');
   }
 
-  // 成功登录
+  // 创建登录挑战（二次验证）
   resetFail(key);
-  const session_id = uuidv4();
-  const rememberExp = remember_me ? Date.now() + 7 * 24 * 60 * 60 * 1000 : null; // 7天
-  loginSessions.set(session_id, {
+  const challenge_id = uuidv4();
+  const idLast4 = (account.id_number || '').slice(-4);
+  loginChallenges.set(challenge_id, {
     user_id: account.user_id,
+    identifier_key: key,
+    phone_country_code: account.phone_country_code || '+86',
+    phone_number: account.phone_number,
+    id_last4: idLast4,
+    failCount: 0,
+    lockedUntil: 0,
+    sms: { code: null, expires_at: 0, used: false },
+    created_at: Date.now(),
+  });
+  return res.json({
+    challenge_id,
+    title: '身份验证',
+    prompt: '请输入登录账号绑定的证件号后4位',
+    next: 'id_verify',
+    public_key_pem: loginCryptoPubPem,
+  });
+});
+
+// 二次验证步骤1：身份证后4位验证，成功后发送短信验证码
+app.post(`${base}/auth/login/id-verify`, (req, res) => {
+  const { challenge_id, id_last4_encrypted } = req.body || {};
+  const ch = loginChallenges.get(challenge_id);
+  if (!ch) return error(res, 404, 'CHALLENGE_NOT_FOUND', '登录会话不存在或已过期');
+  if (ch.lockedUntil && Date.now() < ch.lockedUntil) {
+    return error(res, 403, 'ACCOUNT_LOCKED', '账户已被锁定，请30分钟后重试或联系客服');
+  }
+  let id4 = '';
+  try {
+    const buf = Buffer.from(id_last4_encrypted || '', 'base64');
+    const dec = crypto.privateDecrypt({ key: loginCryptoPrivPem, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING, oaepHash: 'sha256' }, buf);
+    id4 = dec.toString('utf8');
+  } catch (e) {
+    return error(res, 400, 'ID_DECRYPT_FAILED', '身份证信息解密失败');
+  }
+  if (!/^[0-9]{4}$/.test(id4) || id4 !== ch.id_last4) {
+    ch.failCount += 1;
+    if (ch.failCount >= 3) {
+      ch.lockedUntil = Date.now() + 30 * 60 * 1000; // 30分钟锁定
+    }
+    loginChallenges.set(challenge_id, ch);
+    return error(res, 401, 'ID_LAST4_INVALID', '身份证后4位不匹配');
+  }
+  // 发送短信验证码（5分钟有效）
+  const code = generateOtp6();
+  ch.sms = { code, expires_at: Date.now() + 5 * 60 * 1000, used: false };
+  loginChallenges.set(challenge_id, ch);
+  if (process.env.OTP_DEV_LOG !== '0') {
+    console.log(`[DEV] 登录短信验证码 ${code} 已生成并“发送”到 ${ch.phone_number}`);
+  }
+  const payload = { status: 'sms_sent', ttl_seconds: 300 };
+  if (req.get('x-dev-debug') === '1' || process.env.DEV_OTP_LEAK === '1') payload.dev_code = code;
+  return res.json(payload);
+});
+
+// 二次验证步骤2：短信验证码验证，成功则创建会话
+app.post(`${base}/auth/login/sms/verify`, (req, res) => {
+  const { challenge_id, code } = req.body || {};
+  const ch = loginChallenges.get(challenge_id);
+  if (!ch) return error(res, 404, 'CHALLENGE_NOT_FOUND', '登录会话不存在或已过期');
+  if (ch.lockedUntil && Date.now() < ch.lockedUntil) {
+    return error(res, 403, 'ACCOUNT_LOCKED', '账户已被锁定，请30分钟后重试或联系客服');
+  }
+  if (!ch.sms || !ch.sms.code) return error(res, 400, 'SMS_NOT_SENT', '尚未发送验证码');
+  if (ch.sms.used) return error(res, 400, 'SMS_CODE_ALREADY_USED', '验证码已使用，请重新获取');
+  if (Date.now() > ch.sms.expires_at) return error(res, 400, 'SMS_CODE_EXPIRED', '验证码已过期，请重新获取');
+  if (!code || code !== ch.sms.code) {
+    ch.failCount += 1;
+    if (ch.failCount >= 3) {
+      ch.lockedUntil = Date.now() + 30 * 60 * 1000;
+    }
+    loginChallenges.set(challenge_id, ch);
+    return error(res, 400, 'SMS_CODE_MISMATCH', '验证码错误');
+  }
+  ch.sms.used = true;
+  loginChallenges.set(challenge_id, ch);
+  const session_id = uuidv4();
+  const rememberExp = null; // 移除“记住我”功能后不再设置持久会话
+  loginSessions.set(session_id, {
+    user_id: ch.user_id,
     last_active_at: Date.now(),
     remember_expires_at: rememberExp,
   });
+  // 完成后清理挑战
+  loginChallenges.delete(challenge_id);
   return res.json({
     session_id,
-    user_id: account.user_id,
+    user_id: ch.user_id,
     remember_expires_at: rememberExp ? new Date(rememberExp).toISOString() : null,
     redirect: process.env.HOME_URL || 'http://localhost:8080/',
     message: '登录成功',
   });
+});
+
+// 重新发送登录短信验证码（受限速与有效期控制）
+app.post(`${base}/auth/login/sms/resend`, (req, res) => {
+  const { challenge_id } = req.body || {};
+  const ch = loginChallenges.get(challenge_id);
+  if (!ch) return error(res, 404, 'CHALLENGE_NOT_FOUND', '登录会话不存在或已过期');
+  if (ch.lockedUntil && Date.now() < ch.lockedUntil) {
+    return error(res, 403, 'ACCOUNT_LOCKED', '账户已被锁定，请30分钟后重试或联系客服');
+  }
+  // 速率限制（复用手机验证码的全局速率控制）
+  const rate = smsRate.get(ch.phone_number) || { lastSentAt: 0, countDate: new Date().toDateString(), count: 0 };
+  if (rate.countDate !== new Date().toDateString()) { rate.countDate = new Date().toDateString(); rate.count = 0; }
+  if (Date.now() - rate.lastSentAt < 60 * 1000) return error(res, 429, 'SMS_TOO_FREQUENT', '短信发送过于频繁，请稍后再试');
+  if (rate.count >= 10) return error(res, 429, 'SMS_DAILY_LIMIT_REACHED', '短信发送次数已达上限，请稍后再试');
+  rate.lastSentAt = Date.now(); rate.count += 1; smsRate.set(ch.phone_number, rate);
+  const code = generateOtp6();
+  ch.sms = { code, expires_at: Date.now() + 5 * 60 * 1000, used: false };
+  loginChallenges.set(challenge_id, ch);
+  if (process.env.OTP_DEV_LOG !== '0') {
+    console.log(`[DEV] 登录短信验证码（重发） ${code} 已生成并“发送”到 ${ch.phone_number}`);
+  }
+  const payload = { status: 'sms_sent', ttl_seconds: 300 };
+  if (req.get('x-dev-debug') === '1' || process.env.DEV_OTP_LEAK === '1') payload.dev_code = code;
+  return res.json(payload);
 });
 
 // 获取会话状态

@@ -111,11 +111,10 @@ body { margin: 0; font-family: "Microsoft YaHei", system-ui, -apple-system, Aria
 .input-group input { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 4px; }
 .input-group input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 2px rgba(45,125,210,0.2); }
 
-.captcha-row { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 12px; margin: 8px 0; }
-.captcha-box { display: flex; align-items: center; gap: 8px; }
-.captcha-box img { width: 120px; height: 40px; border: 1px solid #cbd5e0; }
+/* link-style for inline actions */
 .link { background: none; border: none; color: #2d7dd2; cursor: pointer; padding: 0; }
-.remember { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; margin: 10px 0; }
+.link { background: none; border: none; color: #2d7dd2; cursor: pointer; padding: 0; }
+/* 记住我功能已移除，相关样式清理 */
 .login-btn { width: 100%; margin-top: 8px; }
 .login-links { display: flex; justify-content: space-between; margin-top: 8px; }
 .login-hint { font-size: 12px; color: #666; margin-top: 8px; }
@@ -134,3 +133,15 @@ body { margin: 0; font-family: "Microsoft YaHei", system-ui, -apple-system, Aria
   .login-layout { grid-template-columns: 1fr; }
   .hero-phone { display: none; }
 }
+
+/* 二次验证弹窗样式（沿用现有UI风格） */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; z-index: 9999; animation: fadeIn 0.2s ease-in; }
+.modal { width: 360px; max-width: calc(100vw - 32px); background: #fff; border: 1px solid #e0e6ef; border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); padding: 16px; position: relative; }
+.modal-title { margin: 0 0 8px; font-size: 18px; color: #2d7dd2; font-weight: 700; }
+.modal-tip { font-size: 14px; color: #555; margin: 8px 0; }
+.modal .input-group { grid-template-columns: 1fr; }
+.modal .input-group input { font-size: 16px; letter-spacing: 2px; text-align: center; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+.modal .primary { background: #ff9900; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+.modal .secondary { background: #fff; color: #2d7dd2; border: 1px solid #2d7dd2; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+.modal .close { position: absolute; right: 8px; top: 8px; border: none; background: none; font-size: 20px; color: #777; cursor: pointer; }
