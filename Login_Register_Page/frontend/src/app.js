@@ -49,6 +49,14 @@ let countdownTimer = null;
 function validateUsernameLocal(u) {
   return /^[A-Za-z][A-Za-z0-9_]{5,29}$/.test(u);
 }
+function validateUsernameDetail(u) {
+  const s = String(u || '').trim();
+  if (s.length < 6) return { ok: false, message: '用户名长度必须至少6位' };
+  if (s.length > 30) return { ok: false, message: '用户名长度不能超过30位' };
+  if (!/^[A-Za-z]/.test(s)) return { ok: false, message: '用户名须以字母开头' };
+  if (!/^[A-Za-z0-9_]+$/.test(s)) return { ok: false, message: '用户名包含非法字符，仅允许字母、数字、下划线' };
+  return { ok: true, message: '' };
+}
 function passwordStrength(p, username) {
   const len = p.length;
   const allowedChars = /^[_A-Za-z0-9]+$/;
@@ -84,10 +92,8 @@ function validatePhoneLocal(cc, num) {
 // Live validations
 usernameInput.addEventListener('blur', async () => {
   const u = usernameInput.value.trim();
-  if (!validateUsernameLocal(u)) {
-    setError('username-error', '用户名只能由字母、数字和_组成，须以字母开头！');
-    return;
-  }
+  const vu = validateUsernameDetail(u);
+  if (!vu.ok) { setError('username-error', vu.message); return; }
   try {
     const res = await fetch(`${API_BASE}/users/username/check?username=${encodeURIComponent(u)}`);
     const data = await res.json();
@@ -153,7 +159,10 @@ accountForm.addEventListener('submit', async (evt) => {
   const email = emailInput.value.trim();
   const traveler_type = travelerTypeSelect.value;
 
-  if (!validateUsernameLocal(username)) { setError('username-error', '用户名只能由字母、数字和_组成，须以字母开头！'); return; }
+  {
+    const v = validateUsernameDetail(username);
+    if (!v.ok) { setError('username-error', v.message); return; }
+  }
   const pw = passwordStrength(password, username);
   if (!pw.ok) { setError('password-error', pw.message || '密码格式不正确'); return; }
   if (confirm !== password) { setError('confirm-error', '确认密码与密码不同！'); return; }
@@ -317,3 +326,27 @@ idNumberInput.addEventListener('blur', () => {
     setError('id-error', '身份证格式错误或校验位不正确');
   }
 });
+
+const linkTerms = document.getElementById('link-terms');
+const linkPrivacy = document.getElementById('link-privacy');
+function recordClick(kind, url) {
+  try {
+    const key = 'LINK_CLICK_EVENTS';
+    const prev = JSON.parse(localStorage.getItem(key) || '[]');
+    prev.push({ kind, url, ts: Date.now() });
+    localStorage.setItem(key, JSON.stringify(prev.slice(-100)));
+  } catch (e) {}
+}
+function handleDocLink(e) {
+  e.preventDefault();
+  const a = e.currentTarget;
+  const url = a.getAttribute('href');
+  const kind = a.id === 'link-terms' ? 'terms' : 'privacy';
+  recordClick(kind, url);
+  setError('terms-error', '');
+  fetch(url, { method: 'HEAD' })
+    .then(res => { if (res.ok) { window.open(url, '_blank', 'noopener'); } else { setError('terms-error', '链接不可用，请稍后重试'); } })
+    .catch(() => { setError('terms-error', '链接不可用，请稍后重试'); });
+}
+if (linkTerms) linkTerms.addEventListener('click', handleDocLink);
+if (linkPrivacy) linkPrivacy.addEventListener('click', handleDocLink);

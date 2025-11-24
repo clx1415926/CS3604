@@ -11,8 +11,6 @@ const Header = () => {
         </div>
         <nav className="nav">
           <a href={HOME_URL}>首页</a>
-          <a href="#">客运首页</a>
-          <a href="#" className="active">车票</a>
         </nav>
       </div>
     </header>

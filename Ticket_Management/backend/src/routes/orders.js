@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto = require('crypto');
 const router = express.Router();
 const ordersByToken = new Map();
 let cancelStats = { date: null, count: 0 };
@@ -39,7 +40,27 @@ router.post('/', requireAuth, (req, res) => {
   if (!Array.isArray(seat_locks) || seat_locks.length === 0) {
     return res.status(400).json({ error: 'NO_SEATS_AVAILABLE' });
   }
-  const order_id = `o-${Date.now()}`;
+  const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+  function encodeTime(time, len) { let s = ''; let t = time; for (let i = len; i > 0; i--) { s = ALPHABET[t % 32] + s; t = Math.floor(t / 32); } return s; }
+  function encodeRandom(len) {
+    const bytes = crypto.randomBytes(10);
+    let str = '', bits = 0, value = 0;
+    for (let i = 0; i < bytes.length && str.length < len; i++) {
+      value = (value << 8) | bytes[i];
+      bits += 8;
+      while (bits >= 5 && str.length < len) {
+        str += ALPHABET[(value >>> (bits - 5)) & 31];
+        bits -= 5;
+      }
+    }
+    if (str.length < len) {
+      if (bits > 0) str += ALPHABET[(value << (5 - bits)) & 31];
+      while (str.length < len) str += ALPHABET[0];
+    }
+    return str;
+  }
+  function ulid(time) { return encodeTime(time != null ? time : Date.now(), 10) + encodeRandom(16); }
+  const order_id = `o-${ulid()}`;
   const price_total = 576.0;
   const token = req.authToken;
   const key = identityKeyFromToken(token);

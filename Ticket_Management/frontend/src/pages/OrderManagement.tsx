@@ -88,8 +88,6 @@ export default function OrderManagement() {
           </div>
           <nav className="nav">
             <a href={HOME_URL}>首页</a>
-            <a href="#">客运首页</a>
-            <a href="#" className="active">车票</a>
           </nav>
         </div>
       </header>
@@ -118,7 +116,7 @@ export default function OrderManagement() {
         )}
 
         <div className="section-title">未完成订单</div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+        <div className="filters-row" style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
           <input placeholder="按车次号筛选" value={filterTrain} onChange={e => setFilterTrain(e.target.value)} />
           <input placeholder="按日期筛选 YYYY-MM-DD" value={filterDate} onChange={e => setFilterDate(e.target.value)} />
           <button className="btn-primary" onClick={refreshOrders}>刷新</button>

@@ -51,6 +51,7 @@ body { margin: 0; font-family: "Microsoft YaHei", system-ui, -apple-system, Aria
 .checkbox-row .field input[type="checkbox"] { width: auto !important; height: 16px; margin-top: 0; vertical-align: middle; }
 .checkbox-row .checkbox a { color: var(--blue); text-decoration: none; }
 .checkbox-row .checkbox a:hover { text-decoration: underline; }
+.checkbox-row .checkbox a:active { opacity: 0.85; transition: opacity 0.15s; }
 
 .radio { display: inline-flex; align-items: center; gap: 10px; }
 .radio input[type="radio"] { width: 16px; height: 16px; margin: 0; vertical-align: middle; }

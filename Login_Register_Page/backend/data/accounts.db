@@ -3,3 +3,4 @@
 {"$$indexCreated":{"fieldName":"username","unique":true,"sparse":false}}
 {"$$indexCreated":{"fieldName":"email","unique":true,"sparse":true}}
 {"$$indexCreated":{"fieldName":"phone_key","unique":true,"sparse":false}}
+{"user_id":"aeddd3b8-6e6a-4a06-ba3b-f4b7d7c0e93b","username":"test1234","phone_country_code":"+86","phone_number":"13811111111","phone_key":"+86:13811111111","password_hash":"7c08dd7f3e9698f6eee11b5be39ae5ad40e529ad47a21864bca378ecd82ad9c1","password_salt":"bb2c4e4733f33ada8aec2ab542cb854e","name":"clx","id_type":"居民身份证","id_number":"310110200101011110","traveler_type":"成人","created_at":1763949585737,"_id":"ziYTlXclbAACvcuC"}
