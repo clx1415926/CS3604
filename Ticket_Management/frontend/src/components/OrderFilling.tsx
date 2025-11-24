@@ -25,7 +25,6 @@ export default function OrderFilling() {
     const sidParam = getParam('sid');
     let sid = sidParam || localStorage.getItem('SESSION_ID') || '';
     if (sidParam) { try { localStorage.setItem('SESSION_ID', sidParam); } catch (e) {} sid = sidParam; }
-    sid = sid || 'sess-super-12306';
     const tryFetch = async (port: number) => {
       try {
         const r = await fetch(`http://localhost:${port}/api/v1/auth/session/profile`, {
@@ -40,6 +39,7 @@ export default function OrderFilling() {
       return false;
     };
     (async () => {
+      if (!sid) return; // 未登录则跳过
       if (await tryFetch(8082)) return;
       await tryFetch(8083);
       try {
@@ -60,7 +60,8 @@ export default function OrderFilling() {
   const submitOrder = async () => {
     setMessage('');
     try {
-      const sid = localStorage.getItem('SESSION_ID') || 'sess-super-12306';
+      const sid = localStorage.getItem('SESSION_ID') || '';
+      if (!sid) { setMessage('未登录'); return; }
       const r = await fetch('http://localhost:3001/api/v1/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sid}` },
@@ -109,7 +110,7 @@ export default function OrderFilling() {
           travelDate={travelDate}
           onConfirm={(locks: any[], ps: any[]) => {
             setSeatLocks(locks);
-            const pid = profile?.user_id || contacts[0]?.passenger_id || 'u-super';
+            const pid = profile?.user_id || contacts[0]?.passenger_id || 'p-001';
             setPassengers(ps.map(p => ({ ...p, passenger_id: pid, name: profile?.name || contacts[0]?.name || '本人' })));
             setMessage('锁座成功');
           }}

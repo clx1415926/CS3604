@@ -126,6 +126,28 @@ body { margin: 0; font-family: "Microsoft YaHei", system-ui, -apple-system, Aria
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 
+/* 步骤指示器 */
+.steps-indicator {
+  list-style: none;
+  display: flex;
+  gap: 8px;
+  margin: 8px 0 16px;
+  padding: 0;
+  justify-content: center;
+}
+
+.steps-indicator li {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #eee;
+  color: #666;
+  font-size: 12px;
+}
+
+.steps-indicator li.active {
+  background: var(--blue);
+  color: #fff;
+}
 /* 登录页响应式 */
 @media (max-width: 960px) {
   .login-layout { grid-template-columns: 1fr; }

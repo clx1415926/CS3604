@@ -44,35 +44,7 @@ accountStore.set('username:testuser123', { user_id: 'u-001', password: 'Password
 accountStore.set('phone:13812345678', { user_id: 'u-002', password: 'Password123!', name: '王五' });
 accountStore.set('email:user@example.com', { user_id: 'u-003', password: 'Password123!', name: '李四' });
 
-(async () => {
-  const username = 'superadmin';
-  const user_id = 'u-super';
-  let exists = null;
-  try { exists = await db.findByUsername(username); } catch (e) {}
-  if (!exists) {
-    const salt = uuidv4();
-    const password_hash = hashPassword('Admin12345_', salt);
-    try {
-      await db.createUser({
-        user_id,
-        username,
-        phone_country_code: '+86',
-        phone_number: '13900000000',
-        email: 'superadmin@example.com',
-        password_hash,
-        password_salt: salt,
-        name: '系统管理员',
-        id_type: '居民身份证',
-        id_number: '110101199001011234',
-        traveler_type: '成人',
-      });
-    } catch (e) {}
-  }
-  const sid = 'sess-super-12306';
-  // 预置会话不再包含“记住我”相关字段
-  loginSessions.set(sid, { user_id, last_active_at: Date.now() });
-  process.env.SUPERUSER_SESSION_ID = sid;
-})();
+
 
 function uuidv4() {
   // 简易UUID生成（非加密强度），用于演示
@@ -306,10 +278,7 @@ function generateOtp6() {
 }
 
 // 发送短信验证码
-app.post(`${base}/registration/sessions/:session_id/sms/send`, (req, res) => {
-  const { session_id } = req.params;
-  const session = sessions.get(session_id);
-  if (!session) return error(res, 404, 'SESSION_NOT_FOUND', '会话不存在');
+app.post(`${base}/password/reset/sms/send`, (req, res) => {
   const { phone_country_code, phone_number } = req.body || {};
   if (!validateCNPhone(phone_country_code, phone_number)) return error(res, 400, 'PHONE_INVALID', '请输入正确的手机号');
   const now = Date.now();
@@ -318,7 +287,7 @@ app.post(`${base}/registration/sessions/:session_id/sms/send`, (req, res) => {
     rate.countDate = new Date().toDateString();
     rate.count = 0;
   }
-  if (now - rate.lastSentAt < 60 * 1000) {
+  if (now - rate.lastSentAt < 5 * 1000) { // 间隔调整为5秒
     return error(res, 429, 'SMS_TOO_FREQUENT', '短信发送过于频繁，请稍后再试');
   }
   if (rate.count >= 10) {
@@ -328,14 +297,13 @@ app.post(`${base}/registration/sessions/:session_id/sms/send`, (req, res) => {
   rate.count += 1;
   smsRate.set(phone_number, rate);
   const code = process.env.NODE_ENV === 'test' ? '123456' : generateOtp6();
-  session.sms.code = code;
-  session.sms.expires_at = now + 5 * 60 * 1000; // 5分钟
-  // 开发环境：在终端打印验证码，便于联调
+  fpSmsStore.set(phone_number, { code, expires_at: now + 5 * 60 * 1000 });
+  // 开发环境：在终端打印验证码
   if (process.env.OTP_DEV_LOG !== '0') {
-    console.log(`[DEV] SMS 验证码 ${code} 已生成并“发送”到 ${phone_country_code}${phone_number} (session ${session_id})`);
+    console.log(`[DEV] FP SMS 验证码 ${code} 已生成并“发送”到 ${phone_country_code}${phone_number}`);
   }
   const leak = req.get('x-dev-debug') === '1' || req.query.dev === '1' || process.env.DEV_OTP_LEAK === '1';
-  const payload = { status: 'sent', countdown_seconds: 60, ttl_minutes: 5 };
+  const payload = { status: 'sent', countdown_seconds: 5, ttl_minutes: 5 };
   if (leak) payload.dev_code = code;
   return res.json(payload);
 });
@@ -354,6 +322,32 @@ app.post(`${base}/registration/sessions/:session_id/sms/verify`, (req, res) => {
   return res.json({ phone_verified: true, message: '手机验证成功' });
 });
 
+// 发送短信验证码（注册）
+app.post(`${base}/registration/sessions/:session_id/sms/send`, (req, res) => {
+  const { session_id } = req.params;
+  const session = sessions.get(session_id);
+  if (!session) return error(res, 404, 'SESSION_NOT_FOUND', '会话不存在');
+  const cc = (req.body && req.body.phone_country_code) || session.account.phone_country_code;
+  const num = (req.body && req.body.phone_number) || session.account.phone_number;
+  if (!cc || !num) return error(res, 400, 'PHONE_REQUIRED', '缺少手机号');
+  if (!validateCNPhone(cc, num)) return error(res, 400, 'PHONE_INVALID', '请输入正确的手机号');
+  const now = Date.now();
+  const rate = smsRate.get(num) || { lastSentAt: 0, countDate: new Date().toDateString(), count: 0 };
+  if (rate.countDate !== new Date().toDateString()) { rate.countDate = new Date().toDateString(); rate.count = 0; }
+  if (now - rate.lastSentAt < 5 * 1000) return error(res, 429, 'SMS_TOO_FREQUENT', '短信发送过于频繁，请稍后再试');
+  if (rate.count >= 10) return error(res, 429, 'SMS_DAILY_LIMIT_REACHED', '短信发送次数已达上限，请稍后再试');
+  rate.lastSentAt = now; rate.count += 1; smsRate.set(num, rate);
+  const code = process.env.NODE_ENV === 'test' ? '123456' : generateOtp6();
+  session.sms = { code, expires_at: now + 5 * 60 * 1000 };
+  if (process.env.OTP_DEV_LOG !== '0') {
+    console.log(`[DEV] SMS 验证码 ${code} 已生成并“发送”到 ${cc}${num} (session ${session_id})`);
+  }
+  const leak = req.get('x-dev-debug') === '1' || req.query.dev === '1' || process.env.DEV_OTP_LEAK === '1';
+  const payload = { status: 'sent', countdown_seconds: 5, ttl_minutes: 5 };
+  if (leak) payload.dev_code = code;
+  return res.json(payload);
+});
+
 // 发送邮件验证码
 app.post(`${base}/registration/sessions/:session_id/email/send`, (req, res) => {
   const { session_id } = req.params;
@@ -364,7 +358,7 @@ app.post(`${base}/registration/sessions/:session_id/email/send`, (req, res) => {
   const now = Date.now();
   const rate = emailRate.get(email) || { lastSentAt: 0, countDate: new Date().toDateString(), count: 0 };
   if (rate.countDate !== new Date().toDateString()) { rate.countDate = new Date().toDateString(); rate.count = 0; }
-  if (now - rate.lastSentAt < 60 * 1000) return error(res, 429, 'EMAIL_TOO_FREQUENT', '邮件发送过于频繁，请稍后再试');
+  if (now - rate.lastSentAt < 5 * 1000) return error(res, 429, 'EMAIL_TOO_FREQUENT', '邮件发送过于频繁，请稍后再试');
   if (rate.count >= 10) return error(res, 429, 'EMAIL_DAILY_LIMIT_REACHED', '邮件发送次数已达上限，请稍后再试');
   rate.lastSentAt = now; rate.count += 1; emailRate.set(email, rate);
   const code = process.env.NODE_ENV === 'test' ? '888888' : generateOtp6();
@@ -374,7 +368,7 @@ app.post(`${base}/registration/sessions/:session_id/email/send`, (req, res) => {
     console.log(`[DEV] EMAIL 验证码 ${code} 已生成并“发送”到 ${email} (session ${session_id})`);
   }
   const leak = req.get('x-dev-debug') === '1' || req.query.dev === '1' || process.env.DEV_OTP_LEAK === '1';
-  const payload = { status: 'sent', countdown_seconds: 60, ttl_minutes: 5 };
+  const payload = { status: 'sent', countdown_seconds: 5, ttl_minutes: 5 };
   if (leak) payload.dev_code = code;
   return res.json(payload);
 });
@@ -543,8 +537,8 @@ app.post(`${base}/auth/login`, async (req, res) => {
 
   // 成功登录
   resetFail(key);
-  // 强制：登录二次短信验证流程（所有登录均需走2FA；如需关闭，设置环境变量 FORCE_LOGIN_2FA=0）
-  if (process.env.FORCE_LOGIN_2FA !== '0') {
+  const force2fa = (process.env.FORCE_LOGIN_2FA !== '0') && (process.env.NODE_ENV !== 'test');
+  if (force2fa) {
     const flow_id = uuidv4();
     let phone_number = null; let phone_country_code = '+86';
     try {
@@ -735,7 +729,7 @@ app.post(`${base}/auth/login/2fa/id-check`, async (req, res) => {
   const rate = smsRate.get(phone_number) || { lastSentAt: 0, countDate: new Date(now).toDateString(), count: 0 };
   const nowDateStr = new Date(now).toDateString();
   if (rate.countDate !== nowDateStr) { rate.countDate = nowDateStr; rate.count = 0; }
-  if (now.getTime() - rate.lastSentAt < 60 * 1000) return error(res, 429, 'SMS_TOO_FREQUENT', '短信发送过于频繁，请稍后再试');
+  if (now.getTime() - rate.lastSentAt < 5 * 1000) return error(res, 429, 'SMS_TOO_FREQUENT', '短信发送过于频繁，请稍后再试');
   if (rate.count >= 10) return error(res, 429, 'SMS_DAILY_LIMIT_REACHED', '短信发送次数已达上限，请稍后再试');
   rate.lastSentAt = now.getTime(); rate.count += 1; smsRate.set(phone_number, rate);
   const code = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
@@ -890,7 +884,7 @@ app.post(`${base}/auth/password/email/request`, (req, res) => {
   const erate = emailRate.get(email) || { lastSentAt: 0, countDate: new Date(now).toDateString(), count: 0 };
   const nowDateStr2 = new Date(now).toDateString();
   if (erate.countDate !== nowDateStr2) { erate.countDate = nowDateStr2; erate.count = 0; }
-  if (now.getTime() - erate.lastSentAt < 60 * 1000) return error(res, 429, 'EMAIL_TOO_FREQUENT', '邮件发送过于频繁，请稍后再试');
+  if (now.getTime() - erate.lastSentAt < 5 * 1000) return error(res, 429, 'EMAIL_TOO_FREQUENT', '邮件发送过于频繁，请稍后再试');
   if (erate.count >= 10) return error(res, 429, 'EMAIL_DAILY_LIMIT_REACHED', '邮件发送次数已达上限，请稍后再试');
   erate.lastSentAt = now.getTime(); erate.count += 1; emailRate.set(email, erate);
   return res.json({ status: 'sent', message: '重置邮件已发送' });

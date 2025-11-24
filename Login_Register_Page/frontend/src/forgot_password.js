@@ -83,6 +83,8 @@ if (submitAccountBtn) {
     if (!idNo) { setText($('#errorTip'), '请输入证件号码'); return; }
     phoneAccountReady = true;
     setPhoneStep(2);
+    hide($('#phone-step-1'));
+    show($('#phone-step-2'));
     setText($('#errorTip'), '');
     sendSmsBtn.disabled = isMaintenanceOn() ? true : false;
   });

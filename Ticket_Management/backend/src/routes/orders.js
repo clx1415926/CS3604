@@ -10,7 +10,6 @@ async function verifySession(authHeader) {
   if (!m) return false;
   const token = m[1];
   if (process.env.TEST_AUTH_ANY === '1') return true;
-  if (token === 'sess-super-12306') return true;
   const ports = [8082, 8083];
   for (const p of ports) {
     try {
