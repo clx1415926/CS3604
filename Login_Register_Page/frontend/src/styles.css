@@ -132,10 +132,195 @@ body { margin: 0; font-family: "Microsoft YaHei", system-ui, -apple-system, Aria
   .hero-phone { display: none; }
 }
 
-/* 弹窗样式（复用 Login_Register_Page 组件风格） */
-.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 999; }
-.modal[hidden] { display: none; }
-.dialog { width: 520px; max-width: 96vw; border-radius: 8px; overflow: hidden; }
-.dialog .card-title { font-weight: 600; color: #2d7dd2; }
-.dialog .actions .primary { min-width: 120px; }
-.dialog .countdown { font-size: 12px; color: #666; align-self: center; }
+
+/* forgot-password.css */
+
+.login-panel .tabs {
+  display: flex;
+  border-bottom: 1px solid #e0e6ef;
+}
+
+.login-panel .tab {
+  flex: 1;
+  padding: 12px 16px;
+  border: none;
+  background: #f6f8fc;
+  color: #4b6ea8;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.login-panel .tab.active {
+  background: #fff;
+  color: #2d7dd2;
+  border-top: 2px solid #2d7dd2;
+  border-left: 1px solid #e0e6ef;
+  border-right: 1px solid #e0e6ef;
+  position: relative;
+  top: -1px;
+}
+
+.login-panel .tab:not(.active) {
+  border-bottom: 1px solid #e0e6ef;
+}
+
+.tab-content {
+  padding: 24px;
+  display: none;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+.steps-indicator {
+  list-style: none;
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin: 16px 0 32px;
+  padding: 0;
+  position: relative;
+}
+
+.steps-indicator::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 15%;
+  right: 15%;
+  height: 2px;
+  background: #e0e6ef;
+  transform: translateY(-50%);
+  z-index: -1;
+}
+
+.steps-indicator li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #666;
+}
+
+.steps-indicator li::before {
+  content: '';
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #e0e6ef;
+}
+
+.steps-indicator li.active {
+  color: #2d7dd2;
+  font-weight: 600;
+}
+
+.steps-indicator li.active::before {
+  background: #2d7dd2;
+  border-color: #2d7dd2;
+}
+
+.form-grid {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.form-row label {
+  text-align: right;
+  color: #555;
+}
+
+.field input, .field select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #cbd5e0;
+  border-radius: 4px;
+}
+
+.field input:focus, .field select:focus {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 2px rgba(45,125,210,0.2);
+}
+
+.phone-field {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0;
+}
+
+.actions .primary {
+  background: #ff9900;
+  color: #fff;
+  border: none;
+  padding: 12px 48px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.actions .primary:hover {
+  background: #ff8a00;
+}
+
+.qr-area {
+  text-align: center;
+  padding: 24px 0;
+}
+
+.qr-area p {
+  color: #555;
+  margin-bottom: 16px;
+}
+
+.qr-box {
+  width: 180px;
+  height: 180px;
+  margin: 0 auto;
+  border: 1px solid #e0e6ef;
+  padding: 8px;
+  background: #fff;
+}
+
+.qr-status {
+  color: #4b6ea8;
+  margin-top: 16px;
+}
+
+.error {
+  text-align: center;
+  color: var(--red);
+  margin-top: 16px;
+  min-height: 20px;
+}
+
+.success {
+  text-align: center;
+  color: var(--green);
+  margin-top: 16px;
+  min-height: 20px;
+}
