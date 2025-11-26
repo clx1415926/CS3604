@@ -23,7 +23,7 @@ enums:
       - 台湾居民来往大陆通行证
     default: 居民身份证
   TravelerType:
-    values: [成人, 儿童]
+    values: [成人, 儿童, 学生, 残疾军人]
     default: 成人
   AccountStatus:
     values: [draft, phone_pending, identity_pending, active, locked]

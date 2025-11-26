@@ -19,6 +19,14 @@ start /b cmd /c "cd /d Ticket_Management\backend && npm i && set PORT=3001 && np
 echo [Ticket_Management_Frontend] starting...
 start /b cmd /c "cd /d Ticket_Management\frontend && npm i && npm run dev"
 
+echo [User_Center_Backend] starting...
+start /b cmd /c "cd /d User_Center\backend && set PORT=8083 && node src\server.js"
+
+echo [User_Center_Frontend] starting...
+start /b cmd /c "cd /d User_Center\frontend && npm i && npm run dev"
+
+echo [User_Center] Personal Center API available at http://localhost:8083/api/v1
+
 echo All services launched in this window. Press Ctrl+C to stop or run stop-all.cmd.
 pause >nul
 

@@ -1,0 +1,118 @@
+requirements:
+  - requirementId: REQ-UC-001
+    description: "个人信息管理"
+    interfaces:
+      - interfaceId: API-GET-UserProfile
+        interfaceType: Backend
+        acceptanceCriteria:
+          - criteriaIndex: 1
+            description: "返回三个信息区段；敏感字段脱敏"
+            testCases:
+              - testFile: "User_Center/backend/test/routes/profile.test.js"
+                testName: "should return three sections with masked fields"
+                status: "pending"
+          - criteriaIndex: 2
+            description: "字段与UI一致；基本信息无编辑控制"
+            testCases:
+              - testFile: "User_Center/backend/test/routes/profile.test.js"
+                testName: "should align fields with UI and no edit controls in basic info"
+                status: "pending"
+
+      - interfaceId: API-PATCH-TravelerType
+        interfaceType: Backend
+        acceptanceCriteria:
+          - criteriaIndex: 1
+            description: "四种类型选项；保存成功返回查看模式"
+            testCases:
+              - testFile: "User_Center/backend/test/routes/profile.test.js"
+                testName: "should accept four traveler types and return 200 with success message"
+                status: "pending"
+
+      - interfaceId: API-GET-PhoneVerificationContext
+        interfaceType: Backend
+        acceptanceCriteria:
+          - criteriaIndex: 1
+            description: "返回原手机号(脱敏)与核验状态"
+            testCases:
+              - testFile: "User_Center/backend/test/routes/profile.test.js"
+                testName: "should return masked original phone and verification status"
+                status: "pending"
+
+      - interfaceId: API-POST-PhoneChange
+        interfaceType: Backend
+        acceptanceCriteria:
+          - criteriaIndex: 1
+            description: "需正确密码；手机号格式错误提示"
+            testCases:
+              - testFile: "User_Center/backend/test/routes/profile.test.js"
+                testName: "should require correct password and validate phone format"
+                status: "pending"
+          - criteriaIndex: 2
+            description: "新手机号不得与原号相同；占用返回409"
+            testCases:
+              - testFile: "User_Center/backend/test/routes/profile.test.js"
+                testName: "should reject same-as-old phone and return 422; occupied returns 409"
+                status: "pending"
+          - criteriaIndex: 3
+            description: "成功后返回个人信息页并显示脱敏的新手机号"
+            testCases:
+              - testFile: "User_Center/backend/test/routes/profile.test.js"
+                testName: "should succeed and return masked new phone, then redirect to profile"
+                status: "pending"
+
+      - interfaceId: API-GET-CountryCodes
+        interfaceType: Backend
+        acceptanceCriteria:
+          - criteriaIndex: 1
+            description: "+86必须存在"
+            testCases:
+              - testFile: "User_Center/backend/test/routes/profile.test.js"
+                testName: "should include +86 in country calling codes"
+                status: "pending"
+
+      - interfaceId: UI-PersonalInfoView
+        interfaceType: Frontend
+        acceptanceCriteria:
+          - criteriaIndex: 1
+            description: "页面显示基本信息/联系方式/附加信息三块"
+            testCases:
+              - testFile: "User_Center/frontend/test/pages/PersonalInfoView.test.tsx"
+                testName: "should render three information sections: basic, contact, additional"
+                status: "pending"
+          - criteriaIndex: 2
+            description: "基本信息只读，无编辑按钮"
+            testCases:
+              - testFile: "User_Center/frontend/test/pages/PersonalInfoView.test.tsx"
+                testName: "should show basic info as read-only without edit controls"
+                status: "pending"
+          - criteriaIndex: 3
+            description: "联系方式显示脱敏并有编辑按钮"
+            testCases:
+              - testFile: "User_Center/frontend/test/pages/PersonalInfoView.test.tsx"
+                testName: "should show contact info masked and with Edit button"
+                status: "pending"
+
+      - interfaceId: UI-PhoneVerification
+        interfaceType: Frontend
+        acceptanceCriteria:
+          - criteriaIndex: 1
+            description: "展示原手机号(脱敏)与+86默认区号"
+            testCases:
+              - testFile: "User_Center/frontend/test/pages/PhoneVerification.test.tsx"
+                testName: "should show original masked phone and default +86 country code"
+                status: "pending"
+          - criteriaIndex: 3
+            description: "密码错误停留并提示，保留输入"
+            testCases:
+              - testFile: "User_Center/frontend/test/pages/PhoneVerification.test.tsx"
+                testName: "should show error and remain on page for wrong password"
+                status: "pending"
+          - criteriaIndex: 4
+            description: "成功后返回个人信息页并显示新手机号(脱敏)"
+            testCases:
+              - testFile: "User_Center/frontend/test/pages/PhoneVerification.test.tsx"
+                testName: "should return to personal info page on success and show masked new phone"
+                status: "pending"
+
+    coverageStatus: "partial"
+    coveragePercentage: 65

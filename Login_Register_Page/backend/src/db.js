@@ -75,5 +75,19 @@ module.exports = {
     if (!user_id || !password_hash || !password_salt) throw new Error('updatePasswordByUserId: invalid params');
     const num = await accounts.update({ user_id }, { $set: { password_hash, password_salt, updated_at: Date.now() } }, { multi: false });
     return num > 0;
+  },
+  async updatePhoneByUserId(user_id, cc, num) {
+    if (!user_id || !cc || !num) throw new Error('updatePhoneByUserId: invalid params');
+    const existing = await accounts.findOne({ phone_key: phoneKey(cc, num) });
+    if (existing && existing.user_id !== user_id) return false;
+    const n = await accounts.update({ user_id }, { $set: { phone_country_code: cc, phone_number: num, phone_key: phoneKey(cc, num), updated_at: Date.now() } }, { multi: false });
+    return n > 0;
+  }
+  ,async updateTravelerTypeByUserId(user_id, traveler_type) {
+    if (!user_id || !traveler_type) throw new Error('updateTravelerTypeByUserId: invalid params');
+    const allowed = ['成人', '儿童', '学生', '残疾军人'];
+    if (!allowed.includes(traveler_type)) return false;
+    const n = await accounts.update({ user_id }, { $set: { traveler_type, updated_at: Date.now() } }, { multi: false });
+    return n > 0;
   }
 };

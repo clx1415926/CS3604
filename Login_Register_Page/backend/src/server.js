@@ -556,7 +556,7 @@ app.post(`${base}/auth/login`, async (req, res) => {
       const fb = accountStore.get(key);
       if (fb && fb.phone_number) phone_number = fb.phone_number;
     }
-    login2FAFlows.set(flow_id, {
+  login2FAFlows.set(flow_id, {
       user_id: account.user_id,
       login_key: key,
       identifier_type: type,
@@ -566,6 +566,7 @@ app.post(`${base}/auth/login`, async (req, res) => {
       created_at: Date.now(),
       id_fail_count: 0,
       locked_until: 0,
+      code_fail_count: 0,
       code: null,
       code_expires_at: 0,
     });
@@ -616,6 +617,122 @@ app.get(`${base}/auth/session/profile`, async (req, res) => {
     const acc = await db.findByUserId(sess.user_id);
     if (!acc) return error(res, 404, 'ACCOUNT_NOT_FOUND', '未找到对应账户');
     return res.json({ user_id: acc.user_id, username: acc.username, name: acc.name });
+  } catch (e) {
+    return error(res, 500, 'INTERNAL_ERROR', '服务器错误');
+  }
+});
+
+// 获取当前登录用户的完整账户信息（脱敏返回）
+app.get(`${base}/auth/session/account`, async (req, res) => {
+  const auth = req.get('Authorization') || '';
+  const m = auth.match(/Bearer\s+(.+)/);
+  if (!m) return error(res, 401, 'SESSION_EXPIRED', '登录已过期，请重新登录');
+  const sid = m[1];
+  const sess = loginSessions.get(sid);
+  if (!sess) return error(res, 401, 'SESSION_EXPIRED', '登录已过期，请重新登录');
+  try {
+    const acc = await db.findByUserId(sess.user_id);
+    if (!acc) return error(res, 404, 'ACCOUNT_NOT_FOUND', '未找到对应账户');
+    function maskId(id) {
+      if (!id) return '';
+      const s = String(id);
+      if (s.length <= 7) return s;
+      const head = s.slice(0, 4);
+      const tail = s.slice(-3);
+      return head + '*'.repeat(s.length - 7) + tail;
+    }
+    function maskPhone(num) {
+      if (!num) return '';
+      const s = String(num);
+      if (s.length <= 7) return s;
+      const head = s.slice(0, 3);
+      const tail = s.slice(-4);
+      return head + '****' + tail;
+    }
+    function maskEmail(email) {
+      if (!email) return '';
+      const s = String(email);
+      const i = s.indexOf('@');
+      if (i < 0) return s;
+      const local = s.slice(0, i);
+      const domain = s.slice(i);
+      if (local.length <= 4) {
+        const head = local.slice(0, 1);
+        const tail = local.slice(-1);
+        const stars = Math.max(2, local.length - 2);
+        return head + '*'.repeat(stars) + tail + domain;
+      }
+      const head = local.slice(0, 2);
+      const tail = local.slice(-2);
+      return head + '******' + tail + domain;
+    }
+    const countryCode = acc.phone_country_code || '+86';
+    const countryName = countryCode === '+86' ? '中国' : countryCode === '+1' ? '美国' : '未知';
+    const payload = {
+      user_id: acc.user_id,
+      username: acc.username,
+      name: acc.name,
+      id_type: acc.id_type,
+      id_number_masked: maskId(acc.id_number),
+      phone_country_code: countryCode,
+      phone_masked: maskPhone(acc.phone_number),
+      email_masked: maskEmail(acc.email || ''),
+      traveler_type: acc.traveler_type,
+      country: countryName,
+      verified_status: '已通过',
+    };
+    return res.json(payload);
+  } catch (e) {
+    return error(res, 500, 'INTERNAL_ERROR', '服务器错误');
+  }
+});
+
+app.post(`${base}/auth/session/phone/change`, async (req, res) => {
+  const auth = req.get('Authorization') || '';
+  const m = auth.match(/Bearer\s+(.+)/);
+  if (!m) return error(res, 401, 'SESSION_EXPIRED', '登录已过期，请重新登录');
+  const sid = m[1];
+  const sess = loginSessions.get(sid);
+  if (!sess) return error(res, 401, 'SESSION_EXPIRED', '登录已过期，请重新登录');
+  const { phone_country_code, phone_number } = req.body || {};
+  if (!phone_country_code || !phone_number) return error(res, 400, 'PHONE_REQUIRED', '缺少手机号');
+  if (!validateCNPhone(phone_country_code, phone_number)) return error(res, 400, 'PHONE_INVALID', '请输入正确的手机号');
+  try {
+    const acc = await db.findByUserId(sess.user_id);
+    if (!acc) return error(res, 404, 'ACCOUNT_NOT_FOUND', '未找到对应账户');
+    // 如果目标手机号被其他账户占用则拒绝
+    const available = await db.isPhoneAvailable(phone_country_code, phone_number);
+    if (!available) return error(res, 409, 'PHONE_TAKEN', '该手机号已被注册，请尝试找回账户或联系客服');
+    const ok = await db.updatePhoneByUserId(sess.user_id, phone_country_code, phone_number);
+    if (!ok) return error(res, 422, 'UNPROCESSABLE', '修改失败，请稍后再试');
+    function maskPhone(num) {
+      const s = String(num);
+      const head = s.slice(0, 3);
+      const tail = s.slice(-4);
+      return head + '****' + tail;
+    }
+    return res.json({ success: true, phone_country_code, phone_masked: maskPhone(phone_number) });
+  } catch (e) {
+    return error(res, 500, 'INTERNAL_ERROR', '服务器错误');
+  }
+});
+
+app.patch(`${base}/auth/session/traveler-type/change`, async (req, res) => {
+  const auth = req.get('Authorization') || '';
+  const m = auth.match(/Bearer\s+(.+)/);
+  if (!m) return error(res, 401, 'SESSION_EXPIRED', '登录已过期，请重新登录');
+  const sid = m[1];
+  const sess = loginSessions.get(sid);
+  if (!sess) return error(res, 401, 'SESSION_EXPIRED', '登录已过期，请重新登录');
+  const { traveler_type } = req.body || {};
+  const allowed = ['成人', '儿童', '学生', '残疾军人'];
+  if (!traveler_type || !allowed.includes(traveler_type)) return error(res, 400, 'TRAVELER_TYPE_INVALID', '优惠类型无效');
+  try {
+    const acc = await db.findByUserId(sess.user_id);
+    if (!acc) return error(res, 404, 'ACCOUNT_NOT_FOUND', '未找到对应账户');
+    const ok = await db.updateTravelerTypeByUserId(sess.user_id, traveler_type);
+    if (!ok) return error(res, 422, 'UNPROCESSABLE', '修改失败，请稍后再试');
+    return res.json({ success: true, traveler_type });
   } catch (e) {
     return error(res, 500, 'INTERNAL_ERROR', '服务器错误');
   }
@@ -706,7 +823,7 @@ app.post(`${base}/auth/login/2fa/id-check`, async (req, res) => {
   const last4 = id_number ? String(id_number).slice(-4) : '';
   // 支持明文后4位或哈希后4位（提升传输安全）
   let matched = false;
-  if (typeof id_last4 === 'string' && /^[0-9]{4}$/.test(id_last4)) {
+  if (typeof id_last4 === 'string' && /^[0-9Xx]{4}$/.test(id_last4)) {
     matched = (last4 && String(id_last4) === last4);
   } else if (typeof id_last4_hash === 'string' && id_last4_hash.length === 64) {
     const h = crypto.createHash('sha256').update(String(last4)).digest('hex');
@@ -720,21 +837,28 @@ app.post(`${base}/auth/login/2fa/id-check`, async (req, res) => {
     if (flow.id_fail_count >= 3) {
       flow.locked_until = Date.now() + 30 * 60 * 1000;
       login2FAFlows.set(flow_id, flow);
-      const key = flow.login_key || `user:${flow.user_id}`;
-      const rec = loginFailCounter.get(key) || { failCount: 0, lockedUntil: 0 };
-      rec.lockedUntil = Date.now() + 30 * 60 * 1000;
-      loginFailCounter.set(key, rec);
       return error(res, 403, 'ACCOUNT_LOCKED', '错误次数过多，账户已锁定30分钟');
     }
     return error(res, 400, 'ID_LAST4_MISMATCH', '身份证后4位不匹配');
   }
 
-  // 通过校验后自动发送短信验证码（速率/每日上限与注册短信一致）
+  const hasValidCode = flow.code && Date.now() <= flow.code_expires_at;
   const phone_number = flow.phone_number;
   if (!phone_number) return error(res, 400, 'PHONE_NOT_FOUND', '未找到绑定手机号');
   const rate = smsRate.get(phone_number) || { lastSentAt: 0, countDate: new Date(now).toDateString(), count: 0 };
   const nowDateStr = new Date(now).toDateString();
   if (rate.countDate !== nowDateStr) { rate.countDate = nowDateStr; rate.count = 0; }
+  if (hasValidCode) {
+    const last = rate.lastSentAt || 0;
+    const diffSec = Math.floor((now.getTime() - last) / 1000);
+    const countdown = diffSec >= 60 ? 0 : 60 - diffSec;
+    const ttlMs = flow.code_expires_at - Date.now();
+    const ttlMin = ttlMs > 0 ? Math.ceil(ttlMs / 60000) : 0;
+    const leak = req.get('x-dev-debug') === '1' || req.query.dev === '1' || process.env.DEV_OTP_LEAK === '1';
+    const payload = { sent: false, countdown_seconds: countdown, ttl_minutes: ttlMin };
+    if (leak) payload.dev_code = flow.code;
+    return res.json(payload);
+  }
   if (now.getTime() - rate.lastSentAt < 60 * 1000) return error(res, 429, 'SMS_TOO_FREQUENT', '短信发送过于频繁，请稍后再试');
   if (rate.count >= 10) return error(res, 429, 'SMS_DAILY_LIMIT_REACHED', '短信发送次数已达上限，请稍后再试');
   rate.lastSentAt = now.getTime(); rate.count += 1; smsRate.set(phone_number, rate);
@@ -774,7 +898,10 @@ app.post(`${base}/auth/login/2fa/resend`, (req, res) => {
     console.log(`[DEV] 登录2FA 重新发送验证码 ${code} 已生成并“发送”到 +86${phone_number} (flow ${flow_id})`);
   }
   const leak = req.get('x-dev-debug') === '1' || req.query.dev === '1' || process.env.DEV_OTP_LEAK === '1';
-  const payload = { sent: true, countdown_seconds: 60, ttl_minutes: 5 };
+  const last = rate.lastSentAt || 0;
+  const diffSec = Math.floor((now.getTime() - last) / 1000);
+  const countdown = diffSec >= 60 ? 0 : 60 - diffSec;
+  const payload = { sent: true, countdown_seconds: countdown, ttl_minutes: 5 };
   if (leak) payload.dev_code = code;
   return res.json(payload);
 });
@@ -792,9 +919,13 @@ app.post(`${base}/auth/login/2fa/verify`, (req, res) => {
   if (!flow.code) return error(res, 400, 'SMS_NOT_SENT', '尚未发送验证码');
   if (Date.now() > flow.code_expires_at) return error(res, 400, 'SMS_CODE_EXPIRED', '验证码已过期，请重新获取');
   if (String(code) !== String(flow.code)) {
-    incFail(flow.login_key || `user:${flow.user_id}`);
-    const locked = isLocked(flow.login_key || `user:${flow.user_id}`);
-    if (locked) return error(res, 403, 'ACCOUNT_LOCKED', '错误次数过多，账户已锁定30分钟');
+    flow.code_fail_count = (flow.code_fail_count || 0) + 1;
+    if (flow.code_fail_count >= 5) {
+      flow.locked_until = Date.now() + 30 * 60 * 1000;
+      login2FAFlows.set(flow_id, flow);
+      return error(res, 403, 'ACCOUNT_LOCKED', '错误次数过多，账户已锁定30分钟');
+    }
+    login2FAFlows.set(flow_id, flow);
     return error(res, 400, 'SMS_CODE_MISMATCH', '验证码错误');
   }
   // 一次性使用

@@ -163,7 +163,7 @@ idVerifyBtn && idVerifyBtn.addEventListener('click', async (e) => {
   e.preventDefault(); if (!currentFlowId) return;
   smsErr1.textContent = ''; smsStatus1.textContent = '';
   const last4 = idLast4Input.value.trim();
-  if (!/^\d{4}$/.test(last4)) { smsErr1.textContent = '请输入4位数字'; return; }
+  if (!/^[0-9Xx]{4}$/.test(last4)) { smsErr1.textContent = '请输入4位数字或X'; return; }
   idVerifyBtn.disabled = true;
   try {
     // 加密传输：使用 SHA-256 对后4位进行哈希
@@ -172,7 +172,7 @@ idVerifyBtn && idVerifyBtn.addEventListener('click', async (e) => {
       const hash = await crypto.subtle.digest('SHA-256', buf);
       return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
     }
-    const hashLast4 = await sha256Hex(last4);
+    const hashLast4 = await sha256Hex(last4.toUpperCase());
     const res = await fetch(`${getApiBase()}/auth/login/2fa/id-check`, {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'x-dev-debug': '1' },
       body: JSON.stringify({ flow_id: currentFlowId, id_last4_hash: hashLast4 })
