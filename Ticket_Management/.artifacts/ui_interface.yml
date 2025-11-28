@@ -1,8 +1,8 @@
 meta:
   name: "12306订单管理_UI接口规范"
-  version: "1.0.0"
-  generated_at: "2025-11-16T00:00:00Z"
-  source_doc: "e:\\cs3604\\12306\\12306_订单管理_需求文档.md"
+  version: "1.1.0"
+  generated_at: "2025-11-27T00:00:00Z"
+  source_doc: "e:\\cs3604\\12306\\Final Requirements\\12306_订单管理_需求文档(3).md"
 
 principles:
   layout:
@@ -26,9 +26,11 @@ pages:
         source_api: "/api/v1/contacts"
         card_fields: [姓名, 证件类型, 证件号(脱敏)]
         interaction:
-          select_checkbox: { type: checkbox, on_select: "添加到订单" }
+          select_checkbox: { type: checkbox, on_select: "添加到订单, 触发温馨提示" }
       seat_selection_entry:
         modal: "seat_selection"
+      warm_tip_dialog:
+        modal: "warm_tip_modal"
     actions:
       submit_order:
         label: "提交订单"
@@ -41,6 +43,7 @@ pages:
     acceptanceCriteria:
       - 页面顶部显示所选车次的详细信息（车次号、站点、时间、日期）。
       - 页面显示常用联系人列表，卡片含姓名/证件类型/证件号脱敏。
+      - 选择乘车人时可能弹出温馨提示，需确认后关闭。
       - "提交订单"按钮在未选择乘车人或未锁定座位时保持禁用。
 
   seat_selection:
@@ -98,7 +101,7 @@ pages:
     title: "您确认取消订单吗？"
     content:
       warning_icon: true
-      warning_text: "一天内取消次数上限为3次，超过限制将无法取消"
+      warning_text: "一天内3次申请车票成功后取消订单（包含无座票时取消5次计为取消1次），当日将不能在12306继续购票。"
     actions:
       confirm:
         label: "确定"
@@ -106,7 +109,7 @@ pages:
       cancel:
         label: "取消"
     acceptanceCriteria:
-      - 显示标题"您确认取消订单吗？"与取消限制提示。
+      - 显示标题"您确认取消订单吗？"与详细取消限制提示。
       - 点击"确定"调用取消接口；点击"取消"关闭对话框。
 
   cancel_success_modal:
@@ -121,6 +124,34 @@ pages:
         navigate: "返回车票查询页或刷新订单列表"
     acceptanceCriteria:
       - 显示"取消订单成功"并提供"确定"按钮返回或刷新。
+
+  warm_tip_modal:
+    url: "modal://warm_tip"
+    title: "温馨提示"
+    content:
+      text: "请确认乘车人身份信息真实有效..."
+    actions:
+      confirm:
+        label: "确认"
+        close_modal: true
+    acceptanceCriteria:
+      - 显示温馨提示内容。
+      - 点击确认按钮关闭弹窗。
+
+  payment_page:
+    url: "https://kyfw.12306.cn/otn/view/payment.html"
+    sections:
+      order_summary:
+        fields: [订单号, 金额]
+      payment_options:
+        options: [支付宝, 微信, 银联]
+    actions:
+      pay_now:
+        label: "立即支付"
+        api: "/api/v1/orders/{order_id}/pay"
+    acceptanceCriteria:
+      - 页面显示订单金额。
+      - 页面提供多种支付方式选项（支付宝/微信/银联）。
 
 interactions:
   flows:

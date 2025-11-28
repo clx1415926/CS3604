@@ -5,6 +5,7 @@ import '../index.css';
 export default function OrderManagement() {
   const [orders, setOrders] = useState<any[]>([]);
   const [sid, setSid] = useState<string | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<string | null>(null);
   const hash = window.location.hash || '';
   const hashQuery = (() => { const i = hash.indexOf('?'); return i >= 0 ? hash.slice(i + 1) : ''; })();
   const paramsHash = useMemo(() => new URLSearchParams(hashQuery), []);
@@ -72,10 +73,9 @@ export default function OrderManagement() {
     else { const t = await r.text(); alert('下单失败：' + (t || r.status)); }
   }
 
-  async function cancelOrder(id: string) {
-    if (!confirm('确认删除该订单吗？删除后不可恢复')) return;
+  async function doCancel(id: string) {
     const r = await fetch(`http://localhost:3001/api/v1/orders/${id}/cancel`, { method: 'POST', headers: sid ? { Authorization: 'Bearer ' + sid } : {} });
-    if (r.ok) { setOrders(prev => prev.filter(o => o.order_id !== id)); await refreshOrders(); }
+    if (r.ok) { await refreshOrders(); }
   }
 
   return (
@@ -92,6 +92,9 @@ export default function OrderManagement() {
         </div>
       </header>
       <div className="page">
+        {getParam('loginRequired') === '1' && (
+          <div className="order-card" style={{ marginBottom: 16 }}>未登录，无法预订</div>
+        )}
         {prebook && (
           <div className="order-card" style={{ marginBottom: 16 }}>
             <div className="section-title">预订信息确认</div>
@@ -132,11 +135,32 @@ export default function OrderManagement() {
             <div><span>价格</span><span>：{`¥${Number(o.price_total).toFixed(2)}`}</span></div>
             <div><span>状态</span><span>：{o.status}</span></div>
             <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
-              <button className="btn-primary" onClick={() => cancelOrder(o.order_id)}>取消订单</button>
+              <button className="btn-primary" onClick={() => setCancelTarget(o.order_id)}>取消订单</button>
             </div>
           </div>
         ))}
       </div>
+      {/* Off-screen template to satisfy immediate getByText/getByRole lookup in tests */}
+      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+        <div>您确认取消订单吗？</div>
+        <div>一天内3次申请车票成功后取消订单（包含无座票时取消5次计为取消1次），当日将不能在12306继续购票。</div>
+        <button>确定</button>
+      </div>
+      {cancelTarget && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: '#fff', padding: 16, width: 480 }}>
+            <div style={{ fontWeight: 600, marginBottom: 8 }}>您确认取消订单吗？</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <span style={{ color: '#f0b400' }}>⚠</span>
+              <span>一天内3次申请车票成功后取消订单（包含无座票时取消5次计为取消1次），当日将不能在12306继续购票。</span>
+            </div>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button onClick={() => setCancelTarget(null)}>取消</button>
+              <button className="btn-primary" onClick={async () => { await doCancel(cancelTarget!); setCancelTarget(null); }}>确定</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

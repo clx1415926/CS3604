@@ -23,8 +23,11 @@ export default function Payment() {
       });
       const data = await r.json();
       if (r.ok) {
-        setMessage('支付成功');
-        setTimeout(() => { window.location.hash = ''; }, 800);
+        setMessage('支付成功，正在跳转...');
+        setTimeout(() => {
+          const target = `http://localhost:5176/#/otn/view/train_order.html?orderId=${orderId}&sid=${encodeURIComponent(sid)}`;
+          window.location.href = target;
+        }, 800);
       } else {
         setMessage(data && data.error ? String(data.error) : '支付失败');
       }
@@ -39,6 +42,14 @@ export default function Payment() {
       <div className="order-card">
         <div>订单号：{orderId}</div>
         <div>金额：¥576.00</div>
+      </div>
+      <div className="panel">
+        <div>支付方式</div>
+        <ul>
+          <li>支付宝</li>
+          <li>微信</li>
+          <li>银联</li>
+        </ul>
       </div>
       <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
         <button className="btn-primary" onClick={pay}>立即支付</button>

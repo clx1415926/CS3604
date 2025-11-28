@@ -1,8 +1,8 @@
 meta:
   name: "12306订单管理_API接口库"
-  version: "1.0.0"
-  generated_at: "2025-11-16T00:00:00Z"
-  source_doc: "e:\\cs3604\\12306\\12306_订单管理_需求文档.md"
+  version: "1.1.0"
+  generated_at: "2025-11-27T00:00:00Z"
+  source_doc: "e:\\cs3604\\12306\\Final Requirements\\12306_订单管理_需求文档(3).md"
 
 conventions:
   style: "REST + JSON"
@@ -108,6 +108,7 @@ endpoints:
       - DB-CreateOrder
     acceptanceCriteria:
       - 所有锁定令牌有效且匹配；生成待支付订单并返回订单ID。
+      - 无座或未锁定座位时返回400 NO_SEATS_AVAILABLE，并包含友好提示message。
 
   - id: API-GET-Orders
     name: "按状态查询订单"
@@ -135,6 +136,8 @@ endpoints:
       - DB-ListOrdersByStatus
     acceptanceCriteria:
       - 默认返回未完成订单；字段集与UI订单卡片一致。
+      - 超过支付时限的未支付订单不在未完成列表中显示（自动过期）。
+      - 历史订单标签返回已取消或已完成订单。
 
   - id: API-GET-OrderDetail
     name: "订单详情"
@@ -177,7 +180,29 @@ endpoints:
       - DB-CancelOrder
     acceptanceCriteria:
       - 仅允许取消未支付订单；取消后返回成功消息。
-      - 每日取消超过3次返回限制错误；提示并阻止取消。
+      - 每日取消超过3次（或无座5次）返回限制错误；提示并阻止取消。
+      - 返回的人性化错误提示文案与Error codes一致（message字段）。
+
+  - id: API-POST-OrderPay
+    name: "订单支付（占位）"
+    method: POST
+    path: "/orders/{order_id}/pay"
+    body: {}
+    responses:
+      200:
+        body:
+          success: true
+          status: "paid"
+          paid_at: datetime
+      404:
+        error: [ORDER_NOT_FOUND]
+      401:
+        error: [UNAUTHORIZED]
+    dependencies:
+      - DB-GetOrderById
+    acceptanceCriteria:
+      - 同会话下对未支付订单进行支付，返回success=true与status=paid。
+      - 未找到订单返回404；未登录返回401。
 
 errors:
   codes:
@@ -186,7 +211,7 @@ errors:
     LOCK_EXPIRED: { http_status: 410, message: "座位锁定已过期，请重新选择" }
     ORDER_NOT_FOUND: { http_status: 404, message: "订单不存在" }
     INVALID_ORDER_STATE: { http_status: 400, message: "当前订单不可取消" }
-    CANCEL_RATE_LIMIT_EXCEEDED: { http_status: 429, message: "一天内取消订单次数超过3次限制" }
+    CANCEL_RATE_LIMIT_EXCEEDED: { http_status: 429, message: "您今日取消订单次数已达上限，无法继续购票" }
     UNAUTHORIZED: { http_status: 401, message: "未登录或会话已过期" }
     FORBIDDEN: { http_status: 403, message: "无权限执行该操作" }
     NETWORK_ERROR: { http_status: 400, message: "网络异常，请重试" }

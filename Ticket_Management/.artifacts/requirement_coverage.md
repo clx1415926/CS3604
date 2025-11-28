@@ -1,23 +1,23 @@
 # 需求覆盖率报告
 
-生成时间: 2025-11-16
+生成时间: 2025-11-27
 
 ## 总体概览
 
 | 指标 | 数值 |
 |------|------|
 | 需求总数 | 1 |
-| 完全覆盖 | 1 (100%) |
-| 部分覆盖 | 0 (0%) |
+| 完全覆盖 | 0 (0%) |
+| 部分覆盖 | 1 (100%) |
 | 未覆盖 | 0 (0%) |
-| 总验收标准数 | 20 |
-| 已测试验收标准数 | 20 (100%) |
+| 总验收标准数 | 26 |
+| 已测试验收标准数 | 26 (100%) |
 
 ## 详细覆盖情况
 
-### ✅ REQ-ORD-001: 订单管理功能
+### ⚠️ REQ-ORD-001: 订单管理功能
 
-**覆盖状态:** 完全覆盖 (100%)
+**覆盖状态:** 部分覆盖 (65%)
 
 **相关接口:**
 - `API-GET-Contacts` (Backend)
@@ -82,3 +82,27 @@
     - 测试: `Ticket_Management/frontend/test/pages/OrderManagement.test.tsx::should render cancel success modal and navigate back`
 
 **说明:** 当前所有测试为目标功能测试，基于接口定义的验收标准，因代码骨架未实现，运行时将失败，用作后续实现的验收基准。
+
+## 更新覆盖情况 (2025-11-27)
+
+新增并更新的验收标准（当前测试未通过，待实现）：
+
+- Backend
+  - `API-POST-OrderCancel` AC#3: 返回限制错误提示文案
+    - 测试: `Ticket_Management/backend/test/routes/orders.limit.message.test.js`
+  - `API-GET-Orders` AC#4: 超时未支付自动取消，未完成列表不再显示
+    - 测试: `Ticket_Management/backend/test/routes/orders.expire.test.js`
+  - `API-GET-Orders` AC#5: 历史订单标签显示已取消或已完成订单
+    - 测试: `Ticket_Management/backend/test/routes/orders.history.test.js`
+  - `API-POST-OrderCreate` AC#2: 无座或未锁定座位时返回400并包含友好提示
+    - 测试: `Ticket_Management/backend/test/routes/orders.noseat.boundary.test.js`
+
+- Frontend
+  - `UI-CancelDialog` AC#1, AC#2: 标题与取消限制文案；确定调用取消接口/取消关闭
+    - 测试: `Ticket_Management/frontend/test/pages/OrderManagement.cancelDialogContent.test.tsx`
+  - `UI-WarmTipModal` AC#1: 选择乘车人后显示温馨提示，确认关闭
+    - 测试: `Ticket_Management/frontend/test/components/OrderFilling.warmTip.test.tsx`
+  - `UI-PaymentPage` AC#1: 显示订单金额与多种支付方式选项
+    - 测试: `Ticket_Management/frontend/test/pages/Payment.options.test.tsx`
+
+当前估算覆盖率: 65%（详见 traceability_matrix.yml）。

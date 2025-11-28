@@ -8,8 +8,20 @@ import Payment from './pages/Payment';
 function Router() {
   const [hash, setHash] = useState(window.location.hash);
   useEffect(() => {
-    const onHash = () => setHash(window.location.hash);
+    const onHash = () => {
+      const h = window.location.hash || '';
+      if (h.startsWith('#order-filling')) {
+        const hasSidInHash = /sid=([^&]+)/.test(h);
+        const sidStored = localStorage.getItem('SESSION_ID');
+        const hasSid = hasSidInHash || !!sidStored;
+        if (!hasSid) {
+          window.location.hash = '#?loginRequired=1';
+        }
+      }
+      setHash(window.location.hash);
+    };
     window.addEventListener('hashchange', onHash);
+    onHash();
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
   let Page: any = OrderManagement;

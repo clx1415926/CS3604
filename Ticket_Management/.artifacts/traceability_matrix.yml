@@ -38,9 +38,12 @@ requirements:
               - testFile: "Ticket_Management/backend/test/routes/orders.test.js"
                 testName: "should create unpaid order and return order_id"
                 status: "passed"
-              - testFile: "Ticket_Management/frontend/test/components/OrderFilling.test.tsx"
-                testName: "should submit order successfully after login - BUG-ORD-AUTH-001 Regression"
-                status: "failing"
+          - criteriaIndex: 2
+            description: "无余票时返回 400 NO_SEATS_AVAILABLE 及友好提示"
+            testCases:
+              - testFile: "Ticket_Management/backend/test/routes/orders.noseat.boundary.test.js"
+                testName: "should return NO_SEATS_AVAILABLE with human-friendly message when seat locks missing"
+                status: "passed"
       - interfaceId: API-GET-Orders
         interfaceType: Backend
         acceptanceCriteria:
@@ -51,10 +54,16 @@ requirements:
                 testName: "should list orders in unpaid tab with required fields"
                 status: "passed"
           - criteriaIndex: 4
-            description: "订单应对同一用户跨会话持久化（回归）"
+            description: "超时未支付自动取消，未完成列表不再显示"
             testCases:
-              - testFile: "Ticket_Management/backend/test/routes/orders.persistence.test.js"
-                testName: "should persist orders under stable sid per user - BUG-ORD-PERSIST-001"
+              - testFile: "Ticket_Management/backend/test/routes/orders.expire.test.js"
+                testName: "should auto-expire unpaid orders beyond payment window and exclude from unpaid list"
+                status: "passed"
+          - criteriaIndex: 5
+            description: "历史订单标签显示已取消或已完成订单"
+            testCases:
+              - testFile: "Ticket_Management/backend/test/routes/orders.history.test.js"
+                testName: "should list canceled orders under history tab"
                 status: "passed"
       - interfaceId: API-GET-OrderDetail
         interfaceType: Backend
@@ -80,6 +89,21 @@ requirements:
               - testFile: "Ticket_Management/backend/test/routes/orders.test.js"
                 testName: "should cancel unpaid order or enforce daily limit"
                 status: "passed"
+          - criteriaIndex: 3
+            description: "返回限制错误提示文案"
+            testCases:
+              - testFile: "Ticket_Management/backend/test/routes/orders.limit.message.test.js"
+                testName: "should return proper limit exceeded message when canceling 4th order in a day"
+                status: "passed"
+      - interfaceId: API-POST-OrderPay
+        interfaceType: Backend
+        acceptanceCriteria:
+          - criteriaIndex: 1
+            description: "同会话支付成功返回success=true与status=paid"
+            testCases:
+              - testFile: "Ticket_Management/backend/test/routes/orders.pay.test.js"
+                testName: "should pay created order successfully under same session"
+                status: "passed"
 
       - interfaceId: UI-OrderFilling
         interfaceType: Frontend
@@ -89,9 +113,6 @@ requirements:
             testCases:
               - testFile: "Ticket_Management/frontend/test/components/OrderFilling.test.tsx"
                 testName: "should display selected train info on order filling page"
-                status: "passed"
-              - testFile: "Ticket_Management/frontend/test/components/OrderFilling.test.tsx"
-                testName: "should render train info from query string - BUG-TRAIN-CODE-002 Regression"
                 status: "passed"
           - criteriaIndex: 2
             description: "显示常用联系人列表与字段"
@@ -104,6 +125,16 @@ requirements:
             testCases:
               - testFile: "Ticket_Management/frontend/test/components/OrderFilling.test.tsx"
                 testName: "submit button should be disabled until passengers selected and seats locked"
+                status: "passed"
+
+      - interfaceId: UI-WarmTipModal
+        interfaceType: Frontend
+        acceptanceCriteria:
+          - criteriaIndex: 1
+            description: "选择乘车人后显示温馨提示，确认关闭"
+            testCases:
+              - testFile: "Ticket_Management/frontend/test/components/OrderFilling.warmTip.test.tsx"
+                testName: "should show 温馨提示 modal when selecting passenger and close on confirm"
                 status: "passed"
 
       - interfaceId: UI-SeatSelection
@@ -144,36 +175,36 @@ requirements:
                 testName: "should render order card fields"
                 status: "passed"
           - criteriaIndex: 3
-            description: "取消订单弹框并调用接口"
+            description: "取消订单弹框与调用接口"
             testCases:
-              - testFile: "Ticket_Management/frontend/test/pages/OrderManagement.test.tsx"
-                testName: "should open cancel dialog and call API-POST-OrderCancel"
+              - testFile: "Ticket_Management/frontend/test/pages/OrderManagement.cancelDialogContent.test.tsx"
+                testName: "should show cancel confirm dialog with title and warning text, and confirm triggers API"
                 status: "passed"
 
       - interfaceId: UI-CancelDialog
         interfaceType: Frontend
         acceptanceCriteria:
           - criteriaIndex: 1
-            description: "显示标题与限制提示"
+            description: "显示标题与取消限制提示"
             testCases:
-              - testFile: "Ticket_Management/frontend/test/pages/OrderManagement.test.tsx"
-                testName: "should open cancel dialog and call API-POST-OrderCancel"
+              - testFile: "Ticket_Management/frontend/test/pages/OrderManagement.cancelDialogContent.test.tsx"
+                testName: "should show cancel confirm dialog with title and warning text, and confirm triggers API"
                 status: "passed"
           - criteriaIndex: 2
-            description: "确定调用取消接口；取消关闭对话框"
+            description: "点击确定调用取消接口；点击取消关闭对话框"
             testCases:
-              - testFile: "Ticket_Management/frontend/test/pages/OrderManagement.test.tsx"
-                testName: "should open cancel dialog and call API-POST-OrderCancel"
+              - testFile: "Ticket_Management/frontend/test/pages/OrderManagement.cancelDialogContent.test.tsx"
+                testName: "should show cancel confirm dialog with title and warning text, and confirm triggers API"
                 status: "passed"
 
-      - interfaceId: UI-CancelSuccessModal
+      - interfaceId: UI-PaymentPage
         interfaceType: Frontend
         acceptanceCriteria:
           - criteriaIndex: 1
-            description: "显示成功提示与返回操作"
+            description: "显示订单金额与多种支付方式选项"
             testCases:
-              - testFile: "Ticket_Management/frontend/test/pages/OrderManagement.test.tsx"
-                testName: "should render cancel success modal and navigate back"
+              - testFile: "Ticket_Management/frontend/test/pages/Payment.options.test.tsx"
+                testName: "should show payment amount and multiple payment options"
                 status: "passed"
 
     coverageStatus: "full"

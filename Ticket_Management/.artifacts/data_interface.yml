@@ -1,8 +1,8 @@
 meta:
   name: "12306订单管理_数据接口库"
-  version: "1.0.0"
-  generated_at: "2025-11-16T00:00:00Z"
-  source_doc: "e:\\cs3604\\12306\\12306_订单管理_需求文档.md"
+  version: "1.0.1"
+  generated_at: "2025-11-27T00:00:00Z"
+  source_doc: "e:\\cs3604\\12306\\Final Requirements\\12306_订单管理_需求文档(3).md"
   notes: "对齐 Login_Register_Page/.artifacts 的约定与结构，避免重复设计并便于复用。"
 
 conventions:
@@ -25,7 +25,8 @@ enums:
   CancelLimit:
     values:
       - limit_per_day: 3
-    default: { limit_per_day: 3 }
+      - no_seat_factor: 0.2 # 无座票取消5次计为1次
+    default: { limit_per_day: 3, no_seat_factor: 0.2 }
   ErrorCode:
     values:
       - NO_SEATS_AVAILABLE
@@ -49,6 +50,8 @@ schemas:
       user_id: { type: string }
       train_id: { type: string }
       travel_date: { type: date }
+      depart_time: { type: datetime }
+      arrive_time: { type: datetime }
       from_station: { type: string }
       to_station: { type: string }
       items:
@@ -195,8 +198,10 @@ database_operations:
       - DB-CountDailyCancellations
     acceptanceCriteria:
       - 仅允许取消unpaid状态；成功后写审计日志ORDER_CANCELED。
-      - 每日取消次数超过3次时拒绝并返回CANCEL_RATE_LIMIT_EXCEEDED。
+      - 每日取消次数超过3次时拒绝并返回CANCEL_RATE_LIMIT_EXCEEDED（无座票取消5次计为1次）。
     changeLog:
+      - date: "2025-11-27"
+        description: "更新验收标准，增加无座票取消计数规则。"
       - date: "2025-11-16"
         description: "初始创建。"
 
@@ -213,12 +218,14 @@ database_operations:
 
   - type: Database
     id: DB-CountDailyCancellations
-    description: 统计用户当日取消次数（用于限制）。
+    description: 统计用户当日取消次数（支持无座票权重计算）。
     dependencies:
       - none
     acceptanceCriteria:
       - 返回当天取消计数；支持原子性递增与读写一致性。
     changeLog:
+      - date: "2025-11-27"
+        description: "更新描述，支持无座票权重计算。"
       - date: "2025-11-16"
         description: "初始创建。"
 

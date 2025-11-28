@@ -134,9 +134,100 @@ endpoints:
     acceptanceCriteria:
       - 至少包含+86；用于手机核验页面的区号下拉选择。
 
+  - id: API-GET-Passengers
+    name: "获取乘车人列表"
+    method: GET
+    path: "/passengers"
+    responses:
+      200:
+        body:
+          passengers:
+            - passenger_id: string
+              name: string
+              id_type: string
+              id_number_masked: string
+              phone_country_code: string
+              phone_number_masked: string
+              traveler_type: string
+              verified_status: string
+              is_self: boolean
+    dependencies:
+      - DB-GetPassengers
+    acceptanceCriteria:
+      - 支持按姓名模糊查询
+      - 证件号和手机号需脱敏
+
+  - id: API-POST-AddPassenger
+    name: "添加乘车人"
+    method: POST
+    path: "/passengers"
+    body:
+      name: { type: string, required: true }
+      id_type: { type: string, required: true }
+      id_number: { type: string, required: true }
+      phone_country_code: { type: string }
+      phone_number: { type: string }
+      traveler_type: { type: string, required: true }
+    responses:
+      201:
+        body:
+          passenger_id: string
+          verified_status: string
+      400:
+        error: [MISSING_FIELD, INVALID_TRAVELER_TYPE, INVALID_ID_NUMBER_FORMAT, INVALID_NAME_FORMAT]
+      403:
+        error: [PASSENGER_LIMIT_EXCEEDED]
+    dependencies:
+      - DB-AddPassenger
+    acceptanceCriteria:
+      - 最多15人
+      - 需校验必填字段
+
+  - id: API-DELETE-Passenger
+    name: "删除乘车人"
+    method: DELETE
+    path: "/passengers/{id}"
+    responses:
+      204:
+        body: {}
+      403:
+        error: [CANNOT_DELETE_SELF]
+      404:
+        error: [PASSENGER_NOT_FOUND]
+    dependencies:
+      - DB-DeletePassenger
+    acceptanceCriteria:
+      - 本人不可删除
+
+  - id: API-PATCH-Passenger
+    name: "编辑乘车人（仅手机号和优惠类型）"
+    method: PATCH
+    path: "/passengers/{id}"
+    body:
+      phone_number: { type: string, required: false }
+      phone_country_code: { type: string, required: false }
+      traveler_type: { type: string, required: false }
+    responses:
+      200:
+        body:
+          passenger_id: string
+          phone_number_masked: string
+          traveler_type: string
+      400:
+        error: [INVALID_TRAVELER_TYPE]
+      404:
+        error: [PASSENGER_NOT_FOUND]
+    dependencies:
+      - DB-UpdatePassenger
+    acceptanceCriteria:
+      - 仅允许修改手机号和优惠类型
+      - 返回更新后的乘客信息
+
 errors:
   codes:
     INVALID_TRAVELER_TYPE: { http_status: 400, message: "优惠类型不合法" }
+    INVALID_ID_NUMBER_FORMAT: { http_status: 400, message: "证件号码格式错误，请检查" }
+    INVALID_NAME_FORMAT: { http_status: 400, message: "姓名格式不合法，仅限汉字、字母、点(.)与中点(·)" }
     UNAUTHORIZED: { http_status: 401, message: "未登录或会话已过期" }
     PHONE_INVALID: { http_status: 400, message: "手机号格式错误，请检查" }
     PASSWORD_REQUIRED: { http_status: 400, message: "请输入密码" }
