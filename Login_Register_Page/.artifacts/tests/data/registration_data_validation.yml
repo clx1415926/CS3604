@@ -1,0 +1,87 @@
+meta:
+  name: "数据校验测试用例 - 用户注册"
+  scope: [username, password, phone, sms_code, id_card]
+
+username:
+  - id: u01_valid
+    input: "test_user_123"
+    expect: { valid: true }
+  - id: u02_invalid_start_digit
+    input: "1abcde"
+    expect:
+      valid: false
+      message: "用户名只能由字母、数字和_组成，须以字母开头！"
+  - id: u03_too_short
+    input: "abc"
+    expect:
+      valid: false
+      message: "用户名长度不能少于6个字符！"
+
+password:
+  - id: p01_strong
+    input: "MyPass_123"
+    expect: { valid: true, categories_met: 3, strength: "强" }
+  - id: p02_weak_only_digits
+    input: "123456"
+    expect: { valid: false, strength: "弱", message: "格式错误，必须且只能包含字母，数字，下划线中的两种或两种以上！" }
+  - id: p03_illegal_char
+    input: "Password123!"
+    expect: { valid: false, message: "包含非法字符（仅允许字母、数字、下划线）" }
+  - id: p04_same_as_username
+    input: "test_user_123"
+    with_username: "test_user_123"
+    expect: { valid: false, message: "密码不能与用户名相同！" }
+
+phone:
+  - id: ph01_cn_valid
+    country_code: "+86"
+    number: "13812345678"
+    expect: { valid: true }
+  - id: ph02_hk_valid
+    country_code: "+852"
+    number: "91234567"
+    expect: { valid: true }
+  - id: ph03_mo_valid
+    country_code: "+853"
+    number: "61234567"
+    expect: { valid: true }
+  - id: ph04_tw_valid
+    country_code: "+886"
+    number: "0912345678"
+    expect: { valid: true }
+  - id: ph05_invalid
+    country_code: "+86"
+    number: "12345"
+    expect: { valid: false, message: "请输入正确的手机号" }
+
+sms_code:
+  - id: s01_valid
+    input: "123456"
+    ttl_minutes: 5
+    expect: { format_valid: true, not_expired: true }
+  - id: s02_mismatch
+    input: "654321"
+    expect: { format_valid: true, mismatch: true }
+  - id: s03_expired
+    input: "123456"
+    elapsed_minutes: 6
+    expect: { expired: true, message: "验证码已过期，请重新获取" }
+
+id_card:
+  - id: id01_valid_cn_18
+    type: "居民身份证"
+    number: "110101199001011234"
+    expect: { format_valid: true, checksum_valid: true }
+  - id: id02_invalid_format
+    type: "居民身份证"
+    number: "12345"
+    expect: { format_valid: false, message: "请输入正确的身份证号码格式" }
+  - id: id03_name_mismatch
+    type: "居民身份证"
+    number: "110101199001011234"
+    name: "李四"
+    expect: { verified: false, error: "姓名与证件号码不匹配，请核实后重新输入" }
+  - id: id04_passport_format
+    type: "护照"
+    number: "E1234567"
+    expect: { format_valid: true }

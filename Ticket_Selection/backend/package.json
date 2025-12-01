@@ -1,0 +1,16 @@
+{
+  "name": "ticket-selection-backend",
+  "version": "1.0.0",
+  "description": "Backend for the ticket selection application",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "jest": "^30.2.0",
+    "supertest": "^7.1.4"
+  }
+}

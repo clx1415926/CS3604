@@ -1,0 +1,553 @@
+meta:
+  name: "12306用户注册与登录_数据接口库"
+  version: "1.2.0"
+  generated_at: "2025-11-11T00:00:00Z"
+  source_doc: "e:\\cs3604\\12306\\12306_用户注册功能_详细需求文档.md"
+  source_doc_login: "e:\\cs3604\\12306\\12306_用户登录功能_详细需求文档.md"
+  source_doc_password: "e:\\cs3604\\12306\\12306_密码管理功能_详细需求文档.md"
+  notes: "在v1.2加入密码管理（找回/修改）、更强密码策略、锁定策略与票据模型；保持与注册/登录模型复用与一致。"
+
+conventions:
+  data_format: "JSON (server-side), UTF-8"
+  pii_handling:
+    - "密码仅以安全散列存储（不保存明文）"
+    - "身份证号、手机号等敏感字段按最低可用范围访问控制"
+  audit: true
+
+enums:
+  IdType:
+    values:
+      - 居民身份证
+      - 护照
+      - 港澳居民来往内地通行证
+      - 台湾居民来往大陆通行证
+    default: 居民身份证
+  TravelerType:
+    values: [成人, 儿童, 学生, 残疾军人]
+    default: 成人
+  AccountStatus:
+    values: [draft, phone_pending, identity_pending, active, locked]
+    default: phone_pending
+  VerificationStatus:
+    values: [pending, sent, success, failed]
+    default: pending
+  TermsVersion:
+    values:
+      - v2025.11_服务条款
+      - v2025.11_隐私权政策
+  ErrorCode:
+    values:
+      - USERNAME_INVALID_FORMAT
+      - USERNAME_TAKEN
+      - PASSWORD_WEAK
+      - PASSWORD_ILLEGAL_CHAR
+      - PASSWORD_SAME_AS_USERNAME
+      - PHONE_INVALID
+      - PHONE_TAKEN
+      - SMS_TOO_FREQUENT
+      - SMS_DAILY_LIMIT_REACHED
+      - SMS_NOT_SENT
+      - SMS_CODE_EXPIRED
+      - SMS_CODE_MISMATCH
+      - EMAIL_TOO_FREQUENT
+      - EMAIL_DAILY_LIMIT_REACHED
+      - ID_INVALID_FORMAT
+      - ID_NAME_MISMATCH
+      - ID_VERIFICATION_FAILED
+      - NETWORK_ERROR
+      - SERVER_ERROR
+      # 登录相关错误码
+      - LOGIN_IDENTIFIER_INVALID_FORMAT
+      - USER_NOT_FOUND
+      - INVALID_CREDENTIALS
+      - ACCOUNT_LOCKED
+      - MAINTENANCE_WINDOW
+      - SESSION_EXPIRED
+      # 密码管理相关错误码
+      - PHONE_ID_MISMATCH
+      - RESET_LOCKED
+      - RESET_TOKEN_INVALID
+      - RESET_TOKEN_EXPIRED
+      - EMAIL_LINK_EXPIRED
+      - ORIGINAL_PASSWORD_INVALID
+      - NEW_PASSWORD_SAME_AS_OLD
+      - NEW_PASSWORD_WEAK
+      - FACE_VERIFICATION_FAILED
+      - FACE_LOCKED
+      - CHANGE_LOCKED
+
+  LoginIdentifierType:
+    values: [username, phone, email]
+    default: username
+
+  LoginMethod:
+    values: [password, qrcode]
+    default: password
+
+  QRCodeStatus:
+    values: [unscanned, scanned, confirmed, expired]
+    default: unscanned
+
+
+
+schemas:
+  UserAccount:
+    description: "注册完成后的账户实体（实名/手机号唯一、用户名唯一、不可更名）。"
+    fields:
+      user_id:
+        type: string
+        format: uuid
+      username:
+        type: string
+        unique: true
+        immutable: true
+        constraints:
+          min_length: 6
+          max_length: 30
+          pattern: "^[A-Za-z][A-Za-z0-9_]{5,29}$"
+          description: "字母开头，仅包含字母/数字/下划线"
+      password_hash:
+        type: string
+        description: "密码安全散列（不存明文）"
+        constraints:
+          hash_algorithm: [argon2id, bcrypt]
+          min_cost: "依据安全策略"
+      name:
+        type: string
+        required: true
+      id_type:
+        type: IdType
+        required: true
+      id_number:
+        type: string
+        required: true
+        constraints:
+          pattern_by_id_type:
+            居民身份证: "^(\\d{17}[\\dXx])$"
+            护照: "^[A-Za-z0-9]{5,20}$"
+            港澳居民来往内地通行证: "^[A-Za-z0-9]{8,20}$"
+            台湾居民来往大陆通行证: "^[A-Za-z0-9]{8,20}$"
+          algorithm_for_id_card: "中国居民身份证18位校验码算法（ISO 7064:1983 MOD 11-2，GB 11643）"
+      phone_country_code:
+        type: string
+        default: "+86"
+        constraints:
+          pattern: "^\\+\\d{1,3}$"
+      phone_number:
+        type: string
+        unique: true
+        constraints:
+          e164: true
+          pattern: "^\\+?\\d{6,15}$"
+          region_notes:
+            - "+86 中国大陆：^1[3-9]\\d{9}$（不含+86时）"
+            - "+852 香港：^[5|6|9]\\d{7}$"
+            - "+853 澳门：^6\\d{7}$"
+            - "+886 台湾：^09\\d{8}$"
+      email:
+        type: string
+        required: false
+        constraints:
+          pattern: "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
+      traveler_type:
+        type: TravelerType
+        required: false
+      status:
+        type: AccountStatus
+        default: phone_pending
+      created_at:
+        type: datetime
+      updated_at:
+        type: datetime
+
+  RegistrationSession:
+    description: "多步骤注册过程中的临时会话（保存阶段性数据与校验状态）。"
+    fields:
+      session_id:
+        type: string
+        format: uuid
+      progress:
+        type: object
+        properties:
+          account_info_completed: boolean
+          phone_verified: boolean
+          identity_verified: boolean
+          terms_accepted: boolean
+      expires_at:
+        type: datetime
+      data_snapshot:
+        type: object
+        properties:
+          username: string
+          name: string
+          id_type: IdType
+          id_number: string
+          phone_country_code: string
+          phone_number: string
+          email: string
+          traveler_type: TravelerType
+
+  SMSVerification:
+    description: "手机验证码实体。"
+    fields:
+      phone_number:
+        type: string
+      code:
+        type: string
+        constraints:
+          pattern: "^\\d{6}$"
+      status:
+        type: VerificationStatus
+      expires_at:
+        type: datetime
+      sent_at:
+        type: datetime
+      attempts_today:
+        type: integer
+      max_attempts_per_day:
+        type: integer
+        default: 10
+
+  IdentityVerification:
+    description: "身份核验记录。"
+    fields:
+      id_type:
+        type: IdType
+      id_number:
+        type: string
+      name:
+        type: string
+      verified:
+        type: boolean
+      verification_source:
+        type: string
+        default: "公安部门数据库/权威数据源"
+      error_code:
+        type: ErrorCode
+      error_message:
+        type: string
+      verified_at:
+        type: datetime
+
+  TermsAgreement:
+    description: "服务条款与隐私政策的确认记录。"
+    fields:
+      user_id:
+        type: string
+      terms_version:
+        type: TermsVersion
+      privacy_version:
+        type: TermsVersion
+      accepted:
+        type: boolean
+      accepted_at:
+        type: datetime
+
+  AuditEvent:
+    description: "审计事件记录（关键操作留痕）。"
+    fields:
+      event_id:
+        type: string
+        format: uuid
+      user_id:
+        type: string
+      session_id:
+        type: string
+      event:
+        type: string
+      timestamp:
+        type: datetime
+      details:
+        type: object
+
+  LoginRequest:
+    description: "账号密码登录请求（支持用户名/手机号/邮箱）。"
+    fields:
+      identifier_type:
+        type: LoginIdentifierType
+        description: "登录标识类型：用户名/手机号/邮箱。可由服务端根据输入自动识别。"
+      identifier:
+        type: string
+        description: "用户名/手机号/邮箱"
+      password:
+        type: string
+        description: "明文输入（传输层加密），服务端进行哈希匹配"
+      client_context:
+        type: object
+        properties:
+          device:
+            type: string
+          ip:
+            type: string
+          user_agent:
+            type: string
+
+  LoginResponse:
+    description: "登录响应（成功/失败）。"
+    fields:
+      success:
+        type: boolean
+      user_id:
+        type: string
+        required: false
+      session_id:
+        type: string
+        required: false
+      redirect:
+        type: string
+        required: false
+      message:
+        type: string
+      error_code:
+        type: ErrorCode
+        required: false
+      locked_until:
+        type: datetime
+        required: false
+
+  UserSession:
+    description: "用户会话信息（维护登录状态与过期策略）。"
+    fields:
+      session_id:
+        type: string
+        format: uuid
+      user_id:
+        type: string
+      created_at:
+        type: datetime
+      last_active_at:
+        type: datetime
+      idle_timeout_minutes:
+        type: integer
+        default: 30
+
+
+
+
+  QRCodeLoginSession:
+    description: "扫码登录会话（网页端生成二维码，APP确认）。"
+    fields:
+      qrcode_id:
+        type: string
+      image_data:
+        type: string
+        description: "可为dataURL或服务端生成的二维码URL"
+      status:
+        type: QRCodeStatus
+      expires_at:
+        type: datetime
+        description: "二维码在2分钟内有效（Scenario 7/8）。"
+      poll_interval_seconds:
+        type: integer
+        default: 2
+      confirmed_user_id:
+        type: string
+        required: false
+      session_id:
+        type: string
+        required: false
+
+  LoginAttempt:
+    description: "登录尝试记录（用于失败计数与锁定）。"
+    fields:
+      identifier:
+        type: string
+      success:
+        type: boolean
+      timestamp:
+        type: datetime
+      failure_count_last_window:
+        type: integer
+      locked_until:
+        type: datetime
+
+  validation_rules:
+  username:
+    pattern: "^[A-Za-z][A-Za-z0-9_]{5,29}$"
+    unique: true
+    messages:
+      invalid_format: "用户名只能由字母、数字和_组成，须以字母开头！"
+      too_short: "用户名长度不能少于6个字符！"
+      taken: "该用户名已经占用，请重新选择用户名！"
+
+  password:
+    length:
+      min: 6
+      max: 20
+    allowed_chars_pattern: "^[_A-Za-z0-9]{6,20}$"
+    category_rules:
+      categories: [letters, digits, underscore]
+      min_distinct_categories: 2
+    disallow:
+      - same_as_username
+      - common_weak_passwords
+    messages:
+      weak: "格式错误，必须且只能包含字母，数字，下划线中的两种或两种以上！"
+      illegal_char: "包含非法字符（仅允许字母、数字、下划线）"
+      same_as_username: "密码不能与用户名相同！"
+
+  phone:
+    e164: true
+    daily_limit: 10
+    messages:
+      invalid: "请输入正确的手机号"
+      taken: "该手机号已被注册，请尝试找回账户或联系客服"
+      sms_limit: "短信发送次数已达上限，请稍后再试"
+
+  login_identifier:
+    accept_types: [username, phone, email]
+    patterns:
+      username: "^[A-Za-z][A-Za-z0-9_]{5,29}$"
+      phone: "^1[3-9]\\d{9}$"
+      email: "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
+    messages:
+      invalid_format: "请输入正确的用户名/手机号/邮箱格式"
+
+
+
+  sms_code:
+    digits: 6
+    ttl_minutes: 5
+    messages:
+      expired: "验证码已过期，请重新获取"
+      mismatch: "验证码错误，请重新输入"
+
+  id_card:
+    pattern_18: "^(\\d{6})(\\d{8})(\\d{3})([0-9Xx])$"
+    checksum: "ISO 7064 MOD 11-2"
+    messages:
+      invalid_format: "请输入正确的身份证号码格式"
+      name_mismatch: "姓名与证件号码不匹配，请核实后重新输入"
+
+  business_rules:
+  - 每个手机号只能注册一个账户（唯一约束）
+  - 用户名一旦设置不可修改（不可变约束）
+  - 未成年人需要监护人协助完成注册（从身份证出生日期推断，建议<14岁提示监护）
+  - 支持中国大陆、香港、澳门、台湾地区手机号（区号与格式校验）
+  - 服务端进行唯一性与实名校验（用户名、手机号、身份证信息）
+  - 登录失败累计达到5次则锁定账户30分钟（Scenario 16）
+  - 扫码登录二维码有效期2分钟，过期需刷新（Scenario 7/8）
+  - 会话非活跃超过30分钟需重新登录（Scenario 18）
+  - 维护时间内登录不可用，并显示维护提示（Scenario 20/21）
+
+security:
+  password_storage:
+    hash: [argon2id, bcrypt]
+    pepper: optional
+    salt: per-user
+  pii_access_control:
+    scopes:
+      - admin: full
+      - support: masked_view
+      - user: own_only
+  audit_events:
+    - REGISTER_SESSION_CREATED
+    - ACCOUNT_INFO_SUBMITTED
+    - SMS_SENT
+    - SMS_VERIFIED
+    - IDENTITY_VERIFIED
+    - TERMS_ACCEPTED
+    - REGISTRATION_COMPLETED
+    - LOGIN_ATTEMPT
+    - LOGIN_SUCCESS
+    - LOGIN_FAILED
+    - ACCOUNT_LOCKED
+    - LOGOUT
+
+# ===== 密码管理扩展（找回/修改） =====
+password_management:
+  policies:
+    password_policy:
+      registration:
+        length_min: 6
+        length_max: 20
+        categories: [letters, digits, underscore]
+        min_distinct_categories: 2
+        allow_specials: false
+      reset_change:
+        length_min: 8
+        length_max: 32
+        require:
+          - uppercase
+          - lowercase
+          - digit
+          - special
+        allowed_specials: "!@#$%^&*()-_=+[]{};:,.?/\\|"
+        disallow:
+          - same_as_username
+          - same_as_old_password
+          - common_weak_passwords
+        strength_levels: [弱, 中, 强]
+    lockout_policy:
+      password_change:
+        max_wrong_old_password_attempts: 3
+        lock_duration_minutes: 10
+      face_recovery:
+        max_failures: 3
+        lock_duration_minutes: 30
+    token_policy:
+      reset_token_ttl_minutes:
+        phone: 15
+        email: 1440
+        face: 30
+      sms_code_ttl_minutes: 5
+      sms_code_length: 6
+
+  schemas:
+    PasswordResetToken:
+      description: "密码重置令牌（通过手机/邮箱/人脸找回后签发）"
+      fields:
+        token_id: { type: string, format: uuid }
+        user_id: { type: string }
+        channel: { type: string, enum: [phone, email, face] }
+        issued_at: { type: datetime }
+        expires_at: { type: datetime }
+        used: { type: boolean, default: false }
+        context:
+          type: object
+          properties:
+            phone_number: { type: string, required: false }
+            email: { type: string, required: false }
+            qrcode_id: { type: string, required: false }
+
+    FaceResetSession:
+      description: "人脸识别找回密码会话（网页端QR+APP确认）"
+      fields:
+        qrcode_id: { type: string }
+        image_data: { type: string }
+        status: { type: QRCodeStatus }
+        expires_at: { type: datetime }
+        poll_interval_seconds: { type: integer, default: 2 }
+        failures_count: { type: integer, default: 0 }
+        locked_until: { type: datetime, required: false }
+
+    PasswordChangeRequest:
+      description: "登录后的密码修改请求记录"
+      fields:
+        user_id: { type: string }
+        old_password_valid: { type: boolean }
+        new_password_strength: { type: string, enum: [弱, 中, 强] }
+        attempts_in_window: { type: integer }
+        locked_until: { type: datetime, required: false }
+        changed_at: { type: datetime, required: false }
+
+  validation_rules_new_password:
+    description: "用于密码重置/修改的更强密码强度规则"
+    rules:
+      min_length: 8
+      max_length: 32
+      require_categories: [uppercase, lowercase, digit, special]
+      allowed_specials: "!@#$%^&*()-_=+[]{};:,.?/\\|"
+      messages:
+        weak: "密码强度不足，请包含大小写字母、数字和特殊字符，长度至少8位"
+        same_as_old: "新密码不能与原密码相同"
+        illegal_char: "包含非法字符"
+
+  business_rules_extension:
+    - 手机号码/邮箱找回需验证实名信息（证件类型+证件号码）
+    - 手机验证码为6位数字，有效期5分钟；倒计时60秒后可重新发送
+    - 邮件重置链接有效期24小时；过期后需重新申请
+    - 人脸识别连续失败3次后，锁定30分钟
+    - 登录后修改密码需验证原密码；连续错误3次锁定10分钟
+    - 新密码需满足更强密码强度要求，且不得与原密码相同
+    - 密码重置/修改成功后，向用户手机与邮箱发送通知

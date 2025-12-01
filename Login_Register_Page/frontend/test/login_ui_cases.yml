@@ -1,0 +1,19 @@
+meta:
+  name: "前端UI测试用例 - 登录（执行）"
+  notes: "与 .artifacts/tests/ui/login_ui_cases.yml 同步的可执行用例集合"
+
+cases:
+  - id: ui01_tabs_switch
+    expect: "扫码登录页签可切换且二维码区域可见"
+  - id: ui02_account_login_validation
+    expect: "错误格式高亮，正确格式通过"
+  - id: ui03_password_strength_meter
+    expect: "强度条显示并随输入实时变化"
+  - id: ui04_captcha_flow
+    expect: "验证码错误置红并可刷新"
+  - id: ui05_qr_states
+    expect: "状态依次切换并在确认后跳转"
+  - id: ui06_remember_me
+    expect: "刷新后仍保持登录"
+  - id: ui07_accessibility
+    expect: "ARIA、Tab导航、对比度均满足"

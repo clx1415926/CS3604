@@ -1,0 +1,34 @@
+- type: Database
+  id: DB-FindStations
+  description: "根据用户输入（中文/拼音/首字母）模糊查询站点信息，用于自动完成。"
+  dependencies:
+    - none
+  acceptanceCriteria:
+    - "当输入'bj'时，应返回'北京'、'北京南'、'北京西'等相关站点。"
+    - "当输入'上海'时，应返回'上海'、'上海虹桥'等。"
+  changeLog:
+    - date: "2025-11-11"
+      description: "初始创建。"
+
+- type: Database
+  id: DB-FindTrainListByRoute
+  description: "根据出发地、目的地和出发日期，查询所有符合条件的车次基础信息列表。"
+  dependencies:
+    - none
+  acceptanceCriteria:
+    - "成功查询后，返回包含车次、站点、时间、历时等信息的车次列表。"
+    - "如果当天没有车次，返回空列表。"
+  changeLog:
+    - date: "2025-11-11"
+      description: "初始创建。"
+
+- type: Database
+  id: DB-FindSeatStatusForTrains
+  description: "根据车次ID列表，批量查询各车次的席别余票状态。"
+  dependencies:
+    - DB-FindTrainListByRoute
+  acceptanceCriteria:
+    - "能为给定的车次列表返回其所有席别的余票状态（有、无、数字、--）。"
+  changeLog:
+    - date: "2025-11-11"
+      description: "初始创建。"

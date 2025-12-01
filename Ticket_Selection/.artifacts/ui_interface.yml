@@ -1,0 +1,58 @@
+- type: Frontend
+  id: UI-QueryForm
+  description: "车票查询表单，包含出发地、目的地、日期选择和查询按钮。"
+  properties:
+    - name: onQuery
+      type: function
+      description: "点击查询按钮时触发的回调，携带查询参数。"
+  state:
+    - fromStation
+    - toStation
+    - departDate
+  dependencies:
+    - API-GET-QueryStations # 用于站点输入自动完成
+  acceptanceCriteria:
+    - "应包含出发地、目的地、日期三个输入控件和一个查询按钮。"
+    - "输入站点时应能调用API-GET-QueryStations获取建议。"
+  changeLog:
+    - date: "2025-11-11"
+      description: "初始创建。"
+
+- type: Frontend
+  id: UI-TrainList
+  description: "展示车次查询结果的列表，支持排序和筛选。"
+  properties:
+    - name: trains
+      type: array
+      description: "要展示的车次数据列表。"
+  state:
+    - sortBy
+    - filterTrainTypes
+    - filterSeatTypes
+  dependencies:
+    - API-GET-QueryTickets
+  acceptanceCriteria:
+    - "能正确渲染车次号、站点、时间、历时和余票信息。"
+    - "点击排序按钮能重新排列列表。"
+    - "勾选筛选条件能过滤列表内容。"
+  changeLog:
+    - date: "2025-11-11"
+      description: "初始创建。"
+
+- type: Frontend
+  id: UI-FilterPanel
+  description: "筛选面板，提供车次类型和席别筛选功能。"
+  properties:
+    - name: onFilterChange
+      type: function
+      description: "当筛选条件变化时触发的回调。"
+  state:
+    - selectedTrainTypes
+    - selectedSeatTypes
+  dependencies:
+    - none
+  acceptanceCriteria:
+    - "应提供车次类型（高铁、动车、直达）和席别（一等座、二等座、软卧、硬卧）的复选框。"
+  changeLog:
+    - date: "2025-11-11"
+      description: "初始创建。"

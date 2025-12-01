@@ -1,0 +1,170 @@
+meta:
+  name: "12306个人信息管理_数据接口库"
+  version: "1.0.0"
+  generated_at: "2025-11-26T00:00:00Z"
+  source_doc: "d:\\Desktop\\大三上\\SoftwareEngineer\\12306\\CS3604\\User_Center\\12306_个人信息管理_需求文档.md"
+
+conventions:
+  data_format: "JSON (server-side), UTF-8"
+  audit: true
+  pii_handling:
+    - "不保存密码明文，不在日志中记录敏感信息"
+    - "身份证、手机号、邮箱仅在必要范围内可见（脱敏传输/展示）"
+
+enums:
+  TravelerType:
+    values: [成人, 儿童, 学生, 残疾军人]
+    default: 成人
+  VerificationStatus:
+    values: [pending, sent, success, failed]
+    default: success
+
+schemas:
+  UserProfile:
+    description: "个人信息聚合视图（基本信息、联系方式、附加信息）。"
+    fields:
+      user_id: { type: string, format: uuid }
+      username: { type: string }
+      name: { type: string }
+      country_region: { type: string }
+      id_type: { type: string }
+      id_number_masked: { type: string }
+      id_verified_status: { type: VerificationStatus }
+      phone_country_code: { type: string }
+      phone_number_masked: { type: string }
+      phone_verified_status: { type: VerificationStatus }
+      email_masked: { type: string }
+      email_verified_status: { type: VerificationStatus }
+      traveler_type: { type: TravelerType }
+      created_at: { type: datetime }
+      updated_at: { type: datetime }
+
+  PhoneChangeRequest:
+    description: "修改手机号的请求记录。"
+    fields:
+      user_id: { type: string }
+      old_phone_country_code: { type: string }
+      old_phone_number: { type: string }
+      new_phone_country_code: { type: string }
+      new_phone_number: { type: string }
+      login_password_valid: { type: boolean }
+      checked_available: { type: boolean }
+      submitted_at: { type: datetime }
+
+  PhoneChangeResult:
+    description: "修改手机号结果。"
+    fields:
+      success: { type: boolean }
+      message: { type: string }
+      new_phone_country_code: { type: string }
+      new_phone_number_masked: { type: string }
+      changed_at: { type: datetime }
+
+  CountryCallingCode:
+    description: "国家/地区电话区号。"
+    fields:
+      code: { type: string }
+      name: { type: string }
+      locale: { type: string }
+
+database_operations:
+  - type: Database
+    id: DB-GetUserProfile
+    description: 聚合并返回用户个人信息视图（含脱敏与核验状态）。
+    dependencies:
+      - DB-MaskPII
+    acceptanceCriteria:
+      - 返回基本信息、联系方式、附加信息三部分且字段完整。
+      - 脱敏规则：身份证显示前4后3；手机号显示国家码、前3、后4；邮箱显示前2与域名。
+    changeLog:
+      - date: "2025-11-26"
+        description: "初始创建。"
+
+  - type: Database
+    id: DB-UpdateTravelerType
+    description: 更新用户优惠(待)类型。
+    dependencies:
+      - none
+    acceptanceCriteria:
+      - 接受TravelerType中的四种类型；更新后立即生效。
+      - 写入审计事件TRAVELER_TYPE_UPDATED并更新updated_at。
+    changeLog:
+      - date: "2025-11-26"
+        description: "初始创建。"
+
+  - type: Database
+    id: DB-VerifyPassword
+    description: 校验用户登录密码是否正确（不修改密码）。
+    dependencies:
+      - none
+    acceptanceCriteria:
+      - 输入用户ID与明文密码，经安全散列比对返回布尔值。
+      - 连续错误次数可计数并触发短期锁定策略（与密码管理一致）。
+    changeLog:
+      - date: "2025-11-26"
+        description: "初始创建。"
+
+  - type: Database
+    id: DB-CheckPhoneAvailability
+    description: 检查新手机号是否可用（未被占用）。
+    dependencies:
+      - none
+    acceptanceCriteria:
+      - 对(phone_country_code, phone_number)进行唯一性检查；返回可用/不可用。
+      - 返回占用时的关联恢复引导链接（如存在）。
+    changeLog:
+      - date: "2025-11-26"
+        description: "初始创建。"
+
+  - type: Database
+    id: DB-UpdatePhoneNumber
+    description: 更新用户手机号并重置核验状态为pending。
+    dependencies:
+      - DB-CheckPhoneAvailability
+      - DB-VerifyPassword
+    acceptanceCriteria:
+      - 新手机号不得与原手机号相同；更新后phone_verified_status设为pending。
+      - 写入审计事件PHONE_CHANGED，并向用户发送通知。
+    changeLog:
+      - date: "2025-11-26"
+        description: "初始创建。"
+
+  - type: Database
+    id: DB-GetCountryCallingCodes
+    description: 返回支持的国家/地区电话区号列表。
+    dependencies:
+      - none
+    acceptanceCriteria:
+      - 至少包含+86；包含名称、代码与本地化标签。
+    changeLog:
+      - date: "2025-11-26"
+        description: "初始创建。"
+
+  - type: Database
+    id: DB-MaskPII
+    description: 将敏感字段进行脱敏处理用于展示。
+    dependencies:
+      - none
+    acceptanceCriteria:
+      - 身份证：前4后3显示，中间以*替代；手机号：国家码+前3+****+后4；邮箱：前2+****+域名。
+    changeLog:
+      - date: "2025-11-26"
+        description: "初始创建。"
+
+business_rules:
+  - 查看个人信息需登录且通过基础实名认证。
+  - 优惠(待)类型可随时修改，立即生效，影响票价计算。
+  - 修改手机号需校验登录密码；新手机号不得与原手机号相同且必须唯一。
+  - 修改成功后需重新核验手机号；页面显示成功提示并返回个人信息页。
+
+security:
+  audit_events:
+    - PROFILE_VIEWED
+    - TRAVELER_TYPE_UPDATED
+    - PHONE_CHANGE_REQUESTED
+    - PHONE_CHANGED
+  pii_access_control:
+    scopes:
+      - admin: full
+      - support: masked_view
+      - user: own_only

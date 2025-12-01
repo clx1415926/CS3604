@@ -1,0 +1,136 @@
+meta:
+  name: "需求-接口-测试 追踪矩阵"
+  source_doc: "12306_用户注册功能_详细需求文档.md"
+  source_doc_login: "12306_用户登录功能_详细需求文档.md"
+  source_doc_password: "12306_密码管理功能_详细需求文档.md"
+  version: "2025-11-11"
+
+mappings:
+  - req_id: MUST-USERNAME-RULES
+    description: "用户名以字母开头，6-30位，仅字母数字下划线"
+    interfaces:
+      data: [UserAccount.username]
+      api: [GET /users/username/check, PATCH /registration/sessions/{id}/account]
+      ui: [AccountInfo.username]
+    tests:
+      feature: [u01_valid, u02_invalid_start_digit, u03_too_short]
+      api: [s01_check_username_valid, s02_check_username_taken, n01_username_format_error]
+
+  - req_id: MUST-PASSWORD-RULES
+    description: "密码最少8位，三类字符至少两类；不得与用户名相同；允许字母数字下划线"
+    interfaces:
+      data: [UserAccount.password_hash, ValidationRules.password]
+      api: [PATCH /registration/sessions/{id}/account]
+      ui: [AccountInfo.password]
+    tests:
+      feature: [p01_strong, p02_weak_only_digits, p03_illegal_char, p04_same_as_username]
+      api: [n02_password_weak]
+
+  - req_id: MUST-PHONE-VERIFY
+    description: "手机号格式校验与短信验证码验证（60s倒计时、5分钟有效）"
+    interfaces:
+      data: [UserAccount.phone, SMSVerification]
+      api: [GET /users/phone/check, POST /registration/sessions/{id}/sms/send, POST /registration/sessions/{id}/sms/verify]
+      ui: [PhoneVerify]
+    tests:
+      feature: [ph01_cn_valid, ph05_invalid, s01_valid, s03_expired]
+      api: [s03_check_phone_available, s06_send_sms, s07_verify_sms_success, n03_sms_mismatch]
+
+  - req_id: MUST-ID-VERIFY
+    description: "身份信息校验，支持身份证；需通过权威渠道核验姓名一致性"
+    interfaces:
+      data: [IdentityVerification]
+      api: [POST /registration/sessions/{id}/identity/verify]
+      ui: [IdentityVerify]
+    tests:
+      feature: [id01_valid_cn_18, id03_name_mismatch]
+      api: [s08_verify_identity_success, n04_id_name_mismatch]
+
+  - req_id: MUST-TERMS-CONSENT
+    description: "用户需勾选并同意服务条款与隐私政策"
+    interfaces:
+      data: [TermsAgreement]
+      api: [POST /registration/sessions/{id}/terms]
+      ui: [TermsConfirm]
+    tests:
+      feature: [terms_accept]
+      api: [s09_accept_terms]
+
+  - req_id: SHOULD-PROGRESS-STATE
+    description: "注册流程多步骤状态机与可视化进度指示"
+    interfaces:
+      data: [RegistrationSession.progress]
+      api: [GET/POST/PATCH /registration/sessions/*]
+      ui: [ProgressIndicator]
+    tests:
+      feature: [flow_happy_path]
+      api: [s04_create_session, s05_submit_account_info_valid, s10_complete_registration]
+
+  # ===== 登录需求映射 =====
+  - req_id: LOGIN-MUST-PASSWORD-LOGIN
+    description: "支持用户名/手机号/邮箱账号密码登录"
+    interfaces:
+      data: [LoginRequest, LoginResponse, UserSession]
+      api: [POST /auth/login, GET /auth/session, POST /auth/logout]
+      ui: [LoginForm]
+    tests:
+      feature: [AC01, AC02, AC03, AC19, AC20]
+      api: [l03_login_username_success, l06_login_phone_success, l07_login_email_success, l04_session_status, l05_logout]
+
+  - req_id: LOGIN-SHOULD-QR
+    description: "扫码登录流程：二维码生成、状态轮询、确认创建会话、过期刷新"
+    interfaces:
+      data: [QRCodeLoginSession]
+      api: [GET /auth/qrcode, GET /auth/qrcode/{id}/status, POST /auth/qrcode/{id}/refresh]
+      ui: [QRCodePanel]
+    tests:
+      feature: [AC08, AC09, AC10]
+      api: [l10_qr_generate, l11_qr_status_unscanned, l12_qr_status_scanned, l13_qr_status_confirmed]
+
+  - req_id: LOGIN-MUST-LOCK
+    description: "失败5次触发30分钟锁定"
+    interfaces:
+      data: [LoginAttempt]
+      api: [POST /auth/login]
+      ui: [LoginForm]
+    tests:
+      feature: [AC17, AC18]
+      api: [l08_login_wrong_password, n04_account_locked_after_failures]
+
+  - req_id: LOGIN-MUST-MAINTENANCE
+    description: "维护窗口禁止登录，返回提示"
+    interfaces:
+      data: []
+      api: [POST /auth/login]
+      ui: [LoginForm]
+    tests:
+      feature: [AC21]
+      api: [l14_maintenance_window_block]
+
+  - req_id: LOGIN-SHOULD-PASSWORD-RECOVERY
+    description: "手机号/邮箱/人脸识别找回密码"
+    interfaces:
+      data: []
+      api: [POST /auth/password/phone/request, POST /auth/password/phone/verify, POST /auth/password/email/request, GET /auth/password/face/start, POST /auth/password/face/confirm, POST /auth/password/reset]
+      ui: [PasswordRecovery]
+    tests:
+      feature: [AC11, AC12, AC13, AC14]
+      api: [p01_phone_request_ok, p02_phone_verify_ok, p03_reset_password_ok, p04_email_request_ok, p05_face_start, p06_face_status_unscanned, p07_face_confirm, p10_maintenance_block_phone_request, n01_phone_id_mismatch, n02_sms_code_mismatch, n03_sms_code_expired, n04_email_invalid_format, n05_reset_password_weak, n07_face_status_expired, n08_rate_limit_phone_request, n09_rate_limit_email_request]
+
+  - req_id: LOGIN-MUST-PASSWORD-CHANGE
+    description: "登录后修改密码：校验旧密码、强度与维护窗口"
+    interfaces:
+      data: [PasswordChangeRequest]
+      api: [POST /auth/password/change]
+      ui: [SettingsSecurity.changePassword]
+    tests:
+      feature: [CP01]
+      api: [p08_login_then_change_password_success, p09_change_password_success, n06_change_password_wrong_old]
+
+coverage_summary:
+  total_requirements: 12
+  covered: 12
+  gaps:
+    - note: "密码提示文案与需求示例略有差异，需产品确认"
+    - note: "手机号重复注册时提示文案是否提示找回账号，需确认"
+    - note: "登录的人脸识别找回密码仅为桩实现，后续需接入真实生物识别服务"

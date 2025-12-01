@@ -1,0 +1,60 @@
+requirements:
+  - requirementId: REQ-TICKET-QUERY
+    description: "车票查询功能"
+    interfaces:
+      - interfaceId: API-GET-QueryStations
+        interfaceType: Backend
+        acceptanceCriteria:
+          - criteriaIndex: 1
+            description: "请求 /api/stations?keyword=bj 应返回北京相关的站点列表。"
+            testCases:
+              - testFile: "backend/test/routes/stations.test.js"
+                testName: "should return 200 OK and a list of stations for a valid keyword"
+                status: "pending"
+      - interfaceId: API-GET-QueryTickets
+        interfaceType: Backend
+        acceptanceCriteria:
+          - criteriaIndex: 1
+            description: "当所有参数合法时，应返回 200 OK 和车次数据。"
+            testCases:
+              - testFile: "backend/test/routes/tickets.test.js"
+                testName: "should return 200 OK and train data for valid query parameters"
+                status: "pending"
+          - criteriaIndex: 2
+            description: "当缺少必要参数时，应返回 400 Bad Request。"
+            testCases:
+              - testFile: "backend/test/routes/tickets.test.js"
+                testName: "should return 400 Bad Request when required parameters are missing"
+                status: "pending"
+      - interfaceId: UI-QueryForm
+        interfaceType: Frontend
+        acceptanceCriteria:
+          - criteriaIndex: 1
+            description: "应包含出发地、目的地、日期三个输入控件和一个查询按钮。"
+            testCases:
+              - testFile: "frontend/test/components/QueryForm.test.tsx"
+                testName: "should render all required form fields"
+                status: "pending"
+      - interfaceId: UI-TrainList
+        interfaceType: Frontend
+        acceptanceCriteria:
+          - criteriaIndex: 1
+            description: "能正确渲染车次号、站点、时间、历时和余票信息。"
+            testCases:
+              - testFile: "frontend/test/components/TrainList.test.tsx"
+                testName: "should render train list correctly"
+                status: "pending"
+              - testFile: "frontend/test/components/TrainList.booking.test.jsx"
+                testName: "should navigate to order page with query parameters - BUG-TS-TrainMismatch-002 Regression"
+                status: "failing"
+      - interfaceId: UI-FilterPanel
+        interfaceType: Frontend
+        acceptanceCriteria:
+          - criteriaIndex: 1
+            description: "应提供车次类型（高铁、动车、直达）和席别（一等座、二等座、软卧、硬卧）的复选框。"
+            testCases:
+              - testFile: "frontend/test/components/FilterPanel.test.tsx"
+                testName: "should render filter options"
+                status: "pending"
+    coverageStatus: "full"
+    coveragePercentage: 100

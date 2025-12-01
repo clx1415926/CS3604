@@ -1,0 +1,242 @@
+meta:
+  name: "12306订单管理_API接口库"
+  version: "1.1.0"
+  generated_at: "2025-11-27T00:00:00Z"
+  source_doc: "e:\\cs3604\\12306\\Final Requirements\\12306_订单管理_需求文档(3).md"
+
+conventions:
+  style: "REST + JSON"
+  base_path: "/api/v1"
+  http_status:
+    success: [200, 201]
+    client_error: [400, 401, 403, 404, 409, 422, 429]
+    server_error: [500]
+
+security:
+  auth:
+    protected_endpoints:
+      - "/orders*"
+      - "/seats/*"
+      - "/contacts"
+  csrf: "前端需遵循同源策略或CSRF Token"
+
+endpoints:
+  - id: API-GET-Contacts
+    name: "获取常用联系人列表"
+    method: GET
+    path: "/contacts"
+    responses:
+      200:
+        body:
+          contacts: [
+            { passenger_id: "uuid", name: "string", id_type: "string", masked_id_number: "string", verified: true }
+          ]
+      401:
+        error: UNAUTHORIZED
+    dependencies:
+      - DB-ListContacts
+    acceptanceCriteria:
+      - 返回所有已添加的常用联系人；字段包含姓名、证件类型、证件号脱敏、实名认证。
+
+  - id: API-GET-SeatMap
+    name: "查询座位布局与占用"
+    method: GET
+    path: "/seats/map"
+    query:
+      train_id: { type: string, required: true }
+      travel_date: { type: date, required: true }
+      seat_class: { type: string, enum: [商务座, 一等座, 二等座, 软卧, 硬卧, 无座], required: true }
+      carriage_no: { type: string, required: false }
+    responses:
+      200:
+        body:
+          train_id: string
+          travel_date: date
+          seat_class: string
+          carriage_no: string
+          seats: [ { seat_no: string, column: "A|B|C|D|E|F", window: boolean, occupied: boolean } ]
+      404:
+        error: "RESOURCE_NOT_FOUND"
+    dependencies:
+      - DB-GetSeatMap
+    acceptanceCriteria:
+      - 显示靠窗标识与列信息；与UI座位图一致。
+
+  - id: API-POST-SeatLock
+    name: "锁定座位"
+    method: POST
+    path: "/seats/lock"
+    body:
+      train_id: string
+      travel_date: date
+      seats: [ { seat_class: string, carriage_no: string, seat_no: string, passenger_id: string } ]
+    responses:
+      200:
+        body:
+          locks: [ { lock_token: string, expires_at: datetime, carriage_no: string, seat_no: string } ]
+      409:
+        error: [SEAT_ALREADY_TAKEN]
+      410:
+        error: [LOCK_EXPIRED]
+    dependencies:
+      - DB-LockSeat
+    acceptanceCriteria:
+      - 并发安全；返回锁定令牌与过期时间；过期后需重新锁定。
+
+  - id: API-POST-OrderCreate
+    name: "创建订单"
+    method: POST
+    path: "/orders"
+    body:
+      train_id: string
+      travel_date: date
+      from_station: string
+      to_station: string
+      passengers: [ { passenger_id: string, name: string, ticket_type: string } ]
+      seat_locks: [ { lock_token: string } ]
+    responses:
+      201:
+        body:
+          order_id: string
+          status: "unpaid"
+          price_total: number
+      400:
+        error: [NO_SEATS_AVAILABLE]
+      410:
+        error: [LOCK_EXPIRED]
+    dependencies:
+      - DB-CreateOrder
+    acceptanceCriteria:
+      - 所有锁定令牌有效且匹配；生成待支付订单并返回订单ID。
+      - 无座或未锁定座位时返回400 NO_SEATS_AVAILABLE，并包含友好提示message。
+
+  - id: API-GET-Orders
+    name: "按状态查询订单"
+    method: GET
+    path: "/orders"
+    query:
+      status: { type: string, enum: [unpaid, upcoming, history], required: false }
+      page: { type: integer, required: false }
+      page_size: { type: integer, required: false }
+    responses:
+      200:
+        body:
+          orders: [
+            {
+              order_id: "uuid",
+              booked_at: datetime,
+              train: { code: string, from: string, to: string, depart_time: string, arrive_time: string },
+              passengers: [ { name: string } ],
+              seats: [ { seat_class: string, carriage_no: string, seat_no: string } ],
+              price_total: number,
+              status: string
+            }
+          ]
+    dependencies:
+      - DB-ListOrdersByStatus
+    acceptanceCriteria:
+      - 默认返回未完成订单；字段集与UI订单卡片一致。
+      - 超过支付时限的未支付订单不在未完成列表中显示（自动过期）。
+      - 历史订单标签返回已取消或已完成订单。
+
+  - id: API-GET-OrderDetail
+    name: "订单详情"
+    method: GET
+    path: "/orders/{order_id}"
+    responses:
+      200:
+        body:
+          order: {
+            order_id: string,
+            booked_at: datetime,
+            train: { code: string, from: string, to: string, depart_time: string, arrive_time: string },
+            passengers: [ { name: string, id_type: string, masked_id_number: string } ],
+            seats: [ { seat_class: string, carriage_no: string, seat_no: string } ],
+            price_total: number,
+            status: string
+          }
+      404:
+        error: [ORDER_NOT_FOUND]
+    dependencies:
+      - DB-GetOrderById
+    acceptanceCriteria:
+      - 返回订单详情完整字段集；不存在时返回404错误码。
+
+  - id: API-POST-OrderCancel
+    name: "取消订单"
+    method: POST
+    path: "/orders/{order_id}/cancel"
+    body: {}
+    responses:
+      200:
+        body:
+          success: true
+          message: "取消订单成功"
+      400:
+        error: [INVALID_ORDER_STATE]
+      429:
+        error: [CANCEL_RATE_LIMIT_EXCEEDED]
+    dependencies:
+      - DB-CancelOrder
+    acceptanceCriteria:
+      - 仅允许取消未支付订单；取消后返回成功消息。
+      - 每日取消超过3次（或无座5次）返回限制错误；提示并阻止取消。
+      - 返回的人性化错误提示文案与Error codes一致（message字段）。
+
+  - id: API-POST-OrderPay
+    name: "订单支付（占位）"
+    method: POST
+    path: "/orders/{order_id}/pay"
+    body: {}
+    responses:
+      200:
+        body:
+          success: true
+          status: "paid"
+          paid_at: datetime
+      404:
+        error: [ORDER_NOT_FOUND]
+      401:
+        error: [UNAUTHORIZED]
+    dependencies:
+      - DB-GetOrderById
+    acceptanceCriteria:
+      - 同会话下对未支付订单进行支付，返回success=true与status=paid。
+      - 未找到订单返回404；未登录返回401。
+
+errors:
+  codes:
+    NO_SEATS_AVAILABLE: { http_status: 400, message: "座位不足或不可用" }
+    SEAT_ALREADY_TAKEN: { http_status: 409, message: "座位已被占用" }
+    LOCK_EXPIRED: { http_status: 410, message: "座位锁定已过期，请重新选择" }
+    ORDER_NOT_FOUND: { http_status: 404, message: "订单不存在" }
+    INVALID_ORDER_STATE: { http_status: 400, message: "当前订单不可取消" }
+    CANCEL_RATE_LIMIT_EXCEEDED: { http_status: 429, message: "您今日取消订单次数已达上限，无法继续购票" }
+    UNAUTHORIZED: { http_status: 401, message: "未登录或会话已过期" }
+    FORBIDDEN: { http_status: 403, message: "无权限执行该操作" }
+    NETWORK_ERROR: { http_status: 400, message: "网络异常，请重试" }
+    SERVER_ERROR: { http_status: 500, message: "系统繁忙，请稍后再试" }
+
+rate_limits:
+  seat_lock:
+    per_user_per_minute: 20
+  order_cancel:
+    per_user_per_day: 3
+  orders_list:
+    per_user_per_minute: 60
+
+examples:
+  create_order_success:
+    request:
+      train_id: "G123"
+      travel_date: "2025-11-17"
+      from_station: "北京南"
+      to_station: "上海虹桥"
+      passengers:
+        - { passenger_id: "p-001", name: "张三", ticket_type: "成人票" }
+      seat_locks:
+        - { lock_token: "lk-001" }
+    response:
+      order_id: "o-001"
+      status: "unpaid"
+      price_total: 576.0

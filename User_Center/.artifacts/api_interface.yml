@@ -1,0 +1,258 @@
+meta:
+  name: "12306个人信息管理_API接口库"
+  version: "1.0.0"
+  generated_at: "2025-11-26T00:00:00Z"
+  source_doc: "d:\\Desktop\\大三上\\SoftwareEngineer\\12306\\CS3604\\User_Center\\12306_个人信息管理_需求文档.md"
+
+conventions:
+  style: "REST + JSON"
+  base_path: "/api/v1"
+  http_status:
+    success: [200, 201]
+    client_error: [400, 401, 403, 404, 409, 422]
+    server_error: [500]
+
+security:
+  auth:
+    protected_endpoints:
+      - "/user/*"
+      - "/metadata/country-codes"
+  csrf: "前端需遵循同源策略或CSRF Token"
+
+endpoints:
+  - id: API-GET-UserProfile
+    name: "获取个人信息（基本/联系方式/附加信息）"
+    method: GET
+    path: "/user/profile"
+    responses:
+      200:
+        body:
+          user_id: string
+          username: string
+          basic_info:
+            name: string
+            country_region: string
+            id_type: string
+            id_number_masked: string
+            id_verified_status: string
+          contact_info:
+            phone_country_code: string
+            phone_number_masked: string
+            phone_verified_status: string
+            email_masked: string
+            email_verified_status: string
+          additional_info:
+            traveler_type: string
+      401:
+        error: [UNAUTHORIZED]
+    dependencies:
+      - DB-GetUserProfile
+    acceptanceCriteria:
+      - 返回三个信息区段；所有敏感字段以脱敏格式展示。
+      - 与UI页面字段一致；无编辑按钮出现在基本信息区。
+
+  - id: API-PATCH-TravelerType
+    name: "修改优惠(待)类型"
+    method: PATCH
+    path: "/user/profile/traveler-type"
+    body:
+      traveler_type: { type: string, enum: [成人, 儿童, 学生, 残疾军人], required: true }
+    responses:
+      200:
+        body:
+          success: true
+          traveler_type: string
+          message: "修改成功"
+      400:
+        error: [INVALID_TRAVELER_TYPE]
+      401:
+        error: [UNAUTHORIZED]
+    dependencies:
+      - DB-UpdateTravelerType
+    acceptanceCriteria:
+      - 下拉选项包含四种类型；提交成功后立即生效并返回查看模式。
+
+  - id: API-GET-PhoneVerificationContext
+    name: "手机核验上下文（原手机号与状态）"
+    method: GET
+    path: "/user/security/phone/context"
+    responses:
+      200:
+        body:
+          phone_country_code: string
+          phone_number_masked: string
+          phone_verified_status: string
+      401:
+        error: [UNAUTHORIZED]
+    dependencies:
+      - DB-GetUserProfile
+    acceptanceCriteria:
+      - 返回脱敏的原手机号与核验状态；供核验页面展示。
+
+  - id: API-POST-PhoneChange
+    name: "修改手机号（需密码验证）"
+    method: POST
+    path: "/user/security/phone/change"
+    body:
+      phone_country_code: { type: string, required: true }
+      phone_number: { type: string, required: true }
+      login_password: { type: string, required: true }
+    responses:
+      200:
+        body:
+          success: true
+          message: "修改成功"
+          phone_country_code: string
+          phone_number_masked: string
+      400:
+        error: [PHONE_INVALID, PASSWORD_REQUIRED]
+      401:
+        error: [INVALID_CREDENTIALS]
+      409:
+        error: [PHONE_TAKEN]
+      422:
+        error: [PHONE_SAME_AS_OLD]
+    dependencies:
+      - DB-VerifyPassword
+      - DB-CheckPhoneAvailability
+      - DB-UpdatePhoneNumber
+    acceptanceCriteria:
+      - 正确输入密码才能修改；手机号格式校验失败时提示错误。
+      - 新手机号不可与原手机号相同；被占用时返回409。
+      - 修改成功后返回个人信息页并显示脱敏的新手机号。
+
+  - id: API-GET-CountryCodes
+    name: "获取国家/地区电话区号"
+    method: GET
+    path: "/metadata/country-codes"
+    responses:
+      200:
+        body:
+          codes: [ { code: string, name: string, locale: string } ]
+    dependencies:
+      - DB-GetCountryCallingCodes
+    acceptanceCriteria:
+      - 至少包含+86；用于手机核验页面的区号下拉选择。
+
+  - id: API-GET-Passengers
+    name: "获取乘车人列表"
+    method: GET
+    path: "/passengers"
+    responses:
+      200:
+        body:
+          passengers:
+            - passenger_id: string
+              name: string
+              id_type: string
+              id_number_masked: string
+              phone_country_code: string
+              phone_number_masked: string
+              traveler_type: string
+              verified_status: string
+              is_self: boolean
+    dependencies:
+      - DB-GetPassengers
+    acceptanceCriteria:
+      - 支持按姓名模糊查询
+      - 证件号和手机号需脱敏
+
+  - id: API-POST-AddPassenger
+    name: "添加乘车人"
+    method: POST
+    path: "/passengers"
+    body:
+      name: { type: string, required: true }
+      id_type: { type: string, required: true }
+      id_number: { type: string, required: true }
+      phone_country_code: { type: string }
+      phone_number: { type: string }
+      traveler_type: { type: string, required: true }
+    responses:
+      201:
+        body:
+          passenger_id: string
+          verified_status: string
+      400:
+        error: [MISSING_FIELD, INVALID_TRAVELER_TYPE, INVALID_ID_NUMBER_FORMAT, INVALID_NAME_FORMAT]
+      403:
+        error: [PASSENGER_LIMIT_EXCEEDED]
+    dependencies:
+      - DB-AddPassenger
+    acceptanceCriteria:
+      - 最多15人
+      - 需校验必填字段
+
+  - id: API-DELETE-Passenger
+    name: "删除乘车人"
+    method: DELETE
+    path: "/passengers/{id}"
+    responses:
+      204:
+        body: {}
+      403:
+        error: [CANNOT_DELETE_SELF]
+      404:
+        error: [PASSENGER_NOT_FOUND]
+    dependencies:
+      - DB-DeletePassenger
+    acceptanceCriteria:
+      - 本人不可删除
+
+  - id: API-PATCH-Passenger
+    name: "编辑乘车人（仅手机号和优惠类型）"
+    method: PATCH
+    path: "/passengers/{id}"
+    body:
+      phone_number: { type: string, required: false }
+      phone_country_code: { type: string, required: false }
+      traveler_type: { type: string, required: false }
+    responses:
+      200:
+        body:
+          passenger_id: string
+          phone_number_masked: string
+          traveler_type: string
+      400:
+        error: [INVALID_TRAVELER_TYPE]
+      404:
+        error: [PASSENGER_NOT_FOUND]
+    dependencies:
+      - DB-UpdatePassenger
+    acceptanceCriteria:
+      - 仅允许修改手机号和优惠类型
+      - 返回更新后的乘客信息
+
+errors:
+  codes:
+    INVALID_TRAVELER_TYPE: { http_status: 400, message: "优惠类型不合法" }
+    INVALID_ID_NUMBER_FORMAT: { http_status: 400, message: "证件号码格式错误，请检查" }
+    INVALID_NAME_FORMAT: { http_status: 400, message: "姓名格式不合法，仅限汉字、字母、点(.)与中点(·)" }
+    UNAUTHORIZED: { http_status: 401, message: "未登录或会话已过期" }
+    PHONE_INVALID: { http_status: 400, message: "手机号格式错误，请检查" }
+    PASSWORD_REQUIRED: { http_status: 400, message: "请输入密码" }
+    INVALID_CREDENTIALS: { http_status: 401, message: "密码错误，请重新输入" }
+    PHONE_TAKEN: { http_status: 409, message: "该手机号已被其他账户使用" }
+    PHONE_SAME_AS_OLD: { http_status: 422, message: "新手机号不能与原手机号相同" }
+
+rate_limits:
+  profile_view:
+    per_user_per_minute: 60
+  phone_change_attempts:
+    per_user_per_minute: 5
+
+examples:
+  traveler_type_change_success:
+    request:
+      traveler_type: "学生"
+    response:
+      success: true
+      traveler_type: "学生"
+      message: "修改成功"
+  phone_change_wrong_password:
+    request:
+      phone_country_code: "+86"
+      phone_number: "12345"
+      login_password: "WrongPass"
+    response:
+      error: "INVALID_CREDENTIALS"

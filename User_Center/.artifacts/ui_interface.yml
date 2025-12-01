@@ -1,0 +1,98 @@
+meta:
+  name: "12306个人信息管理_UI接口规范"
+  version: "1.0.0"
+  generated_at: "2025-11-26T00:00:00Z"
+  source_doc: "d:\\Desktop\\大三上\\SoftwareEngineer\\12306\\CS3604\\User_Center\\12306_个人信息管理_需求文档.md"
+
+principles:
+  layout:
+    - 页头/导航/内容/页脚结构，内容区分卡片：基本信息、联系方式、附加信息
+  states:
+    - 加载: 提交时显示"正在处理，请稍候..."并禁用按钮
+    - 错误: 在字段下方显示红色错误提示文字
+    - 成功: 弹出绿色Toast提示"修改成功"
+  accessibility:
+    keyboard: { tab_order: logical, focus_visible: true }
+    screen_reader: { aria_labels: appropriate }
+    contrast: { meets_wcag: true }
+
+pages:
+  personal_info_view:
+    url: "https://kyfw.12306.cn/otn/view/information.html"
+    sections:
+      basic_info:
+        fields: [用户名, 姓名, 国家/地区, 证件类型, 证件号码(脱敏), 核验状态]
+      contact_info_view:
+        fields: [手机号(脱敏), 手机核验状态, 邮箱(脱敏), 邮箱激活状态]
+        actions:
+          edit_toggle:
+            label: "编辑"
+            on_click: "切换到联系方式编辑模式"
+      contact_info_edit:
+        fields: [手机号(脱敏), 邮箱(脱敏)]
+        links:
+          phone_verify: { label: "去手机核验修改", navigate: "https://kyfw.12306.cn/otn/view/userSecurity_bindTel.html" }
+          email_secure: { label: "去安全邮箱修改", navigate: "secure_email_page" }
+        actions:
+          save_toggle:
+            label: "保存"
+            on_click: "退出编辑模式"
+      additional_info_view:
+        fields: [优惠(待)类型]
+        actions:
+          edit_toggle:
+            label: "编辑"
+            on_click: "切换到附加信息编辑模式"
+      additional_info_edit:
+        controls:
+          traveler_type_dropdown:
+            options: [成人, 儿童, 学生, 残疾军人]
+        actions:
+          save_submit:
+            label: "保存"
+            api: "/api/v1/user/profile/traveler-type"
+    data_sources:
+      profile_api: "/api/v1/user/profile"
+    acceptanceCriteria:
+      - 页面显示三个信息区：基本信息、联系方式、附加信息。
+      - 基本信息为只读显示；联系方式与附加信息可进入编辑模式。
+      - 联系方式编辑模式显示两个跳转链接；保存按钮退出编辑模式。
+      - 附加信息编辑模式下拉包含四个选项；保存后返回查看模式并显示新类型。
+
+  phone_verification:
+    url: "https://kyfw.12306.cn/otn/view/userSecurity_bindTel.html"
+    form:
+      header: "手机核验"
+      original_phone_text: "+86-138****7076 已通过核验"
+      fields:
+        - { name: "国家代码选择", type: "Dropdown", source_api: "/api/v1/metadata/country-codes", default: "+86" }
+        - { name: "新手机号", type: "Textbox", placeholder: "请输入新手机号" }
+        - { name: "登录密码", type: "Password", placeholder: "请输入密码" }
+      hints:
+        - "正确输入密码才能修改密保"
+    actions:
+      cancel:
+        label: "取消"
+        navigate: "返回个人信息页"
+      confirm:
+        label: "确认"
+        api: "/api/v1/user/security/phone/change"
+    acceptanceCriteria:
+      - 显示原手机号（脱敏）与核验状态；国家代码默认为+86可切换。
+      - 输入新手机号与登录密码；点击"确认"提交校验与保存。
+      - 密码错误与手机号格式错误分别给出提示并停留在当前页；新手机号保留。
+      - 修改成功后自动返回个人信息页并显示脱敏的新手机号。
+
+interactions:
+  flows:
+    - 查看个人信息页 -> 编辑联系方式 -> 点击跳转手机核验 -> 填写并确认 -> 返回个人信息页
+    - 查看个人信息页 -> 编辑附加信息 -> 选择下拉 -> 保存 -> 返回查看模式
+  error_handling:
+    - 表单验证失败在字段下方显示红色提示；异步操作进行中禁用按钮
+
+dependencies:
+  - API-GET-UserProfile
+  - API-PATCH-TravelerType
+  - API-GET-PhoneVerificationContext
+  - API-POST-PhoneChange
+  - API-GET-CountryCodes
