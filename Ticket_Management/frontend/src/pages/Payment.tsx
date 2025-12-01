@@ -15,7 +15,9 @@ export default function Payment() {
     try {
       const h = window.location.hash || '';
       const mSid = h.match(/sid=([^&]+)/);
-      const sid = (mSid ? decodeURIComponent(mSid[1]) : (localStorage.getItem('SESSION_ID') || 'sess-super-12306')).trim();
+      const sidRaw = (mSid ? decodeURIComponent(mSid[1]) : (localStorage.getItem('SESSION_ID') || '')).trim();
+      if (!sidRaw) { setMessage('未登录'); return; }
+      const sid = sidRaw;
       try { localStorage.setItem('SESSION_ID', sid); } catch (e) {}
       const r = await fetch(`http://localhost:3001/api/v1/orders/${orderId}/pay`, {
         method: 'POST',
