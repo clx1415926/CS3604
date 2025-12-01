@@ -22,5 +22,3 @@ Services and Ports
   - Command: set PORT=3001 && npm start
 - Ticket_Management frontend (Vite): address shown in the terminal (defaults to 5173+ , auto-increments)
   - Command: npm run dev
-
-6666
