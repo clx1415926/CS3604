@@ -5,6 +5,8 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
+    open: false,
+    strictPort: false, // 如果端口被占用，自动尝试下一个可用端口
     fs: {
       allow: [
         'd:/HW/CS3601/CS3604/12306_ticket_selection',

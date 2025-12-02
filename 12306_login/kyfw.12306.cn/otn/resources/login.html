@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <title>中国铁路12306网站</title>
+    <link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon" />
+    <link href="css/global.css" rel="stylesheet" />
+    <link rel="stylesheet" href="css/common.css" />
+    <link href="css/public.css" rel="stylesheet" />
+    <link href="css/login.css" rel="stylesheet" />
+    <link href="fonts/iconfont.css" rel="stylesheet" />
+    <style>
+      .login-hd-slide {
+        margin-right: 60px;
+      }
+      .login-hd-slide:after {
+        content: "";
+        position: absolute;
+        top: 12px;
+        right: -30px;
+        width: 1px;
+        height: 24px;
+        background: #dedede;
+      }
+      .up-box-bd {
+        background: #fff;
+        border-radius: 0 0 5px 5px;
+        padding: 20px 50px;
+        line-height: 25px;
+      }
+      .nc-container .nc_scale span {
+        height: 34px !important;
+        line-height: 33px !important;
+      }
+    </style>
+  </head>
+  <body class="page-login">
+    <!-- 头部 -->
+    <div class="header">
+      <div class="wrapper">
+        <!-- 头部内容 -->
+        <div class="header-con">
+          <h1 class="logo">
+            <a href="https://www.12306.cn/index/index.html">中国铁路12306</a>
+          </h1>
+          <div class="header-welcome">欢迎登录12306</div>
+        </div>
+      </div>
+    </div>
+    <!-- 登录区域 -->
+    <div class="login-panel">
+      <!-- 轮播图 -->
+      <div class="loginSlide">
+        <div class="bd">
+          <ul></ul>
+        </div>
+        <div class="hd"><ul></ul></div>
+      </div>
+      <!--  仅显示账户登录添加样式login-box-account，验证码隐藏添加样式 login-box-account-nocode -->
+      <div class="login-box">
+        <ul class="login-hd">
+          <li class="login-hd-code active">
+            <a href="javascript:;">账号登录</a>
+          </li>
+          <li class="login-hd-account"><a href="javascript:;">扫码登录</a></li>
+        </ul>
+        <div class="login-bd">
+          <!-- 账号登录 -->
+          <div class="login-account">
+            <div class="login-item" style="height: 44px">
+              <label for="user" class="item-label" style="top: 11px"
+                ><i class="icon icon-user"></i
+              ></label>
+              <input
+                type="text"
+                class="input"
+                id="J-userName"
+                placeholder="用户名/邮箱/手机号"
+                style="height: 44px; line-height: 44px"
+                aria-label="请输入用户名或邮箱或手机号"
+                autocomplete="off"
+              />
+            </div>
+            <div class="login-item" style="height: 44px">
+              <label for="pwd" class="item-label" style="top: 11px"
+                ><i class="icon icon-pwd"></i
+              ></label>
+              <input
+                type="password"
+                class="input"
+                id="J-password"
+                placeholder="密码"
+                aria-label="请输入密码"
+                onpaste="$.isPaste()"
+                style="height: 44px; line-height: 44px"
+                autocomplete="new-password"
+              />
+            </div>
+            <!-- <div class="login-code-select" style="display: none">
+              <div class="code-select-tit">
+                <span class="tit-name">登录验证方式</span>
+              </div>
+              <div class="code-select-con" id="verification">
+                <div class="code-select-item pull-left active" type="1">
+                  <i class="icon icon-slide"></i>
+                  <a href="javascript:;">滑动验证</a>
+                </div>
+                <div
+                  class="code-select-item pull-right"
+                  type="0"
+                  style="display: none"
+                >
+                  <i class="icon icon-msg"></i>
+                  <a href="javascript:;">短信验证</a>
+                </div>
+              </div>
+            </div> -->
+
+            <div class="login-error" id="J-login-error" role="alertdialog" tabindex="-1" aria-label="错误提示" style="display: none">
+              <i class="icon icon-plaint-fill"></i
+              ><span>用户名或密码输入错误</span>
+            </div>
+            <div class="login-btn">
+              <a
+                id="J-login"
+                href="javascript:;"
+                class="btn btn-primary form-block"
+                >立即登录</a
+              >
+            </div>
+            <div class="login-txt">
+              <a
+                href="https://kyfw.12306.cn/otn/regist/init"
+                class="txt-primary"
+                >注册12306账号</a
+              >
+              |
+              <a
+                href="https://kyfw.12306.cn/otn/view/find_my_password.html"
+                class="txt-lighter"
+                >忘记密码？</a
+              >
+            </div>
+          </div>
+          <!-- 扫码登录 -->
+          <div class="login-code" style="display: none">
+            <div id="J-login-code-loading" class="login-code-loading">
+              <img src="images/loading.gif" />
+            </div>
+            <div
+              id="J-login-code-con"
+              class="login-code-con"
+              style="display: none"
+            >
+              <div class="login-code-main">
+                <div class="code-pic">
+                  <img id="J-qrImg" />
+                  <div id="J-code-error-mask" class="code-error-mask"></div>
+                  <div id="J-code-error" class="code-error">
+                    <p>二维码已失效</p>
+                    <a href="javascript:;" class="btn btn-primary">刷新</a>
+                  </div>
+                </div>
+                <div class="code-tips">
+                  <img src="images/code-tips.png" alt="" />
+                </div>
+              </div>
+              <div class="login-code-txt">
+                打开<span class="txt-primary">12306手机APP</span> 扫描二维码
+              </div>
+              <div class="login-code-txt">
+                <a
+                  href="https://kyfw.12306.cn/otn/regist/init"
+                  class="txt-primary"
+                  >注册12306账号</a
+                >
+              </div>
+            </div>
+            <div
+              id="J-login-code-success"
+              class="login-code-con login-code-success hide"
+            >
+              <img src="images/login-success.png" alt="" />
+              <h3>扫描成功！</h3>
+              <p>请勿刷新页面，在手机上确认登录！</p>
+            </div>
+            <ul class="login-code-ft">
+              <li><i class="icon icon-scan"></i>扫一扫登录</li>
+              <li><i class="icon icon-quick"></i>更快</li>
+              <li class="last"><i class="icon icon-safe"></i>更安全</li>
+            </ul>
+          </div>
+        </div>
+        <div class="login-ft">
+          <p>
+            铁路12306每日5:00至次日1:00（周二为5:00至24:00）提供购票、改签、变更到站业务办理， 全天均可办理退票等其他服务。
+          </p>
+        </div>
+
+        <div
+          id="login_control_offline"
+          name="login_control_mask"
+          class="panel-tooltip left panel-tooltip-login"
+          style="bottom: 150px; right: 390px; display: none"
+        >
+          <a
+            name="login_control_close"
+            href="javascript:void(0);"
+            class="tooltip-close"
+            ><i class="icon icon-close"></i
+          ></a>
+          <div class="tooltip-arw"></div>
+          <div class="tooltip-txt tooltips-login-con">
+            <div class="tooltips-login-side">
+              <img src="images/download.png" alt="" />
+            </div>
+            <div class="tooltips-login-main">
+              <h3 class="tooltips-login-tit">
+                <i class="icon icon-plaint-fill txt-danger"></i>身份核验提醒
+              </h3>
+              <p class="tooltips-login-txt">
+                为了保护您的账户安全，确保是您本人操作，请在十分钟内使用12306APP进行登录核验。
+              </p>
+            </div>
+          </div>
+        </div>
+        <div
+          id="login_control_app"
+          name="login_control_mask"
+          class="panel-tooltip left panel-tooltip-login"
+          style="bottom: 150px; right: 390px; display: none"
+        >
+          <a
+            name="login_control_close"
+            href="javascript:void(0);"
+            class="tooltip-close"
+            ><i class="icon icon-close"></i
+          ></a>
+          <div class="tooltip-arw"></div>
+          <div class="tooltip-txt tooltips-login-con">
+            <div class="tooltips-login-side">
+              <img src="images/login/counter.png" alt="" />
+            </div>
+            <div class="tooltips-login-main">
+              <h3 class="tooltips-login-tit">
+                <i class="icon icon-plaint-fill txt-danger"></i>身份核验提醒
+              </h3>
+              <p class="tooltips-login-txt">
+                您的身份信息有问题，需到线下窗口进行身份核验，才能进行登录。
+              </p>
+            </div>
+          </div>
+        </div>
+        <div
+          id="login_control_msg"
+          name="login_control_mask"
+          class="panel-tooltip left panel-tooltip-login"
+          style="bottom: 150px; right: 390px; display: none"
+        >
+          <a
+            name="login_control_close"
+            href="javascript:void(0);"
+            class="tooltip-close"
+            ><i class="icon icon-close"></i
+          ></a>
+          <div class="tooltip-arw"></div>
+          <div class="tooltip-txt tooltips-login-con"  id="upStream">
+            <h3 class="tooltips-login-tit">
+              <i class="icon icon-plaint-fill txt-danger"></i>手机验证提醒
+            </h3>
+            <p id="login_control_mobile" class="tooltips-login-txt">
+              请用尾号2753手机号发短信666到12306。
+            </p>
+            <div class="tooltips-login-search">
+              <input maxlength="6" id="up_msg_code" type="text" class="input" />
+              <a
+                id="login_control_submit"
+                href="javascript:void(0);"
+                class="btn btn-primary"
+                >确定</a
+              >
+              <div
+                style="display: none"
+                id="login_control_error"
+                class="tips-info-txt"
+              >
+                <i class="icon icon-plaint-fill txt-error"></i>验证码错误
+              </div>
+            </div>
+          </div>
+          <div
+            class="tooltip-txt tooltips-login-con"
+            id="down"
+            style="height: 350px; background-color: #fff"
+          >
+            <h3 class="tooltips-login-tit">
+              <i
+                style="color: #ff4646"
+                class="icon icon-plaint-fill txt-danger"
+              ></i
+              >手机验证提醒
+            </h3>
+            <div>
+              <p class="tooltips-login-txt">
+                1.点击获取验证码的按钮来获取动态身份验证码。
+              </p>
+              <p class="tooltips-login-txt">2.输入验证码，并点击验证按钮。</p>
+            </div>
+            <div class="tooltips-login-search">
+              <div style="margin-bottom: 10px">
+                <label>
+                  <strong>手机号码</strong>
+                  <span style="margin-left: 15px;width: 62px;display: inline-block;text-align: center;" id="mobile_down"></span>
+                  <a
+                    href="javascript:;"
+                    style="
+                      height: 30px;
+                      line-height: 20px;
+                      outline: black 0px;
+                      color: #3b99fc;
+                      padding: 5px;
+                      border: 1px solid #dedede;
+                      margin-left: 10px
+                    "
+                    id="verification_code_down"
+                    >获取验证码
+                  </a>
+                  <span
+                    style="display: none; padding-left: 10px"
+                    id="mobile_msg_err"
+                  >
+                    <i class="icon icon-plaint-fill txt-error"></i>获取验证码失败
+                </span>
+                </label>
+              </div>
+              <div>
+                <label for="up_msg_code">
+                  <strong>短信验证码</strong>
+                  <input
+                    maxlength="6"
+                    id="up_msg_code_down"
+                    type="text"
+                    class="input"
+                    style="float: none"
+                    aria-label="输入验证码"
+                  />
+                </label>
+                <span
+                  style="display: none; padding-left: 10px"
+                  id="login_control_error_down"
+                >
+                  <i class="icon icon-plaint-fill txt-error"></i>验证码错误
+                </span>
+              </div>
+              <div style="text-align: center; height: 60px; line-height: 60px">
+                <a
+                  id="login_control_submit_down"
+                  href="javascript:void(0);"
+                  class="btn btn-primary"
+                  style="
+                    height: 30px;
+                    line-height: 20px;
+                    outline: black 0px;
+                    float: none;
+                  "
+                  >验证
+                </a>
+                <a
+                  id="login_control_cancel"
+                  href="javascript:void(0);"
+                  class="btn btn-primary"
+                  style="
+                    height: 30px;
+                    line-height: 20px;
+                    outline: black 0px;
+                    background: #fff;
+                    border-color: #999;
+                    color: black;
+                    float: none;
+                    margin-left: 35px;
+                  "
+                  >取消
+                </a>
+              </div>
+              <div>
+                <p class="tooltips-login-txt">使用说明：</p>
+                <p class="tooltips-login-txt">
+                  1.一个用户一天可以获取三次手机核验的短信验证码。
+                </p>
+                <p class="tooltips-login-txt">
+                  2.手机核验通过的用户能在12306.cn网站办理邮箱修改，密码修改等业务。
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- 底部 -->
+    <div class="footer">
+      <div class="footer-con wrapper">
+        <div class="foot-links" style="margin-right: 20px">
+          <h2 class="foot-con-tit">友情链接</h2>
+          <ul class="foot-links-list">
+            <li>
+              <a href="http://www.china-railway.com.cn/" target="_blank">
+                <img src="images/link05.png" alt="" />
+              </a>
+            </li>
+            <li>
+              <a href="http://www.china-ric.com/" target="_blank">
+                <img src="images/link02.png" alt="" />
+              </a>
+            </li>
+            <li>
+              <a href="http://www.95306.cn/" target="_blank">
+                <img src="images/link03.png" alt="" />
+              </a>
+            </li>
+            <li>
+              <a href="http://www.95572.com/" target="_blank">
+                <img src="images/link04.png" alt="" />
+              </a>
+            </li>
+          </ul>
+        </div>
+        <ul class="foot-code">
+          <li style="width: 140px">
+            <h2 class="foot-con-tit">中国铁路官方微信</h2>
+            <div class="code-pic">
+              <img src="images/zgtlwb.png" />
+            </div>
+          </li>
+          <li style="width: 140px">
+            <h2 class="foot-con-tit">中国铁路官方微博</h2>
+            <div class="code-pic">
+              <img src="images/zgtlwx.png" />
+            </div>
+          </li>
+          <li style="width: 110px">
+            <h2 class="foot-con-tit">12306 公众号</h2>
+            <div class="code-pic">
+              <img src="images/public.png" />
+            </div>
+          </li>
+          <li style="width: 110px">
+            <h2 class="foot-con-tit">铁路12306</h2>
+            <div class="code-pic">
+              <img src="images/download.png" />
+              <div class="code-tips">
+                官方APP下载，目前铁路未授权其他网站或APP开展类似服务内容，敬请广大用户注意。
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div class="footer-txt" style="position: relative;">
+        <p>
+          <span class="mr">版权所有©2008-2025</span>
+          <span>中国铁道科学研究院集团有限公司</span>
+          <span>技术支持：铁旅科技有限公司</span>
+        </p>
+        <p>
+          <span class="mr">
+        	<img src="images/gongan.png" alt="公安" style="width: 13px" />
+	        <a
+	          target="blank"
+	          href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=11010802038392"
+	          style="color: #c1c1c1"
+	          >京公网安备 11010802038392号</a
+	        >
+	      </span>
+	      <span class="mr">|</span>
+          <span class="mr">京ICP备05020493号-4</span>
+          <span class="mr">|</span>
+          <span>ICP证：京B2-20202537</span>
+        </p>
+        <div style="position: absolute;top: 17px;left: 50%;margin-left: 350px;">
+	       <img src="images/footer-slh.jpg" style="display: block;width: 130px;height: 46px;" alt="适老化无障碍服务"/>
+	     </div>
+      </div>
+    </div>
+    <!-- <div
+      id="login_slide_mask"
+      style="
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        background: #000;
+        opacity: 0.5;
+        z-index: 5000;
+        display: none;
+      "
+    ></div> -->
+    <!-- <div
+      class="up-box"
+      id="login_slide_box"
+      style="
+        width: 450px;
+        left: 50%;
+        top: 170px;
+        margin-left: -250px;
+        display: none;
+        border-radius: 6px;
+      "
+    >
+      <div class="up-box-hd">
+        温馨提示<a href="javascript:;" id="close_btn">关闭</a>
+      </div>
+      <div class="up-box-bd">
+        <div class="box-psw-code">
+          <div class="code-tit">请按住滑块拖动到最右边，完成校验。</div>
+          文本验证码
+          <div class="code-pic"><img src="images/code-text.png" alt="" /></div>
+          <div id="J-slide-passcode" class="nc-container"></div>
+        </div>
+      </div>
+    </div> -->
+    <!-- 选择验证方式 -->
+    <div
+      class="modal-login"
+      id="modal"
+      role="alertdialog"
+      tabindex="-1"
+      aria-label="请选择登录验证方式框"
+      style="
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        margin-top: -126px;
+        margin-left: -190px;
+        display: none;
+      "
+    >
+      <div class="modal-login-tit">
+        <h2>选择验证方式</h2>
+        <a
+          href="javascript:;"
+          class="close"
+          id="short_message_close"
+          title="关闭"
+          ><i class="icon icon-close"></i
+        ></a>
+      </div>
+      <!-- 验证选择 -->
+      <div class="login-box">
+        <ul class="login-hd" id="verification">
+          <li class="login-hd-slide active" type="1">
+            <a href="javascript:;">滑动验证</a>
+          </li>
+          <li class="" type="0" style="display: none">
+            <a href="javascript:;">短信验证</a>
+          </li>
+        </ul>
+        <div class="login-code-item" style="display: none" id="short_message">
+          <div style="width: 320px; padding: 20px 0; margin: 0 auto">
+            <div>
+              <label for="id_card" style="position: absolute; top: -6000px"
+                >请输入登录账号绑定的证件号后4位</label
+              >
+              <input
+                type="text"
+                class="input"
+                style="width: 320px; height: 44px; line-height: 34px"
+                id="id_card"
+                placeholder="请输入登录账号绑定的证件号后4位"
+                maxlength="4"
+              />
+            </div>
+            <div style="margin-top: 20px">
+              <a
+                href="javascript:;"
+                class="btn btn-disabled"
+                style="width: 100px"
+                id="verification_code"
+                >获取验证码</a
+              >
+              <label
+                for="verification_code"
+                style="position: absolute; top: -6000px"
+                >请输入验证码</label
+              >
+              <input
+                type="text"
+                class="input"
+                style="
+                  float: left;
+                  width: 200px;
+                  margin-right: 20px;
+                  height: 44px;
+                  line-height: 34px;
+                "
+                placeholder="输入验证码"
+                id="code"
+                maxlength="6"
+              />
+            </div>
+            <div
+              style="margin-top: 5px; color: red; display: none"
+              id="message"
+              role="alertdialog"
+              tabindex="-1"
+              aria-label="错误提示框"
+            >
+              <p></p>
+            </div>
+            <div style="margin-top: 20px">
+              <a
+                href="javascript:;"
+                class="btn btn-primary"
+                style="width: 320px"
+                id="sureClick"
+                >确定</a
+              >
+            </div>
+          </div>
+        </div>
+        <div class="login-code-item" id="slide">
+          <div class="up-box-bd">
+            <div class="box-psw-code">
+              <!-- 文本验证码 -->
+              <div class="code-pic">
+                <img
+                  src="images/slide.png"
+                  alt="滑动验证码"
+                  style="width: 280px; height: 144px"
+                />
+              </div>
+              <div
+                id="J-slide-passcode"
+                class="nc-container"
+                style="left: -30px; position: relative"
+              ></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="text/javascript" src="js/framework/jquery-1.9.1.js"></script>
+    <script
+      type="text/javascript"
+      src="//g.alicdn.com/sd/ncpc/nc.js?t=2015052012"
+    ></script>
+    <script
+      type="text/javascript"
+      src="js/framework/jquery.SuperSlide2.js"
+    ></script>
+    <script type="text/javascript" src="js/framework/jquery.cookie.js"></script>
+    <script type="text/javascript" src="js/framework/base64js.min.js"></script>
+    <script type="text/javascript" src="js/framework/SM4.js"></script>
+    <!-- <script type="text/javascript" src="js/login_new_v20210901.js"></script> -->
+    <script type="text/javascript" src="js/login_new_v20221230.js"></script>
+    <script type="text/javascript">
+      (function ($) {
+        $(document).ready(function () {
+          $.popup_initLogin(false);
+          $.getBanners();
+          var loginBox = $(".login-panel .login-box");
+          // loginBox.css("margin-top", -loginBox.outerHeight() / 2);
+          loginBox.css({
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            "margin-left": "215px",
+            "margin-top": "-225px",
+          });
+          if (!$(".login-box").hasClass("login-box-account")) {
+            $(".login-box").slide({
+              titCell: ".login-hd li",
+              mainCell: ".login-bd",
+              titOnClassName: "active",
+              trigger: "click",
+            });
+          }
+          // 鼠标滑入显示二维码提示
+          $(".login-code-main").hover(
+            function () {
+              $(".login-code-main .code-pic")
+                .stop()
+                .animate(
+                  {
+                    left: 0,
+                  },
+                  300,
+                  function () {
+                    $(".login-code-main .code-tips").show();
+                  }
+                );
+            },
+            function () {
+              $(".login-code-main .code-tips").hide();
+              $(".login-code-main .code-pic").stop().animate(
+                {
+                  left: "80px",
+                },
+                300
+              );
+            }
+          );
+        });
+      })(jQuery);
+    </script>
+  </body>
+</html>
+<script
+  type="text/javascript"
+  src="https://kyfw.12306.cn/otn/resources/route/kyfw.12306.cn/route.js "
+></script>

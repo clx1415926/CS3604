@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Header from './components/Header';
 import QueryForm from './components/QueryForm';
 import TrainList from './components/TrainList';
 import FilterPanel from './components/FilterPanel';
@@ -89,7 +88,6 @@ function App() {
 
     return (
         <div>
-            <Header />
             <main className="container">
                 <QueryForm onQuery={handleQuery} stations={stations} disabled={!stationsLoaded} />
                 <div style={{ display: 'block', marginTop: '20px' }}>
@@ -118,25 +116,26 @@ function App() {
                   <li>
                     <h2 className="foot-con-tit">中国铁路官方微信</h2>
                     <div className="code-pic">
-                      <img src="/@fs/d:/HW/CS3601/CS3604/12306_ticket_selection/kyfw.12306.cn/otn/resources/images/zgtlwb.png" alt="中国铁路官方微信" />
+                      <img src="./assets/zgtlwb.png" alt="中国铁路官方微信" />
                     </div>
                   </li>
                   <li>
                     <h2 className="foot-con-tit">中国铁路官方微博</h2>
                     <div className="code-pic">
-                      <img src="/@fs/d:/HW/CS3601/CS3604/12306_ticket_selection/kyfw.12306.cn/otn/resources/images/zgtlwx.png" alt="中国铁路官方微博" />
+                      <img src="./assets/zgtlwx.png" alt="中国铁路官方微博" />
                     </div>
                   </li>
                   <li>
                     <h2 className="foot-con-tit">12306 公众号</h2>
                     <div className="code-pic">
-                      <img src="/@fs/d:/HW/CS3601/CS3604/12306_ticket_selection/kyfw.12306.cn/otn/resources/images/public.png" alt="12306 公众号" />
+                      <img src="./assets/public.png" alt="12306 公众号" />
                     </div>
                   </li>
                   <li>
                     <h2 className="foot-con-tit">铁路12306</h2>
                     <div className="code-pic">
-                      <img src="/@fs/d:/HW/CS3601/CS3604/12306_ticket_selection/kyfw.12306.cn/otn/resources/images/download.png" alt="铁路12306" />
+                      <img src="./assets/download.png" alt="铁路12306" />
+                      <div className="code-tips">官方APP下载，目前铁路未授权其他网站或APP开展类似服务内容，敬请广大用户注意。</div>
                     </div>
                   </li>
                 </ul>
@@ -149,8 +148,8 @@ function App() {
                 </p>
                 <p>
                   <span className="mr">
-                    <img src="/@fs/d:/HW/CS3601/CS3604/12306_ticket_selection/kyfw.12306.cn/otn/resources/images/gongan.png" alt="公安" style={{width:'13px'}} />
-                    <a target="_blank" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=11010802038392" style={{color:'#c1c1c1'}}>京公网安备 11010802038392号</a>
+                    <img src="./assets/gongan.png" alt="公安" style={{width:'13px'}} />
+                    <a target="blank" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=11010802038392" style={{color:'#c1c1c1'}}>京公网安备 11010802038392号</a>
                   </span>
                   <span className="mr">|</span>
                   <span className="mr">京ICP备05020493号-4</span>
@@ -158,7 +157,7 @@ function App() {
                   <span>ICP证：京B2-20202537</span>
                 </p>
                 <div className="a11y-link">
-                  <img src="/@fs/d:/HW/CS3601/CS3604/12306_ticket_selection/kyfw.12306.cn/otn/resources/images/footer-slh.jpg" alt="适老化无障碍服务" style={{display:'block',width:'130px',height:'46px'}} />
+                  <img src="./assets/footer-slh.jpg" alt="适老化无障碍服务" style={{display: 'block',width: '130px',height: '46px'}} />
                 </div>
               </div>
             </div>
