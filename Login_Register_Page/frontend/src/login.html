@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>中国铁路12306 - 欢迎登录</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="assets/iconfont.css" />
+    <link rel="stylesheet" href="login-styles.css" />
     <script>
       // 在页面加载前声明后端 API 基址，支持通过 ?api_port=XXXX 覆盖端口
       (function(){
@@ -15,129 +16,183 @@
         }catch(e){}
       })();
     </script>
-  </head>
-  <body class="login-body">
-    <header class="site-header">
-      <div class="container">
-        <div class="brand">
-          <span class="logo">◎</span>
-          <span class="title">中国铁路12306</span>
+</head>
+<body class="page-login">
+    <!-- 头部 -->
+    <div class="header" role="banner">
+      <div class="wrapper">
+        <div class="header-con">
+          <h1 class="logo">
+            <a href="http://localhost:8099/">中国铁路12306</a>
+          </h1>
+          <div class="header-right">
+            <!-- 搜索条 -->
+            <div class="header-search">
+              <div class="search-bd">
+                <input type="text" class="search-input" id="search-input" placeholder="搜索车票、餐饮、常旅客、相关规章" aria-label="搜索车票、餐饮、常旅客、相关规章">
+              </div>
+              <a class="search-btn" href="javascript:;" aria-label="点击搜索">
+                <i class="icon icon-search"></i>
+              </a>
+            </div>
+            <!-- 右侧菜单 -->
+            <ul class="header-menu" role="menubar">
+              <li class="menu-item">
+                <a href="javascript:;" class="menu-nav-hd">无障碍</a>
+              </li>
+              <li class="menu-item menu-line">|</li>
+              <li class="menu-item">
+                <a href="javascript:;" class="menu-nav-hd">敬老版</a>
+              </li>
+              <li class="menu-item menu-line">|</li>
+              <li class="menu-item menu-nav" role="menuitem">
+                <a href="javascript:;" class="menu-nav-hd item">English <i class="caret"></i></a>
+              </li>
+              <li class="menu-item menu-line">|</li>
+              <li class="menu-item menu-nav" role="menuitem">
+                <a href="javascript:;" class="menu-nav-hd item" id="my12306">我的12306 <i class="caret"></i></a>
+              </li>
+              <li class="menu-item menu-line">|</li>
+              <li id="J-header-login" class="menu-item menu-login" role="menuitem">
+                <a id="J-btn-login" href="login.html" class="menu-nav-hd">登录</a>
+                <a href="index.html" class="ml">注册</a>
+              </li>
+              <li id="J-header-logout" style="display: none" class="menu-item menu-nav menu-login" role="menuitem">
+                您好，<a href="javascript:;" class="txt-primary menu-nav-my-hd" id="welcome-user"></a>&nbsp;|&nbsp;<a id="regist_out" class="logout" href="javascript:;">退出</a>
+              </li>
+            </ul>
+          </div>
         </div>
-        <nav class="nav">
-          <a id="nav-home" href="http://localhost:8080/">首页</a>
-          <a href="/index.html">注册</a>
-          <a href="/login.html" class="active">登录</a>
-        </nav>
       </div>
-    </header>
+      <!-- 导航栏在登录页隐藏 -->
+    </div>
 
-    <main class="login-hero">
-      <div class="container login-layout">
-        <!-- 左侧宣传与二维码下载 -->
-        <section class="hero-left">
-          <h1>铁路12306 - 中国铁路官方APP</h1>
-          <h2>尽享精彩出行服务</h2>
-          <ul class="hero-list" aria-label="应用特色">
-            <li>个人行程提醒</li>
-            <li>积分兑换</li>
-            <li>餐饮·特产</li>
-            <li>车站大屏</li>
+    <!-- 登录区域 -->
+    <div class="login-panel">
+      <!-- 背景轮播图 -->
+      <div class="loginSlide">
+        <div class="bd">
+          <ul>
+            <li style="background-image: url('assets/banner-login-20200924.jpg')">
+              <a href="javascript:;"></a>
+            </li>
           </ul>
-          <div class="hero-qrcode">
-            <img src="/img/登录与注册/official_app_qr.png" alt="扫码下载铁路12306 官方APP 二维码" />
-            <div class="qrcode-desc">扫描二维码<br/>安装 铁路12306 官方APP</div>
-          </div>
-        </section>
-
-        <!-- 右侧登录面板 -->
-        <section class="login-panel" aria-labelledby="login-tabs">
-          <div class="tabs" id="login-tabs" role="tablist">
-            <button class="tab active" role="tab" aria-selected="true" aria-controls="tab-account" id="tab-account-btn">账户登录</button>
-            <button class="tab" role="tab" aria-selected="false" aria-controls="tab-qr" id="tab-qr-btn">扫码登录</button>
-          </div>
-
-          <!-- 账户登录 -->
-          <div id="tab-account" class="tab-content active" role="tabpanel" aria-labelledby="tab-account-btn">
+        </div>
+      </div>
+      
+      <!-- 登录表单 -->
+      <div class="login-box">
+        <ul class="login-hd" role="tablist">
+          <li class="login-hd-account active">
+            <a href="javascript:;" role="tab" aria-selected="true" id="tab-account-btn">账号登录</a>
+          </li>
+          <li class="login-hd-qr">
+            <a href="javascript:;" role="tab" aria-selected="false" id="tab-qr-btn">扫码登录</a>
+          </li>
+        </ul>
+        
+        <div class="login-bd">
+          <!-- 账号登录 -->
+          <div class="login-account" id="tab-account" role="tabpanel" aria-labelledby="tab-account-btn">
             <form id="login-form" autocomplete="off">
-              <div class="input-group">
-                <span class="input-icon">👤</span>
-                <input type="text" id="identifier" name="identifier" placeholder="用户名/邮箱/手机号" aria-label="用户名或邮箱或手机号" required />
+              <div class="login-item">
+                <label for="identifier" class="item-label">
+                  <i class="icon icon-user"></i>
+                </label>
+                <input 
+                  type="text" 
+                  class="input" 
+                  id="identifier" 
+                  name="identifier" 
+                  placeholder="用户名/邮箱/手机号" 
+                  aria-label="用户名或邮箱或手机号" 
+                  autocomplete="off"
+                  required 
+                />
               </div>
 
-              <div class="input-group">
-                <span class="input-icon">🔒</span>
-                <input type="password" id="password" name="password" placeholder="密码" aria-label="密码" required />
+              <div class="login-item">
+                <label for="password" class="item-label">
+                  <i class="icon icon-pwd"></i>
+                </label>
+                <input 
+                  type="password" 
+                  class="input" 
+                  id="password" 
+                  name="password" 
+                  placeholder="密码" 
+                  aria-label="密码" 
+                  autocomplete="new-password"
+                  required 
+                />
               </div>
 
-              <!-- 图形验证码与“记住我”功能已移除，保留简洁登录体验 -->
-
-              <button type="submit" class="primary login-btn" id="login-btn">立即登录</button>
+              <div class="login-actions">
+                <button type="submit" class="login-btn" id="login-btn">立即登录</button>
+              </div>
+              
               <div class="login-links">
-                <a href="/index.html" class="link">注册12306</a>
-                <a href="#" id="forgot-password" class="link">忘记密码</a>
+                <a href="index.html" class="link">注册12306</a>
+                <a href="forgot-password.html" id="forgot-password" class="link">忘记密码</a>
               </div>
-              <div class="login-hint" id="login-hint">铁路12306服务时间：每日5:00-次日1:00；周二5:00-24:00</div>
+              
+              <div class="login-hint">铁路12306服务时间：每日5:00-次日1:00；周二5:00-24:00</div>
               <div class="error" id="login-error" aria-live="polite"></div>
               <div class="status" id="login-status" aria-live="polite"></div>
             </form>
           </div>
 
           <!-- 扫码登录 -->
-          <div id="tab-qr" class="tab-content" role="tabpanel" aria-labelledby="tab-qr-btn">
+          <div class="login-qr" id="tab-qr" role="tabpanel" aria-labelledby="tab-qr-btn" style="display: none;">
             <div class="qr-area">
               <div class="qr-box">
                 <img id="qr-image" alt="登录二维码" />
               </div>
-              <div class="qr-status" id="qr-status">二维码未生成</div>
+              <div class="qr-status" id="qr-status">请点击下方按钮生成二维码</div>
               <div class="qr-actions">
-                <button id="qr-generate" class="secondary">生成二维码</button>
-                <button id="qr-refresh" class="secondary" disabled>刷新</button>
+                <button id="qr-generate" class="qr-btn">生成二维码</button>
+                <button id="qr-refresh" class="qr-btn" disabled>刷新</button>
                 <!-- 开发辅助：模拟扫描/确认 -->
-                <button id="qr-mock-scan" class="link" disabled>模拟扫描</button>
-                <button id="qr-mock-confirm" class="link" disabled>模拟确认</button>
+                <button id="qr-mock-scan" class="link" style="display:none;" disabled>模拟扫描</button>
+                <button id="qr-mock-confirm" class="link" style="display:none;" disabled>模拟确认</button>
               </div>
             </div>
           </div>
-        </section>
-
-        <!-- 中部手机宣传图 -->
-        <section class="hero-phone">
-          <img src="login.png" alt="铁路12306手机应用展示" />
-        </section>
+        </div>
       </div>
-    </main>
+    </div>
 
     <!-- 登录二次验证（短信）弹窗 -->
     <div id="sms-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="sms-title" hidden>
-      <div class="card dialog">
-        <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
-          <span id="sms-title">身份验证</span>
-          <button id="sms-close" class="link" aria-label="关闭">×</button>
+      <div class="modal-overlay"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="sms-title">身份验证</h3>
+          <button id="sms-close" class="modal-close" aria-label="关闭">×</button>
         </div>
-        <div class="dialog-body" style="padding:16px;">
+        <div class="modal-body">
           <!-- Step 1: 身份证后4位校验 -->
           <div id="sms-step-id">
             <p class="hint">请输入登录账号绑定的证件号后4位</p>
             <div class="input-group">
-              <span class="input-icon">🪪</span>
-              <input type="text" id="id-last4" inputmode="numeric" pattern="\d{4}" maxlength="4" placeholder="后4位" aria-label="身份证后4位" />
+              <input type="text" id="id-last4" inputmode="numeric" pattern="\d{4}" maxlength="4" placeholder="请输入后4位" aria-label="身份证后4位" />
             </div>
             <div class="actions">
-              <button id="id-verify" class="primary">验证</button>
+              <button id="id-verify" class="primary-btn">验证</button>
             </div>
             <div id="sms-error" class="error" aria-live="polite"></div>
             <div id="sms-status" class="status" aria-live="polite"></div>
           </div>
+          
           <!-- Step 2: 短信验证码输入 -->
           <div id="sms-step-code" hidden>
             <p class="hint">我们已向绑定手机号 <span id="sms-masked-phone">***********</span> 发送6位数字验证码</p>
             <div class="input-group">
-              <span class="input-icon">💬</span>
               <input type="text" id="sms-code" inputmode="numeric" pattern="\d{6}" maxlength="6" placeholder="请输入验证码" aria-label="短信验证码" />
             </div>
-            <div class="actions" style="gap:12px;">
-              <button id="sms-verify" class="primary">确认登录</button>
-              <button id="sms-resend" class="secondary" disabled>重新发送</button>
+            <div class="actions">
+              <button id="sms-verify" class="primary-btn">确认登录</button>
+              <button id="sms-resend" class="secondary-btn" disabled>重新发送</button>
               <span class="countdown" id="sms-countdown" aria-live="polite">剩余 05:00</span>
             </div>
             <div id="sms-error-2" class="error" aria-live="polite"></div>
@@ -147,27 +202,69 @@
       </div>
     </div>
 
-    <footer class="site-footer">
-      <div class="container footer-links">
-        <div class="partners">
-          <span>友情链接：</span>
-          <a href="#">中国铁路微信公众号</a>
-          <a href="#">12306 公益公众号</a>
-          <a href="#">铁路12306</a>
+    <!-- 页脚 -->
+    <div class="footer">
+      <div class="footer-con wrapper">
+        <div class="foot-links">
+          <h2 class="foot-con-tit">友情链接</h2>
+          <ul class="foot-links-list" role="menubar">
+            <li role="menuitem">
+              <a href="https://www.12306.cn/index/" target="_blank" rel="noreferrer">
+                <span>12306官网</span>
+              </a>
+            </li>
+          </ul>
         </div>
-        <p class="copyright">© 中国铁路客户服务中心</p>
+        <ul class="foot-code">
+          <li>
+            <h2 class="foot-con-tit">中国铁路官方微信</h2>
+            <div class="code-pic">
+              <img src="assets/zgtlwb.png" alt="中国铁路官方微信">
+            </div>
+          </li>
+          <li>
+            <h2 class="foot-con-tit">中国铁路官方微博</h2>
+            <div class="code-pic">
+              <img src="assets/zgtlwx.png" alt="中国铁路官方微博">
+            </div>
+          </li>
+          <li>
+            <h2 class="foot-con-tit">12306 公众号</h2>
+            <div class="code-pic">
+              <img src="assets/public.png" alt="12306 公众号">
+            </div>
+          </li>
+          <li>
+            <h2 class="foot-con-tit">铁路12306</h2>
+            <div class="code-pic">
+              <img src="assets/download.png" alt="铁路12306">
+              <div class="code-tips">官方APP下载，目前铁路未授权其他网站或APP开展类似服务内容，敬请广大用户注意。</div>
+            </div>
+          </li>
+        </ul>
       </div>
-    </footer>
+      <div class="footer-txt">
+        <p>
+          <span class="mr">版权所有©2008-2025</span>
+          <span class="mr">中国铁道科学研究院集团有限公司</span>
+          <span>技术支持：铁旅科技有限公司</span>
+        </p>
+        <p>
+          <span class="mr">
+            <img src="assets/gongan.png" alt="公安" style="width:13px">
+            <a target="blank" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=11010802038392" style="color:#c1c1c1">京公网安备 11010802038392号</a>
+          </span>
+          <span class="mr">|</span>
+          <span class="mr">京ICP备05020493号-4</span>
+          <span class="mr">|</span>
+          <span>ICP证：京B2-20202537</span>
+        </p>
+        <div class="a11y-link">
+          <img src="assets/footer-slh.jpg" alt="适老化无障碍服务" style="display: block;width: 130px;height: 46px;">
+        </div>
+      </div>
+    </div>
 
     <script src="login.js"></script>
-    <script>
-      (function(){
-        try{
-          var HOME_URL = (window && window.HOME_URL) || 'http://localhost:8080/';
-          var a = document.getElementById('nav-home');
-          if(a) a.setAttribute('href', HOME_URL);
-        }catch(e){}
-      })();
-    </script>
-  </body>
-  </html>
+</body>
+</html>
