@@ -14,7 +14,7 @@
       <div class="wrapper">
         <div class="header-con">
           <h1 class="logo">
-            <a href="javascript:;">中国铁路12306
+            <a href="http://localhost:8080/">中国铁路12306
               <span class="sub">12306 CHINA RAILWAY</span>
             </a>
           </h1>
@@ -62,7 +62,7 @@
         <div class="wrapper">
           <ul class="nav" role="menubar">
             <li role="menuitem" class="nav-item nav-item-w1">
-              <a href="http://localhost:8099/" class="nav-hd">首页</a>
+              <a href="http://localhost:8080/" class="nav-hd">首页</a>
             </li>
             <li role="menuitem" class="nav-item nav-item-w1">
               <a href="javascript:void(0)" class="nav-hd item">车票 <i class="icon icon-down"></i></a>
@@ -103,7 +103,9 @@
           var sid = params.get('sid');
           if (sid) {
             try { localStorage.setItem('SESSION_ID', sid); } catch(e) {}
-            var cleanUrl = window.location.origin + window.location.pathname;
+            try { params.delete('sid'); } catch(e) {}
+            var q = params.toString() ? ('?' + params.toString()) : '';
+            var cleanUrl = window.location.origin + window.location.pathname + q + (window.location.hash || '');
             window.history.replaceState({}, document.title, cleanUrl);
           }
           var storedSid = sid || (function(){ try { return localStorage.getItem('SESSION_ID'); } catch(e) { return null; } })();
