@@ -1,14 +1,29 @@
 import React, { useState, useEffect, useMemo } from 'react';
 
-function QueryForm({ onQuery, stations, disabled }) {
-    const [fromStation, setFromStation] = useState('北京');
-    const [toStation, setToStation] = useState('上海');
-    const [departDate, setDepartDate] = useState('2025-12-15');
+function QueryForm({ onQuery, stations, disabled, initialFrom, initialTo, initialDate }) {
+    const [fromStation, setFromStation] = useState(() => {
+        if (initialFrom) return initialFrom;
+        try { const p = new URLSearchParams(window.location.search || ''); return p.get('from') || ''; } catch(e) { return ''; }
+    });
+    const [toStation, setToStation] = useState(() => {
+        if (initialTo) return initialTo;
+        try { const p = new URLSearchParams(window.location.search || ''); return p.get('to') || ''; } catch(e) { return ''; }
+    });
+    const [departDate, setDepartDate] = useState(() => {
+        if (initialDate) return initialDate;
+        try { const p = new URLSearchParams(window.location.search || ''); const d = p.get('date'); if (d) return d; } catch(e) {}
+        const t=new Date(); const y=t.getFullYear(); const m=String(t.getMonth()+1).padStart(2,'0'); const d=String(t.getDate()).padStart(2,'0'); return `${y}-${m}-${d}`;
+    });
     const [fromSuggestions, setFromSuggestions] = useState([]);
     const [toSuggestions, setToSuggestions] = useState([]);
     const [error, setError] = useState('');
     const [showFromSug, setShowFromSug] = useState(false);
     const [showToSug, setShowToSug] = useState(false);
+
+    useEffect(() => {
+        console.log('[QueryForm] mount props', { initialFrom, initialTo, initialDate });
+        console.log('[QueryForm] mount state', { fromStation, toStation, departDate });
+    }, []);
 
     const cities = useMemo(() => {
         const list = Array.isArray(stations) ? stations : [];
@@ -29,6 +44,7 @@ function QueryForm({ onQuery, stations, disabled }) {
         setFromStation(value);
         getSuggestions(value, setFromSuggestions);
         setShowFromSug(true);
+        console.log('[QueryForm] from change', value);
     };
 
     const handleToChange = (e) => {
@@ -36,13 +52,26 @@ function QueryForm({ onQuery, stations, disabled }) {
         setToStation(value);
         getSuggestions(value, setToSuggestions);
         setShowToSug(true);
+        console.log('[QueryForm] to change', value);
     };
 
     const handleSuggestionClick = (value, setValue, setSuggestions, setShow) => {
         setValue(value);
         setSuggestions([]);
         setShow(false);
+        console.log('[QueryForm] suggestion choose', value);
     };
+
+    useEffect(() => {
+        console.log('[QueryForm] props update', { initialFrom, initialTo, initialDate });
+        if (initialFrom) setFromStation(initialFrom);
+        if (initialTo) setToStation(initialTo);
+        if (initialDate) setDepartDate(initialDate);
+    }, [initialFrom, initialTo, initialDate]);
+
+    useEffect(() => {
+        console.log('[QueryForm] state change', { fromStation, toStation, departDate });
+    }, [fromStation, toStation, departDate]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -51,7 +80,9 @@ function QueryForm({ onQuery, stations, disabled }) {
             return;
         }
         setError('');
-        onQuery({ fromStation, toStation, departDate });
+        const payload = { fromStation, toStation, departDate };
+        console.log('[QueryForm] submit', payload);
+        onQuery(payload);
     };
 
     return (

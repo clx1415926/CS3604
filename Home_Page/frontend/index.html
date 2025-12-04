@@ -14,7 +14,7 @@
       <div class="wrapper">
         <div class="header-con">
           <h1 class="logo">
-            <a href="javascript:;">中国铁路12306</a>
+            <a href="http://localhost:8080/">中国铁路12306</a>
           </h1>
           <div class="header-right">
             <!-- 搜索条 -->
@@ -41,7 +41,27 @@
               </li>
               <li class="menu-item menu-line">|</li>
               <li class="menu-item menu-nav" role="menuitem">
-                <a href="javascript:;" class="menu-nav-hd item" id="my12306">我的12306 <i class="caret"></i></a>
+                <a href="http://localhost:5176/index.html" class="menu-nav-hd item" id="my12306">我的12306 <i class="caret"></i></a>
+                <ul class="menu-nav-bd" role="menu" aria-hidden="true" id="megamenu-2">
+                  <li><a name="g_href" data-type="2" data-href="view/train_order.html" data-redirect="Y" href="javascript:;">火车票订单</a></li>
+                  <li><a name="g_href" data-type="2" data-href="view/lineUp_order.html" data-redirect="Y" href="javascript:;">候补订单</a></li>
+                  <li><a name="g_href" data-type="2" data-href="view/commutation_order.html" data-redirect="Y" href="javascript:;">计次•定期票订单</a></li>
+                  <li><a name="g_href" data-type="2" data-href="view/commutation_ticket_order.html" data-redirect="Y" href="javascript:;">约号订单</a></li>
+                  <li><a name="g_href" data-type="2" data-href="view/invoice_index.html" data-redirect="Y" href="javascript:;">电子发票</a></li>
+                  <li><a name="g_href" data-type="2" data-href="view/personal_travel.html" data-redirect="Y" href="javascript:;">本人车票</a></li>
+                  <li class="nav-line"></li>
+                  <li><a name="g_href" data-type="10" data-href="queryMyOrder.html" data-redirect="Y" href="javascript:;">我的餐饮•特产</a></li>
+                  <li><a name="g_href" data-type="2" data-href="view/my_insurance.html" data-redirect="Y" href="javascript:;">我的保险</a></li>
+                  <li><a name="g_href" data-type="3" data-href="welcome.html" data-redirect="Y" href="javascript:;">我的会员</a></li>
+                  <li class="nav-line"></li>
+                  <li><a name="g_href" data-type="2" data-href="view/information.html" data-redirect="Y" href="javascript:;">查看个人信息</a></li>
+                  <li><a name="g_href" data-type="2" data-href="view/userSecurity.html" data-redirect="Y" href="javascript:;">账户安全</a></li>
+                  <li class="nav-line"></li>
+                  <li><a name="g_href" data-type="2" data-href="view/passengers.html" data-redirect="Y" href="javascript:;">乘车人</a></li>
+                  <li><a name="g_href" data-type="2" data-href="view/address_init.html" data-redirect="Y" href="javascript:;">地址管理</a></li>
+                  <li class="nav-line"></li>
+                  <li><a name="g_href" data-type="2" data-href="view/icentre_serviceQuery.html" data-redirect="Y" href="javascript:;">温馨服务查询</a></li>
+                </ul>
               </li>
               <li class="menu-item menu-line">|</li>
               <li id="J-header-login" class="menu-item menu-login" role="menuitem">
@@ -340,6 +360,7 @@
     <script>
       (function(){
         try {
+          console.log('[HOME] boot', { href: window.location.href, readyState: document.readyState });
           var params = new URLSearchParams(window.location.search || '');
           var sid = params.get('sid');
           if (sid) {
@@ -367,10 +388,55 @@
           }
           var ticket = document.getElementById('link-ticket');
           if (ticket) {
+            console.log('[HOME] hook ticket link', { id: 'link-ticket' });
             var sidForLink = (function(){ try { return localStorage.getItem('SESSION_ID'); } catch(e){ return null; } })();
             if (sidForLink) {
               ticket.href = 'http://localhost:5173/index.html?sid=' + encodeURIComponent(sidForLink);
             }
+            ticket.addEventListener('click', function(ev){
+              try {
+                ev.preventDefault();
+                console.log('[HOME] ticket link click', { isTrusted: ev && ev.isTrusted, type: ev && ev.type });
+                var from = (document.getElementById('fromStation')||{}).value || '';
+                var to = (document.getElementById('toStation')||{}).value || '';
+                var date = (document.getElementById('departDate')||{}).value || '';
+                var student = (document.getElementById('opt-student')||{}).checked ? '1' : '0';
+                var hs = (document.getElementById('opt-highspeed')||{}).checked ? '1' : '0';
+                var params = [
+                  from ? 'from='+encodeURIComponent(from) : null,
+                  to ? 'to='+encodeURIComponent(to) : null,
+                  date ? 'date='+encodeURIComponent(date) : null,
+                  student === '1' ? 'student=1' : null,
+                  hs === '1' ? 'highspeed=1' : null,
+                  'type=single'
+                ].filter(Boolean).join('&');
+                try { localStorage.setItem('LAST_QUERY', JSON.stringify({ from: from, to: to, date: date, student: student, highspeed: hs })); } catch(e) {}
+                var base = 'http://localhost:5173/index.html';
+                if (sidForLink) params += (params ? '&' : '') + 'sid=' + encodeURIComponent(sidForLink);
+                var url = base + (params ? ('?'+params) : '');
+                console.log('[HOME] link-ticket click ->', url);
+                var before = window.location.href;
+                window.location.href = url;
+                setTimeout(function(){
+                  console.log('[HOME] after href set', { before: before, now: window.location.href });
+                }, 0);
+                setTimeout(function(){
+                  if (window.location.href === before) {
+                    console.warn('[HOME] href unchanged, try assign');
+                    try { window.location.assign(url); } catch (e) { console.error('[HOME] assign failed', e); }
+                  }
+                }, 50);
+                setTimeout(function(){
+                  if (!/\b5173\/index\.html\b/.test(window.location.href)) {
+                    console.warn('[HOME] still not on query page, try replace');
+                    try { window.location.replace(url); } catch (e) { console.error('[HOME] replace failed', e); }
+                  }
+                }, 200);
+              } catch (err) {
+                console.error('[HOME] ticket link click error', err);
+                window.location.href = ticket.href;
+              }
+            });
           }
           var personal = document.getElementById('link-personal');
           if (personal) {
@@ -379,6 +445,49 @@
               personal.href = 'http://localhost:5176/index.html?sid=' + encodeURIComponent(sidForPersonal);
             }
           }
+          var my12306 = document.getElementById('my12306');
+          if (my12306) {
+            var sidForMy = (function(){ try { return localStorage.getItem('SESSION_ID'); } catch(e){ return null; } })();
+            if (sidForMy) {
+              my12306.href = 'http://localhost:5176/index.html?sid=' + encodeURIComponent(sidForMy);
+            }
+          }
+          (function(){
+            var trigger = document.getElementById('my12306');
+            if (!trigger) return;
+            var navItem = trigger.closest('.menu-item.menu-nav');
+            if (!navItem) return;
+            var dropdown = document.getElementById('megamenu-2') || navItem.querySelector('.menu-nav-bd');
+            var header = document.querySelector('.header');
+            var hideTimer = null;
+            var openMenu = function(){ if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; } navItem.classList.add('open'); if (header) header.classList.add('menu-open'); };
+            var scheduleClose = function(){ if (hideTimer) clearTimeout(hideTimer); hideTimer = setTimeout(function(){ navItem.classList.remove('open'); if (header) header.classList.remove('menu-open'); }, 220); };
+            ['mouseenter','focusin'].forEach(function(evt){ trigger.addEventListener(evt, openMenu); });
+            ['mouseleave','focusout'].forEach(function(evt){ trigger.addEventListener(evt, scheduleClose); });
+            if (dropdown) {
+              ['mouseenter','focusin'].forEach(function(evt){ dropdown.addEventListener(evt, openMenu); });
+              ['mouseleave','focusout'].forEach(function(evt){ dropdown.addEventListener(evt, scheduleClose); });
+            }
+          })();
+          function bindMy12306Jump(selector, viewPath) {
+            var el = document.querySelector(selector);
+            if (!el) return;
+            el.addEventListener('click', function(e){
+              e.preventDefault();
+              var anchor = document.getElementById('my12306');
+              if (!anchor) return;
+              try {
+                var u = new URL(anchor.href);
+                var sid = u.searchParams.get('sid') || (function(){ try { return localStorage.getItem('SESSION_ID'); } catch(e){ return null; } })();
+                if (sid && !u.searchParams.get('sid')) { u.searchParams.set('sid', sid); }
+                u.hash = '#/otn/' + viewPath;
+                window.location.href = u.toString();
+              } catch(err) {}
+            });
+          }
+          bindMy12306Jump('a[name="g_href"][data-href="view/train_order.html"]', 'view/train_order.html');
+          bindMy12306Jump('a[name="g_href"][data-href="view/passengers.html"]', 'view/passengers.html');
+          bindMy12306Jump('a[name="g_href"][data-href="view/information.html"]', 'view/information.html');
           var btn = document.getElementById('btn-orders');
           if (btn) {
             btn.addEventListener('click', function(e){
@@ -398,6 +507,7 @@
             var m = String(today.getMonth()+1).padStart(2,'0');
             var d = String(today.getDate()).padStart(2,'0');
             dateInput.value = y+'-'+m+'-'+d;
+            console.log('[HOME] default date set', dateInput.value);
           }
           var swapBtn = document.getElementById('swapStations');
           if (swapBtn) {
@@ -406,12 +516,15 @@
               var toEl = document.getElementById('toStation');
               if (fromEl && toEl) {
                 var t = fromEl.value; fromEl.value = toEl.value; toEl.value = t;
+                console.log('[HOME] swap', { from: fromEl.value, to: toEl.value });
               }
             });
           }
           var ticketForm = document.getElementById('ticket-form');
           if (ticketForm) {
+            console.log('[HOME] hook ticket form submit');
             ticketForm.addEventListener('submit', function(e){
+              console.log('[HOME] form submit event');
               e.preventDefault();
               var from = (document.getElementById('fromStation')||{}).value || '';
               var to = (document.getElementById('toStation')||{}).value || '';
@@ -429,9 +542,29 @@
                 'type=single'
               ].filter(Boolean).join('&');
               if (sidForLink) params += (params ? '&' : '') + 'sid=' + encodeURIComponent(sidForLink);
+              try { localStorage.setItem('LAST_QUERY', JSON.stringify({ from: from, to: to, date: date, student: student, highspeed: hs })); } catch(e) {}
+              console.log('[HOME] submit', { from: from, to: to, date: date, student: student, highspeed: hs, sid: sidForLink });
+              console.log('[HOME] redirect', base + (params ? ('?'+params) : ''));
               window.location.href = base + (params ? ('?'+params) : '');
+              setTimeout(function(){ console.log('[HOME] after href set', window.location.href); }, 0);
             });
+            var submitBtn = ticketForm.querySelector('.submit-btn');
+            if (submitBtn) { submitBtn.addEventListener('click', function(){ console.log('[HOME] submit button clicked'); }); }
           }
+          document.addEventListener('visibilitychange', function(){ console.log('[HOME] visibilitychange', document.visibilityState); });
+          window.addEventListener('popstate', function(e){ console.log('[HOME] popstate', e.state); });
+          window.addEventListener('hashchange', function(){ console.log('[HOME] hashchange', window.location.href); });
+          window.addEventListener('beforeunload', function(){ console.log('[HOME] beforeunload', window.location.href); });
+          window.addEventListener('unload', function(){ console.log('[HOME] unload'); });
+          document.addEventListener('click', function(e){
+            try {
+              var t = e.target;
+              var info = { tag: (t && t.tagName), id: t && t.id, cls: t && t.className };
+              if (t && (t.id === 'link-ticket' || (t.closest && t.closest('#ticket-form')))) {
+                console.log('[HOME] click', info);
+              }
+            } catch (err) {}
+          }, true);
           var disabledBanners = document.querySelectorAll('.feature-banner.disabled');
           disabledBanners.forEach(function(el){
             el.addEventListener('click', function(e){

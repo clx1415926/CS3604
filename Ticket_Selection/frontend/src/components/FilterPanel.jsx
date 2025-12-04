@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 
-function FilterPanel({ onFilterChange, availableFromStations = [], availableToStations = [] }) {
+function FilterPanel({ onFilterChange, availableFromStations = [], availableToStations = [], initialTrainTypes = [], initialStudent = false }) {
     const [trainTypes, setTrainTypes] = useState([]);
     const [seatTypes, setSeatTypes] = useState([]);
     const [selectedFromStations, setSelectedFromStations] = useState([]);
     const [selectedToStations, setSelectedToStations] = useState([]);
+    const [isStudent, setIsStudent] = useState(false);
+    useEffect(() => { console.log('[FilterPanel] mount', { initialTrainTypes, initialStudent }); }, []);
 
     const handleTrainTypeChange = (e) => {
         const { value, checked } = e.target;
@@ -33,20 +35,46 @@ function FilterPanel({ onFilterChange, availableFromStations = [], availableToSt
     };
 
     useEffect(() => {
-        onFilterChange({ trainTypes, seatTypes, fromStations: selectedFromStations, toStations: selectedToStations });
-    }, [trainTypes, seatTypes, selectedFromStations, selectedToStations]);
+        const payload = { trainTypes, seatTypes, fromStations: selectedFromStations, toStations: selectedToStations, student: isStudent ? '1' : '0' };
+        console.log('[FilterPanel] change', payload);
+        onFilterChange(payload);
+    }, [trainTypes, seatTypes, selectedFromStations, selectedToStations, isStudent]);
+
+    useEffect(() => {
+        try {
+            if (Array.isArray(initialTrainTypes) && initialTrainTypes.length > 0) {
+                setTrainTypes(initialTrainTypes);
+                const nodes = Array.from(document.querySelectorAll('.filter-panel .train-type-item'));
+                nodes.forEach(n => { if (initialTrainTypes.includes(n.value)) n.checked = true; });
+                console.log('[FilterPanel] apply initialTrainTypes', initialTrainTypes);
+            }
+            if (initialStudent) {
+                setIsStudent(true);
+                const studentNode = document.querySelector('.filter-panel .student-item');
+                if (studentNode) studentNode.checked = true;
+                console.log('[FilterPanel] apply initialStudent', initialStudent);
+            }
+        } catch (e) {}
+    }, []);
 
     return (
         <div className="filter-panel">
             <div className="filter-group">
                 <h4>车次类型</h4>
                 <div className="checkbox-group">
-                    <label><input type="checkbox" value="G" onChange={handleTrainTypeChange} /> 高铁 (G)</label>
-                    <label><input type="checkbox" value="D" onChange={handleTrainTypeChange} /> 动车 (D)</label>
-                    <label><input type="checkbox" value="C" onChange={handleTrainTypeChange} /> 城际 (C)</label>
-                    <label><input type="checkbox" value="Z" onChange={handleTrainTypeChange} /> 直达 (Z)</label>
-                    <label><input type="checkbox" value="T" onChange={handleTrainTypeChange} /> 特快 (T)</label>
-                    <label><input type="checkbox" value="K" onChange={handleTrainTypeChange} /> 快速 (K)</label>
+                    <label><input className="train-type-item" type="checkbox" value="G" onChange={handleTrainTypeChange} /> 高铁 (G)</label>
+                    <label><input className="train-type-item" type="checkbox" value="D" onChange={handleTrainTypeChange} /> 动车 (D)</label>
+                    <label><input className="train-type-item" type="checkbox" value="C" onChange={handleTrainTypeChange} /> 城际 (C)</label>
+                    <label><input className="train-type-item" type="checkbox" value="Z" onChange={handleTrainTypeChange} /> 直达 (Z)</label>
+                    <label><input className="train-type-item" type="checkbox" value="T" onChange={handleTrainTypeChange} /> 特快 (T)</label>
+                    <label><input className="train-type-item" type="checkbox" value="K" onChange={handleTrainTypeChange} /> 快速 (K)</label>
+                </div>
+            </div>
+
+            <div className="filter-group">
+                <h4>乘客类型</h4>
+                <div className="checkbox-group">
+                    <label><input className="student-item" type="checkbox" onChange={(e) => setIsStudent(e.target.checked)} /> 学生</label>
                 </div>
             </div>
 
@@ -91,16 +119,16 @@ function FilterPanel({ onFilterChange, availableFromStations = [], availableToSt
             <div className="filter-group">
                 <h4>席别</h4>
                 <div className="checkbox-group">
-                    <label><input type="checkbox" value="商务座" onChange={handleSeatTypeChange} /> 商务座</label>
-                    <label><input type="checkbox" value="一等座" onChange={handleSeatTypeChange} /> 一等座</label>
-                    <label><input type="checkbox" value="二等座" onChange={handleSeatTypeChange} /> 二等座</label>
-                    <label><input type="checkbox" value="软卧" onChange={handleSeatTypeChange} /> 软卧</label>
-                    <label><input type="checkbox" value="硬卧" onChange={handleSeatTypeChange} /> 硬卧</label>
-                    <label><input type="checkbox" value="硬座" onChange={handleSeatTypeChange} /> 硬座</label>
+                    <label><input className="seat-type-item" type="checkbox" value="商务座" onChange={handleSeatTypeChange} /> 商务座</label>
+                    <label><input className="seat-type-item" type="checkbox" value="一等座" onChange={handleSeatTypeChange} /> 一等座</label>
+                    <label><input className="seat-type-item" type="checkbox" value="二等座" onChange={handleSeatTypeChange} /> 二等座</label>
+                    <label><input className="seat-type-item" type="checkbox" value="软卧" onChange={handleSeatTypeChange} /> 软卧</label>
+                    <label><input className="seat-type-item" type="checkbox" value="硬卧" onChange={handleSeatTypeChange} /> 硬卧</label>
+                    <label><input className="seat-type-item" type="checkbox" value="硬座" onChange={handleSeatTypeChange} /> 硬座</label>
                 </div>
             </div>
             <div className="filter-actions">
-                <button onClick={handleReset} className="reset-btn">重置</button>
+                <button onClick={() => { setIsStudent(false); handleReset(); }} className="reset-btn">重置</button>
             </div>
         </div>
     );

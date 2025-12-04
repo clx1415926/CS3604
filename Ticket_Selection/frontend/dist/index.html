@@ -1,15 +1,160 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>中国铁路12306 - 车票查询</title>
+    <link rel="stylesheet" href="/assets/iconfont.css">
+    <link rel="stylesheet" href="/12306_homepage/www.12306.cn/index/css/index_y_v50003.css">
     
-  <script type="module" crossorigin src="/assets/index-f7bc771d.js"></script>
-  <link rel="stylesheet" href="/assets/index-85bc3ded.css">
+  <script type="module" crossorigin src="/assets/index-de0c6a94.js"></script>
+  <link rel="stylesheet" href="/assets/index-1ca25b96.css">
 </head>
-<body>
+<body role="main">
+    <!-- 头部 -->
+    <div class="header" role="banner">
+      <div class="wrapper">
+        <div class="header-con">
+          <h1 class="logo">
+            <a href="javascript:;">中国铁路12306
+              <span class="sub">12306 CHINA RAILWAY</span>
+            </a>
+          </h1>
+          <div class="header-right">
+            <!-- 搜索条 -->
+            <div class="header-search">
+              <div class="search-bd">
+                <input type="text" class="search-input" id="search-input" placeholder="搜索车票、餐饮、常旅客、相关规章" aria-label="搜索车票、餐饮、常旅客、相关规章">
+              </div>
+              <a class="search-btn" href="javascript:;" aria-label="点击搜索">
+                <i class="icon icon-search"></i>
+              </a>
+            </div>
+            <!-- 右侧菜单 -->
+            <ul class="header-menu" role="menubar">
+              <li class="menu-item">
+                <a href="javascript:;" class="menu-nav-hd">无障碍</a>
+              </li>
+              <li class="menu-item menu-line">|</li>
+              <li class="menu-item">
+                <a href="javascript:;" class="menu-nav-hd">敬老版</a>
+              </li>
+              <li class="menu-item menu-line">|</li>
+              <li class="menu-item menu-nav" role="menuitem">
+                <a href="javascript:;" class="menu-nav-hd item">English <i class="caret"></i></a>
+              </li>
+              <li class="menu-item menu-line">|</li>
+              <li class="menu-item menu-nav" role="menuitem">
+                <a href="javascript:;" class="menu-nav-hd item" id="my12306">我的12306 <i class="caret"></i></a>
+              </li>
+              <li class="menu-item menu-line">|</li>
+              <li id="J-header-login" class="menu-item menu-login" role="menuitem">
+                <a id="J-btn-login" href="http://localhost:8082/login.html" class="menu-nav-hd">登录</a>
+                <a href="http://localhost:8082/login.html" class="ml">注册</a>
+              </li>
+              <li id="J-header-logout" style="display: none" class="menu-item menu-nav menu-login" role="menuitem">
+                您好，<a href="javascript:;" class="txt-primary menu-nav-my-hd" id="welcome-user"></a>&nbsp;|&nbsp;<a id="regist_out" class="logout" href="javascript:;">退出</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <!-- 导航 -->
+      <div class="nav-box" role="navigation">
+        <div class="wrapper">
+          <ul class="nav" role="menubar">
+            <li role="menuitem" class="nav-item nav-item-w1">
+              <a href="http://localhost:8099/" class="nav-hd">首页</a>
+            </li>
+            <li role="menuitem" class="nav-item nav-item-w1">
+              <a href="javascript:void(0)" class="nav-hd item">车票 <i class="icon icon-down"></i></a>
+            </li>
+            <li role="menuitem" class="nav-item">
+              <a href="javascript:void(0)" class="nav-hd item">团购服务 <i class="icon icon-down"></i></a>
+            </li>
+            <li role="menuitem" class="nav-item">
+              <a href="javascript:void(0)" class="nav-hd item">会员服务 <i class="icon icon-down"></i></a>
+            </li>
+            <li role="menuitem" class="nav-item">
+              <a href="javascript:void(0)" class="nav-hd item">站车服务 <i class="icon icon-down"></i></a>
+            </li>
+            <li role="menuitem" class="nav-item">
+              <a href="javascript:void(0)" class="nav-hd item">商旅服务 <i class="icon icon-down"></i></a>
+            </li>
+            <li role="menuitem" class="nav-item">
+              <a href="javascript:void(0)" class="nav-hd item">出行指南 <i class="icon icon-down"></i></a>
+            </li>
+            <li role="menuitem" class="nav-item last">
+              <a href="javascript:void(0)" class="nav-hd item">信息查询 <i class="icon icon-down"></i></a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- React应用挂载点 -->
     <div id="root"></div>
+
     
+    
+    <!-- 头部登录状态处理脚本 -->
+    <script>
+      (function(){
+        try {
+          var params = new URLSearchParams(window.location.search || '');
+          var sid = params.get('sid');
+          if (sid) {
+            try { localStorage.setItem('SESSION_ID', sid); } catch(e) {}
+            try { params.delete('sid'); } catch(e) {}
+            var q = params.toString() ? ('?' + params.toString()) : '';
+            var cleanUrl = window.location.origin + window.location.pathname + q + (window.location.hash || '');
+            window.history.replaceState({}, document.title, cleanUrl);
+          }
+          var storedSid = sid || (function(){ try { return localStorage.getItem('SESSION_ID'); } catch(e) { return null; } })();
+          if (storedSid) {
+            fetch('http://localhost:8082/api/v1/auth/session/profile', { headers: { Authorization: 'Bearer ' + storedSid } })
+              .then(function(r){ return r.json().then(function(d){ return { ok: r.ok, data: d }; }); })
+              .then(function(res){
+                if (res.ok && res.data && (res.data.username || res.data.name)) {
+                  var welcomeEl = document.getElementById('welcome-user');
+                  var loginEl = document.getElementById('J-header-login');
+                  var logoutEl = document.getElementById('J-header-logout');
+                  if (welcomeEl) {
+                    welcomeEl.textContent = (res.data.username || '') + (res.data.name ? '（' + res.data.name + '）' : '');
+                  }
+                  if (loginEl) loginEl.style.display = 'none';
+                  if (logoutEl) logoutEl.style.display = '';
+                }
+              })
+              .catch(function(){});
+          }
+          
+          // 退出登录
+          var regist_out = document.getElementById('regist_out');
+          if (regist_out) {
+            regist_out.addEventListener('click', function(e){
+              e.preventDefault();
+              try { localStorage.removeItem('SESSION_ID'); } catch(err) {}
+              var loginEl = document.getElementById('J-header-login');
+              var logoutEl = document.getElementById('J-header-logout');
+              if (loginEl) loginEl.style.display = '';
+              if (logoutEl) logoutEl.style.display = 'none';
+            });
+          }
+          
+          // 清除伪元素背景
+          var headerEl = document.querySelector('.header');
+          if (headerEl) {
+            var beforeStyle = window.getComputedStyle(headerEl, '::before');
+            var beforeContent = beforeStyle && beforeStyle.getPropertyValue('content');
+            if (beforeContent && beforeContent !== 'none' && beforeContent !== 'normal' && beforeContent !== '""') {
+              var st = document.createElement('style');
+              st.textContent = '.header::before{content:none !important;display:none !important;background:transparent !important;}';
+              document.head.appendChild(st);
+            }
+          }
+        } catch (e) {}
+      })();
+    </script>
 </body>
 </html>
