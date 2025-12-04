@@ -4,6 +4,3 @@
 {"$$indexCreated":{"fieldName":"username","unique":true,"sparse":false}}
 {"$$indexCreated":{"fieldName":"email","unique":true,"sparse":true}}
 {"$$indexCreated":{"fieldName":"phone_key","unique":true,"sparse":false}}
-{"$$indexCreated":{"fieldName":"username","unique":true}}
-{"$$indexCreated":{"fieldName":"email","unique":true,"sparse":true}}
-{"$$indexCreated":{"fieldName":"phone_key","unique":true}}

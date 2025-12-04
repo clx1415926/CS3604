@@ -1,0 +1,29 @@
+:root {
+  --primary-color: #ff8200;
+  --text-color: rgb(0, 0, 0);
+  --bg-color: rgb(255, 255, 255);
+  --font-family: Tahoma, 宋体;
+  --base-font-size: 12px;
+  --input-border: 1px solid rgb(207, 205, 199);
+  --input-padding: 5px 0px 5px 5px;
+  --input-radius: 0px;
+}
+
+/* Apply extracted styles */
+body {
+  font-family: var(--font-family);
+  color: var(--text-color);
+  background-color: var(--bg-color);
+  font-size: var(--base-font-size);
+}
+
+input, select {
+  border: var(--input-border);
+  padding: var(--input-padding);
+  border-radius: var(--input-radius);
+}
+
+button.primary, .submit-btn {
+  background-color: var(--primary-color);
+  color: white; /* Assuming white text on primary */
+}

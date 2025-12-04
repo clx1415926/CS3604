@@ -1,0 +1,51 @@
+
+export function validateIdCard18(id: string): boolean {
+  if (!/^\d{17}[\dXx]$/.test(id)) return false;
+  const weights = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
+  const codes = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'];
+  let sum = 0;
+  for (let i = 0; i < 17; i++) {
+    sum += parseInt(id[i]) * weights[i];
+  }
+  const last = codes[sum % 11];
+  if (last !== id[17].toUpperCase()) return false;
+
+  // Date validation
+  const year = parseInt(id.substring(6, 10));
+  const month = parseInt(id.substring(10, 12));
+  const day = parseInt(id.substring(12, 14));
+  const date = new Date(year, month - 1, day);
+  if (date.getFullYear() !== year || date.getMonth() + 1 !== month || date.getDate() !== day) {
+    return false;
+  }
+  if (date > new Date()) return false;
+  if (year < 1900) return false;
+
+  return true;
+}
+
+export function convert15to18(id: string): string {
+  if (id.length !== 15) return id;
+  const id17 = id.substring(0, 6) + '19' + id.substring(6);
+  const weights = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
+  const codes = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'];
+  let sum = 0;
+  for (let i = 0; i < 17; i++) {
+    sum += parseInt(id17[i]) * weights[i];
+  }
+  return id17 + codes[sum % 11];
+}
+
+export function validatePhone(code: string, number: string): boolean {
+  if (code === '+86' || !code) {
+     // China Mobile: 134-139, 147, 150-152, 157-159, 178, 182-184, 187-188, 198
+     // China Unicom: 130-132, 145, 155-156, 166, 171, 175-176, 185-186
+     // China Telecom: 133, 149, 153, 173, 177, 180-181, 189, 199
+     // CBN: 192
+     // MVNOs included in ranges like 170, 171
+     const cnRegex = /^1(3\d|4[014-9]|5[0-35-9]|6[2567]|7[0-8]|8\d|9[0-35-9])\d{8}$/;
+     return cnRegex.test(number);
+  }
+  // Basic check for international
+  return /^\d{5,15}$/.test(number);
+}
