@@ -26,7 +26,7 @@ export default defineConfig({
         changeOrigin: true,
       },
       '/12306_homepage': {
-        target: 'http://localhost:8099',
+        target: 'http://localhost:8080',
         changeOrigin: true,
       },
     },

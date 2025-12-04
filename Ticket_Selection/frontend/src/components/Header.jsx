@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 const HOME_URL = import.meta.env?.VITE_HOME_URL || 'http://localhost:8099/';
 
 const Header = () => {
   const [userInfo, setUserInfo] = useState(null);
+  const inputRef = useRef(null);
 
   useEffect(() => {
     try {
@@ -29,6 +30,16 @@ const Header = () => {
     } catch (e) {}
   }, []);
 
+  const handleSearch = (e) => {
+    e.preventDefault();
+    const kw = inputRef.current && inputRef.current.value ? inputRef.current.value.trim() : '';
+    const base = window.location.origin + window.location.pathname;
+    const params = new URLSearchParams(window.location.search || '');
+    if (kw) { params.set('search', kw); } else { params.delete('search'); }
+    const next = base + (params.toString() ? ('?' + params.toString()) : '');
+    window.location.href = next;
+  };
+
   const handleLogout = (e) => {
     e.preventDefault();
     try { localStorage.removeItem('SESSION_ID'); } catch (err) {}
@@ -45,7 +56,7 @@ const Header = () => {
           <div className="header-right">
             <div className="header-search">
               <div className="search-bd">
-                <input type="text" className="search-input" id="search-input" placeholder="搜索车票、餐饮、常旅客、相关规章" aria-label="搜索车票、餐饮、常旅客、相关规章" />
+                <input type="text" className="search-input" id="search-input" ref={inputRef} placeholder="搜索车票、餐饮、常旅客、相关规章" aria-label="搜索车票、餐饮、常旅客、相关规章" />
               </div>
               <a className="search-btn" href="javascript:;" aria-label="点击搜索">
                 <i className="icon icon-search"></i>
@@ -72,8 +83,8 @@ const Header = () => {
                 <a id="J-btn-login" href="http://localhost:8082/login.html" className="menu-nav-hd">登录</a>
                 <a href="http://localhost:8082/login.html" className="ml">注册</a>
               </li>
-              <li id="J-header-logout" style={{ display: userInfo ? '' : 'none' }} className="menu-item menu-nav menu-login" role="menuitem">
-                您好，<a href="javascript:;" className="txt-primary menu-nav-my-hd" id="welcome-user">{userInfo ? (userInfo.username || '') + (userInfo.name ? `（${userInfo.name}）` : '') : ''}</a>&nbsp;|&nbsp;<a id="regist_out" className="logout" href="javascript:;" onClick={handleLogout}>退出</a>
+              <li id="J-header-logout" className="menu-item menu-nav menu-login" role="menuitem" style={{ display: userInfo ? '' : 'none' }}>
+                您好，<a href="javascript:;" className="txt-primary menu-nav-my-hd" id="welcome-user">{(userInfo && (userInfo.username || userInfo.name)) || ''}</a>&nbsp;|&nbsp;<a id="regist_out" className="logout" href="javascript:;" onClick={handleLogout}>退出</a>
               </li>
             </ul>
           </div>
