@@ -42,6 +42,9 @@ const codeStatusEl = qs('code-status');
 const verifyIdentityBtn = qs('verify_identity');
 const identityStatusEl = qs('identity-status');
 const acceptTermsBtn = qs('accept_terms');
+const termsContent = qs('terms-content');
+const agreeTermsFinal = qs('agree_terms_final');
+const termsFinalError = qs('terms-final-error');
 
 let sessionId = null;
 let countdownTimer = null;
@@ -261,7 +264,26 @@ async function verifyIdentity() {
     hide(identityForm); show(termsForm);
     document.querySelector('.step.active').classList.remove('active');
     document.querySelector('.step[data-step="terms"]').classList.add('active');
+    // 加载服务条款内容
+    loadTermsContent();
   } catch (e) { setError('identity-error', '网络连接异常，请检查网络后重试'); identityStatusEl.textContent = ''; }
+}
+
+async function loadTermsContent() {
+  if (!termsContent) return;
+  termsContent.textContent = '正在加载服务条款...';
+  try {
+    // 尝试加载根目录下的 terms_of_service.txt
+    const res = await fetch('/terms_of_service.txt');
+    if (res.ok) {
+      const text = await res.text();
+      termsContent.textContent = text;
+    } else {
+      termsContent.textContent = '无法加载服务条款内容，请联系管理员。';
+    }
+  } catch (e) {
+    termsContent.textContent = '加载服务条款失败，请检查网络连接。';
+  }
 }
 
 verifyIdentityBtn.addEventListener('click', verifyIdentity);
@@ -269,6 +291,13 @@ verifyIdentityBtn.addEventListener('click', verifyIdentity);
 // Accept terms -> complete registration
 acceptTermsBtn.addEventListener('click', async () => {
   if (!sessionId) return alert('会话未创建');
+  
+  if (agreeTermsFinal && !agreeTermsFinal.checked) {
+    setError('terms-final-error', '请先阅读并同意服务条款');
+    return;
+  }
+  setError('terms-final-error', '');
+
   try {
     const tres = await fetch(`${API_BASE}/registration/sessions/${sessionId}/terms`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ terms_version: 'v2025.11_服务条款', privacy_version: 'v2025.11_隐私权政策', accepted: true })

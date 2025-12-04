@@ -272,6 +272,11 @@ app.patch(`${base}/registration/sessions/:session_id/account`, async (req, res) 
   if (!phoneAvailable) return error(res, 409, 'PHONE_TAKEN', '该手机号已被注册，请尝试找回账户或联系客服');
   if (!validateEmail(email)) return error(res, 400, 'EMAIL_INVALID_FORMAT', '邮箱格式不正确');
 
+  const allowedTravelerTypes = ['成人', '儿童', '学生', '残疾军人'];
+  if (traveler_type && !allowedTravelerTypes.includes(traveler_type)) {
+    return error(res, 400, 'TRAVELER_TYPE_INVALID', '无效的优惠（待）类型');
+  }
+
   // 生成密码哈希与盐，仅在会话中暂存哈希，避免保存明文
   const salt = crypto.randomBytes(16).toString('hex');
   const password_hash = hashPassword(password, salt);

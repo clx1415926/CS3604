@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>中国铁路12306 - 用户注册</title>
     <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="crawled_styles.css" />
   </head>
   <body>
     <header class="site-header">
@@ -91,11 +92,13 @@
           </div>
 
           <div class="form-row">
-            <label for="traveler_type">乘客类型：</label>
+            <label for="traveler_type">优惠（待）类型：</label>
             <div class="field">
-              <select id="traveler_type" name="traveler_type">
+              <select id="traveler_type" name="traveler_type" required>
                 <option value="成人">成人</option>
                 <option value="儿童">儿童</option>
+                <option value="学生">学生</option>
+                <option value="残疾军人">残疾军人</option>
               </select>
             </div>
           </div>
@@ -177,10 +180,17 @@
 
         <form id="terms-form" class="form-grid hidden">
           <div class="form-row">
-            <label>条款确认：</label>
+            <label>服务条款：</label>
             <div class="field">
-              <button id="accept_terms" type="button">确认并继续</button>
+              <div id="terms-content" class="terms-box" style="height: 200px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; background: #fff; white-space: pre-wrap;">正在加载服务条款...</div>
+              <label class="checkbox">
+                <input type="checkbox" id="agree_terms_final" /> 我已阅读并同意以上服务条款
+              </label>
+              <div class="error" id="terms-final-error"></div>
             </div>
+          </div>
+          <div class="actions">
+            <button id="accept_terms" type="button" class="primary">确认并继续</button>
           </div>
         </form>
 

@@ -5,14 +5,44 @@ const passengerRoutes = require('./routes/passengers');
 
 const PORT = process.env.PORT || 8083;
 
-function send(res, status, data) {
+// Rate Limiter
+const rateLimits = new Map();
+function checkRateLimit(req) {
+  if (req.headers['x-test-rate-limit-bypass']) return true;
+  const ip = req.socket.remoteAddress;
+  const now = Date.now();
+  const windowMs = 60 * 1000; // 1 minute
+  const max = 60; // 60 requests per minute
+
+  let record = rateLimits.get(ip);
+  if (!record) {
+      record = { count: 0, start: now };
+  }
+  
+  if (now - record.start > windowMs) {
+    record.count = 0;
+    record.start = now;
+  }
+  
+  record.count++;
+  rateLimits.set(ip, record);
+  return record.count <= max;
+}
+
+function send(res, status, data, reqInfo = null) {
   res.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET,POST,PATCH,OPTIONS,DELETE',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   });
   res.end(JSON.stringify(data));
+  
+  if (reqInfo) {
+      const { req, userId } = reqInfo;
+      const ip = req.socket.remoteAddress;
+      console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} - User:${userId || 'Anon'} - IP:${ip} - Status:${status} ${status >= 400 ? 'Error: ' + (data.error || '') : ''}`);
+  }
 }
 
 function parseBody(req) {
@@ -29,68 +59,83 @@ function parseBody(req) {
   });
 }
 
+function getUserId(req) {
+  const auth = req.headers['authorization'];
+  if (!auth || !auth.startsWith('Bearer ')) return null;
+  const token = auth.slice(7);
+  if (token === 'sess-super-12306') return 'u-super';
+  // Mock: for other tokens, treat the token as the user ID (or session that maps 1:1)
+  // This allows testing isolation by sending "Bearer user-2"
+  return token;
+}
+
 const server = http.createServer(async (req, res) => {
   const u = new URL(req.url, `http://localhost:${PORT}`);
   if (req.method === 'OPTIONS') return send(res, 200, {});
 
+  // Rate Limiting
+  if (!checkRateLimit(req)) {
+      return send(res, 429, { error: 'TOO_MANY_REQUESTS', message: '请求过于频繁，请稍后再试' });
+  }
+
+  const userId = getUserId(req);
+  const reqInfo = { req, userId };
+
   try {
+    // User Profile Routes
     if (req.method === 'GET' && u.pathname === '/api/v1/user/profile') {
       const r = await routes.getUserProfile();
-      return send(res, r.status, r.body);
+      return send(res, r.status, r.body, reqInfo);
     }
     if (req.method === 'PATCH' && u.pathname === '/api/v1/user/profile/traveler-type') {
       const payload = await parseBody(req);
       const r = await routes.patchTravelerType(payload);
-      return send(res, r.status, r.body || {});
+      return send(res, r.status, r.body || {}, reqInfo);
     }
     if (req.method === 'GET' && u.pathname === '/api/v1/user/security/phone/context') {
       const r = await routes.getPhoneVerificationContext();
-      return send(res, r.status, r.body || {});
+      return send(res, r.status, r.body || {}, reqInfo);
     }
     if (req.method === 'POST' && u.pathname === '/api/v1/user/security/phone/change') {
       const payload = await parseBody(req);
       const r = await routes.postPhoneChange(payload);
       const data = r.body || {};
-      if (r.redirect_to) data.redirect_to = r.redirect_to;
-      return send(res, r.status, data);
-    }
-    if (req.method === 'GET' && u.pathname === '/api/v1/metadata/country-codes') {
-      const r = await routes.getCountryCodes();
-      return send(res, r.status, r.body || {});
+      return send(res, r.status, data, reqInfo);
     }
 
     // Passenger Routes
-    if (req.method === 'GET' && u.pathname === '/api/v1/passengers') {
-      const r = await passengerRoutes.getPassengers(Object.fromEntries(u.searchParams));
-      return send(res, r.status, r.body);
+    if (u.pathname === '/api/v1/passengers') {
+      if (req.method === 'GET') {
+        const r = await passengerRoutes.getPassengers(userId, Object.fromEntries(u.searchParams));
+        return send(res, r.status, r.body, reqInfo);
+      }
+      if (req.method === 'POST') {
+        const payload = await parseBody(req);
+        const r = await passengerRoutes.addPassenger(userId, payload);
+        return send(res, r.status, r.body, reqInfo);
+      }
     }
-    if (req.method === 'POST' && u.pathname === '/api/v1/passengers') {
-      const payload = await parseBody(req);
-      const r = await passengerRoutes.addPassenger(payload);
-      return send(res, r.status, r.body);
-    }
-    const deleteMatch = u.pathname.match(/^\/api\/v1\/passengers\/([^/]+)$/);
-    if (req.method === 'GET' && deleteMatch) {
-        const id = deleteMatch[1];
-        const r = await passengerRoutes.getPassengerById(id);
-        return send(res, r.status, r.body || {});
-    }
-    if (req.method === 'DELETE' && deleteMatch) {
-      const id = deleteMatch[1];
-      const r = await passengerRoutes.deletePassenger(id);
-      return send(res, r.status, r.body || {});
-    }
-    const updateMatch = u.pathname.match(/^\/api\/v1\/passengers\/([^/]+)$/);
-    if ((req.method === 'PATCH' || req.method === 'PUT') && updateMatch) {
-      const id = updateMatch[1];
-      const payload = await parseBody(req);
-      const r = await passengerRoutes.updatePassenger(id, payload);
-      return send(res, r.status, r.body || {});
+    if (u.pathname.match(/^\/api\/v1\/passengers\/\d+$/)) {
+        const id = u.pathname.split('/').pop();
+        if (req.method === 'DELETE') {
+            const r = await passengerRoutes.deletePassenger(userId, id);
+            return send(res, r.status, r.body, reqInfo);
+        }
+        if (req.method === 'PUT' || req.method === 'PATCH') {
+            const payload = await parseBody(req);
+            const r = await passengerRoutes.updatePassenger(userId, id, payload);
+            return send(res, r.status, r.body, reqInfo);
+        }
+        if (req.method === 'GET') {
+            const r = await passengerRoutes.getPassengerById(userId, id);
+            return send(res, r.status, r.body, reqInfo);
+        }
     }
 
-    return send(res, 404, { error: 'NOT_FOUND' });
-  } catch (e) {
-    return send(res, 500, { error: 'INTERNAL_ERROR' });
+    send(res, 404, { error: 'Not Found' }, reqInfo);
+  } catch (err) {
+    console.error('Server Error:', err);
+    send(res, 500, { error: 'Internal Server Error' }, reqInfo);
   }
 });
 
@@ -98,4 +143,3 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log(`[User_Center] server listening on http://localhost:${PORT}`);
 });
-

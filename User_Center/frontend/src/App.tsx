@@ -4,6 +4,7 @@ import PersonalInfoView from './pages/PersonalInfoView';
 import PhoneVerification from './pages/PhoneVerification';
 import PassengerList from './pages/PassengerList';
 import PassengerEdit from './pages/PassengerEdit';
+import AddPassenger from './pages/AddPassenger';
 import OrderCenter from './pages/OrderCenter';
 
 function getRoute() {
@@ -104,14 +105,14 @@ export default function App() {
       </div>
     );
   }
-  if (currentPath === '/otn/view/passenger_edit.html') {
+  if (currentPath === '/otn/view/add_passenger.html') {
     return (
       <div>
         {Topbar}
         <div style={{ display: 'flex', alignItems: 'flex-start' }}>
           {Sidebar}
           <div style={{ flex: 1, padding: '0 24px' }}>
-            <PassengerEdit />
+            <AddPassenger />
           </div>
         </div>
       </div>
@@ -130,5 +131,17 @@ export default function App() {
       </div>
     );
   }
-  return <HomePage />;
+  
+  return (
+    <div>
+      {Topbar}
+      <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+        {Sidebar}
+        <div style={{ flex: 1, padding: '24px' }}>
+           {/* Default to Home or 404 */}
+           <HomePage />
+        </div>
+      </div>
+    </div>
+  );
 }

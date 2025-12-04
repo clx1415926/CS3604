@@ -37,6 +37,11 @@ export default function PassengerList() {
     return fromHash || fromSearch || fromSession || fromLocal;
   };
 
+  const getAuthHeaders = () => {
+    const sid = getSid();
+    return sid ? { 'Authorization': `Bearer ${sid}` } : {};
+  };
+
   const fetchPassengers = async () => {
     setLoading(true);
     setError('');
@@ -45,10 +50,9 @@ export default function PassengerList() {
       if (keyword) {
         url += `?name=${encodeURIComponent(keyword)}`;
       }
-      const sid = getSid();
-      // For now, assuming API doesn't strictly require Auth header for the mock, 
-      // but passing it is good practice if middleware enforced it.
-      const res = await fetch(url);
+      const res = await fetch(url, {
+        headers: getAuthHeaders() as HeadersInit
+      });
       if (!res.ok) throw new Error('Failed to fetch passengers');
       const data = await res.json();
       setPassengers(data.passengers || []);
@@ -68,6 +72,7 @@ export default function PassengerList() {
     try {
       const res = await fetch(`http://localhost:8083/api/v1/passengers/${id}`, {
         method: 'DELETE',
+        headers: getAuthHeaders() as HeadersInit
       });
       if (!res.ok) {
         const d = await res.json();
@@ -84,11 +89,11 @@ export default function PassengerList() {
     if (selectedIds.size === 0) return;
     if (!window.confirm(`确认删除选中的 ${selectedIds.size} 位乘车人吗？`)) return;
     
-    // API doesn't support batch delete yet, so we loop (not ideal but works for prototype)
-    // Or we could update API. Requirement mentioned batch delete.
-    // For now, loop.
     for (const id of Array.from(selectedIds)) {
-      await fetch(`http://localhost:8083/api/v1/passengers/${id}`, { method: 'DELETE' });
+      await fetch(`http://localhost:8083/api/v1/passengers/${id}`, { 
+        method: 'DELETE',
+        headers: getAuthHeaders() as HeadersInit
+      });
     }
     setSelectedIds(new Set());
     fetchPassengers();
@@ -101,118 +106,93 @@ export default function PassengerList() {
     setSelectedIds(newSet);
   };
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchPassengers();
+  };
+
   return (
-    <div style={{ padding: 20 }}>
-      <div style={{ marginBottom: 20, fontSize: 14, color: '#666' }}>
-        当前位置：个人中心 &gt; 常用信息管理 &gt; 乘车人
-      </div>
-
-      <div style={{ display: 'flex', marginBottom: 20 }}>
-        <div style={{ position: 'relative', display: 'inline-block', marginRight: 10 }}>
-          <input
-            type="text"
-            placeholder="请输入乘客姓名"
-            value={keyword}
-            onChange={e => setKeyword(e.target.value)}
-            style={{ padding: '5px 25px 5px 10px', width: 200, boxSizing: 'border-box' }}
-          />
-          {keyword && (
-            <span 
-              onClick={() => { setKeyword(''); }}
-              style={{ 
-                position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', 
-                cursor: 'pointer', color: '#999', fontSize: 18, lineHeight: 1 
-              }}
-            >
-              ×
-            </span>
-          )}
+    <div className="passenger-list-page">
+      <div className="header">
+        <h2>乘车人管理</h2>
+        <div className="actions">
+          <a href="#/otn/view/add_passenger.html" className="btn-primary">添加乘车人</a>
         </div>
-        <button 
-          onClick={fetchPassengers}
-          style={{ padding: '5px 15px', background: '#ff9900', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}
-        >
-          查询
-        </button>
       </div>
 
-      {error && <div style={{ color: 'red', marginBottom: 10 }}>{error}</div>}
+      <div className="search-bar">
+        <form onSubmit={handleSearch}>
+          <input 
+            type="text" 
+            placeholder="请输入乘车人姓名" 
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+          />
+          <button type="submit">查询</button>
+        </form>
+      </div>
 
-      <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #e5e5e5' }}>
-        <thead style={{ background: '#f8f8f8' }}>
-          <tr>
-            <th style={{ padding: 10, borderBottom: '1px solid #e5e5e5' }}>序号</th>
-            <th style={{ padding: 10, borderBottom: '1px solid #e5e5e5', textAlign: 'left' }}>姓名</th>
-            <th style={{ padding: 10, borderBottom: '1px solid #e5e5e5' }}>证件类型</th>
-            <th style={{ padding: 10, borderBottom: '1px solid #e5e5e5' }}>证件号码</th>
-            <th style={{ padding: 10, borderBottom: '1px solid #e5e5e5' }}>手机/电话</th>
-            <th style={{ padding: 10, borderBottom: '1px solid #e5e5e5' }}>旅客类型</th>
-            <th style={{ padding: 10, borderBottom: '1px solid #e5e5e5' }}>核验状态</th>
-            <th style={{ padding: 10, borderBottom: '1px solid #e5e5e5' }}>操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          {passengers.map((p, index) => (
-            <tr key={p.passenger_id} style={{ textAlign: 'center' }}>
-              <td style={{ padding: 10, borderBottom: '1px solid #e5e5e5' }}>
-                {!p.is_self && (
+      {error && <div className="error-msg">{error}</div>}
+      
+      <div className="list-container">
+        {loading ? <div>加载中...</div> : (
+          <table>
+            <thead>
+              <tr>
+                <th>
                   <input 
                     type="checkbox" 
-                    checked={selectedIds.has(p.passenger_id)}
-                    onChange={() => toggleSelect(p.passenger_id)}
-                    style={{ marginRight: 5 }}
+                    onChange={(e) => {
+                      if (e.target.checked) setSelectedIds(new Set(passengers.map(p => p.passenger_id)));
+                      else setSelectedIds(new Set());
+                    }}
+                    checked={passengers.length > 0 && selectedIds.size === passengers.length}
                   />
-                )}
-                {index + 1}
-              </td>
-              <td style={{ padding: 10, borderBottom: '1px solid #e5e5e5', textAlign: 'left' }}>{p.name}</td>
-              <td style={{ padding: 10, borderBottom: '1px solid #e5e5e5' }}>{p.id_type}</td>
-              <td style={{ padding: 10, borderBottom: '1px solid #e5e5e5' }}>{p.id_number_masked || p.id_number}</td>
-              <td style={{ padding: 10, borderBottom: '1px solid #e5e5e5' }}>{p.phone_number_masked || p.phone_number}</td>
-              <td style={{ padding: 10, borderBottom: '1px solid #e5e5e5' }}>{p.traveler_type}</td>
-              <td style={{ padding: 10, borderBottom: '1px solid #e5e5e5', color: p.verified_status === '已通过' ? 'green' : '#f90' }}>
-                {p.verified_status}
-              </td>
-              <td style={{ padding: 10, borderBottom: '1px solid #e5e5e5' }}>
-                <span 
-                  style={{ cursor: 'pointer', color: '#2e6fe7', marginRight: 10 }}
-                  onClick={() => window.location.hash = `#/otn/view/passenger_edit.html?id=${p.passenger_id}`}
-                >
-                  修改
-                </span>
-                {!p.is_self && (
-                  <span 
-                    style={{ cursor: 'pointer', color: '#ff9900' }}
-                    onClick={() => handleDelete(p.passenger_id)}
-                  >
-                    删除
-                  </span>
-                )}
-              </td>
-            </tr>
-          ))}
-          {passengers.length === 0 && !loading && (
-            <tr>
-              <td colSpan={8} style={{ padding: 20, textAlign: 'center', color: '#999' }}>暂无乘车人</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-
-      <div style={{ marginTop: 20 }}>
-        <button
-          onClick={() => window.location.hash = '#/otn/view/passenger_edit.html?type=add'}
-          style={{ padding: '8px 20px', background: '#2e6fe7', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', marginRight: 10 }}
-        >
-          + 添加乘车人
-        </button>
-        <button
-          onClick={handleBatchDelete}
-          style={{ padding: '8px 20px', background: '#fff', color: '#2e6fe7', border: '1px solid #2e6fe7', borderRadius: 4, cursor: 'pointer' }}
-        >
-          批量删除
-        </button>
+                </th>
+                <th>姓名</th>
+                <th>证件类型</th>
+                <th>证件号码</th>
+                <th>手机号</th>
+                <th>旅客类型</th>
+                <th>核验状态</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {passengers.length === 0 && <tr><td colSpan={8} style={{textAlign:'center'}}>暂无乘车人</td></tr>}
+              {passengers.map(p => (
+                <tr key={p.passenger_id}>
+                  <td>
+                    <input 
+                      type="checkbox" 
+                      checked={selectedIds.has(p.passenger_id)}
+                      onChange={() => toggleSelect(p.passenger_id)}
+                    />
+                  </td>
+                  <td>{p.name}{p.is_self && <span className="tag">本人</span>}</td>
+                  <td>{p.id_type}</td>
+                  <td>{p.id_number_masked || p.id_number}</td>
+                  <td>{p.phone_number_masked || p.phone_number}</td>
+                  <td>{p.traveler_type}</td>
+                  <td>
+                    <span className={`status-${p.verified_status === '已通过' ? 'success' : 'pending'}`}>
+                      {p.verified_status}
+                    </span>
+                  </td>
+                  <td>
+                    <button onClick={() => handleDelete(p.passenger_id)} disabled={p.is_self}>删除</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
+      {selectedIds.size > 0 && (
+        <div className="batch-actions">
+          <button onClick={handleBatchDelete}>批量删除</button>
+        </div>
+      )}
     </div>
   );
 }

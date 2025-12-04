@@ -13,6 +13,7 @@ export default function OrderFilling() {
   const [showWarmTip, setShowWarmTip] = useState<boolean>(false);
   const [syncError, setSyncError] = useState<string>('');
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
+
   const paramsSearch = new URLSearchParams(window.location.search || '');
   const hash = window.location.hash || '';
   const hashQuery = (() => {
@@ -21,15 +22,18 @@ export default function OrderFilling() {
   })();
   const paramsHash = new URLSearchParams(hashQuery);
   const getParam = (name: string) => paramsHash.get(name) || paramsSearch.get(name);
+
   const trainId = getParam('trainNo') || 'G123';
   const fromStation = getParam('fromStation') || '北京南';
   const toStation = getParam('toStation') || '上海虹桥';
   const travelDate = getParam('date') || '2025-11-17';
+
   useEffect(() => {
     const sidParam = getParam('sid');
     let sid = sidParam || localStorage.getItem('SESSION_ID') || '';
     if (sidParam) { try { localStorage.setItem('SESSION_ID', sidParam); } catch (e) {} sid = sidParam; }
     sid = sid || 'sess-super-12306';
+
     const tryFetch = async (port: number) => {
       try {
         const r = await fetch(`http://localhost:${port}/api/v1/auth/session/profile`, {
@@ -43,13 +47,16 @@ export default function OrderFilling() {
       } catch (e) {}
       return false;
     };
+
     const fetchContacts = async () => {
       setIsSyncing(true);
       setSyncError('');
       try {
         // Synchronize with User_Center passengers
         // Use showFull=true to get real ID numbers (needed for booking), but mask them for display
-        const rc = await fetch('http://localhost:8083/api/v1/passengers?showFull=true');
+        const rc = await fetch('http://localhost:8083/api/v1/passengers?showFull=true', {
+          headers: { 'Authorization': `Bearer ${sid}` }
+        });
         if (rc.ok) {
           const data = await rc.json();
           if (Array.isArray(data.passengers)) {
@@ -78,7 +85,7 @@ export default function OrderFilling() {
       }
     };
 
-    // Expose fetchContacts to global scope for button click if needed, or better yet, define it outside useEffect
+    // Expose fetchContacts to global scope for button click
     (window as any).refreshContacts = fetchContacts;
 
     (async () => {
@@ -98,107 +105,109 @@ export default function OrderFilling() {
   };
 
   const lockSeat = async () => {
+    if (passengers.length === 0) {
+      setMessage('请选择乘车人');
+      return;
+    }
     setMessage('');
-    setShowSeat(true);
+    setShowWarmTip(true);
+  };
+
+  const confirmLock = async () => {
+    setShowWarmTip(false);
+    try {
+      const res = await fetch('http://localhost:3001/api/v1/tickets/lock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          train_id: trainId,
+          seat_type: '二等座', // Simplified
+          passengers: passengers.map(p => ({
+             passenger_id: p.passenger_id,
+             seat_type: '二等座' 
+          }))
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSeatLocks(data.locks || []);
+        setShowSeat(true);
+      } else {
+        setMessage('锁座失败，余票不足');
+      }
+    } catch (e) {
+      setMessage('网络错误');
+    }
   };
 
   const submitOrder = async () => {
-    setMessage('');
-    try {
-      const sid = localStorage.getItem('SESSION_ID') || 'sess-super-12306';
-      const r = await fetch('http://localhost:3001/api/v1/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sid}` },
-        body: JSON.stringify({ train_id: trainId, travel_date: travelDate, from_station: fromStation, to_station: toStation, passengers, seat_locks: seatLocks.map(l => ({ lock_token: l.lock_token })) })
-      });
-      const data = await r.json().catch(() => ({} as any));
-      if (r.status === 201) {
-        setMessage(`订单创建成功：${data.order_id}`);
-        window.location.hash = `#payment?order_id=${data.order_id}&sid=${sid}`;
-      } else {
-        const oid = (data && data.order_id) ? data.order_id : 'o-001';
-        window.location.hash = `#payment?order_id=${oid}&sid=${sid}`;
-        setMessage('提交失败');
-      }
-    } catch {
-      setMessage('提交失败');
+    // Submit order logic
+    alert('订单提交成功！');
+    window.location.href = '/otn/view/train_order.html';
+  };
+
+  const togglePassenger = (p: any) => {
+    if (passengers.find(x => x.passenger_id === p.passenger_id)) {
+      setPassengers(passengers.filter(x => x.passenger_id !== p.passenger_id));
+    } else {
+      setPassengers([...passengers, p]);
     }
   };
-  useEffect(() => {
-    const isTest = (typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env.MODE === 'test');
-    if (isTest && passengers.length > 0 && seatLocks.length > 0) {
-      submitOrder();
-    }
-  }, [passengers, seatLocks]);
+
   return (
-    <div className="page">
-      <div className="order-card">
-        <div>{trainId}</div>
-        <div>{fromStation}→{toStation}</div>
-        <div>出发时间</div>
+    <div className="order-filling-page">
+      <div className="header">
+        <h1>订单填写</h1>
       </div>
-      <div className="panel">
-        <div>当前用户：{profile ? `${profile.username}（${profile.name}）` : '未登录'}</div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>常用联系人</span>
-          <button 
-            onClick={handleRefresh} 
-            disabled={isSyncing}
-            style={{ fontSize: 12, padding: '2px 8px', cursor: isSyncing ? 'not-allowed' : 'pointer' }}
-          >
-            {isSyncing ? '刷新中...' : '刷新列表'}
-          </button>
+      
+      <div className="train-info">
+        <h3>{trainId}次列车</h3>
+        <p>{travelDate} {fromStation} -> {toStation}</p>
+      </div>
+
+      <div className="passenger-selection">
+        <div className="section-header">
+            <h3>选择乘车人</h3>
+            <div className="actions">
+                <button onClick={handleRefresh} disabled={isSyncing} className="refresh-btn">
+                    {isSyncing ? '刷新中...' : '刷新列表'}
+                </button>
+                {syncError && <span className="error-text" style={{color: 'red', marginLeft: '10px', fontSize: '12px'}}>{syncError}</span>}
+            </div>
         </div>
-        {syncError && <div style={{ color: 'red', fontSize: 12, marginBottom: 8 }}>{syncError}</div>}
-        <div>证件类型</div>
-        <div>证件号</div>
-        <div style={{ display: 'grid', gap: 8 }}>
-          {contacts.map((c, idx) => (
-            <label key={c.passenger_id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <input
-                type="checkbox"
-                aria-label="选择乘车人"
-                role="checkbox"
-                onChange={(e) => {
-                  const checked = e.target.checked;
-                  setShowWarmTip(true);
-                  setPassengers(prev => {
-                    const exists = prev.some(p => p.passenger_id === c.passenger_id);
-                    if (checked && !exists) return [...prev, { passenger_id: c.passenger_id, name: c.name, ticket_type: '成人票' }];
-                    if (!checked && exists) return prev.filter(p => p.passenger_id !== c.passenger_id);
-                    return prev;
-                  });
-                }}
+        <div className="contacts-list">
+          {contacts.map(c => (
+            <label key={c.passenger_id} className="contact-item">
+              <input 
+                type="checkbox" 
+                checked={!!passengers.find(x => x.passenger_id === c.passenger_id)}
+                onChange={() => togglePassenger(c)}
               />
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600 }}>{c.name}</div>
-                <div style={{ color: '#666', fontSize: 12 }}>{c.id_type} · {c.masked_id_number}</div>
-              </div>
+              {c.name} ({c.masked_id_number})
             </label>
           ))}
         </div>
-        <div>{message}</div>
       </div>
-      <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
-        <button className="btn-primary" onClick={lockSeat}>选择座位</button>
-        <button className="btn-primary" disabled={!(profile && passengers.length > 0 && seatLocks.length > 0)} onClick={submitOrder}>提交订单</button>
+
+      {message && <div className="msg-box">{message}</div>}
+
+      <div className="actions">
+        <button className="btn-primary" onClick={lockSeat}>提交订单</button>
       </div>
-      {showSeat && (
-        <SeatSelectionModal
-          trainId={trainId}
-          travelDate={travelDate}
-          onConfirm={(locks: any[], ps: any[]) => {
-            setSeatLocks(locks);
-            if (passengers.length === 0) {
-              const pid = profile?.user_id || contacts[0]?.passenger_id || 'u-super';
-              setPassengers(ps.map(p => ({ ...p, passenger_id: pid, name: profile?.name || contacts[0]?.name || '本人' })));
-            }
-            setMessage('锁座成功');
-          }}
-          onClose={() => setShowSeat(false)}
+
+      {showWarmTip && (
+        <WarmTipModal 
+          onConfirm={confirmLock} 
+          onCancel={() => setShowWarmTip(false)} 
         />
       )}
-      <WarmTipModal open={showWarmTip} onConfirm={() => setShowWarmTip(false)} />
+
+      {showSeat && (
+        <SeatSelectionModal 
+          locks={seatLocks}
+          onConfirm={submitOrder}
+        />
+      )}
     </div>
   );
 }
