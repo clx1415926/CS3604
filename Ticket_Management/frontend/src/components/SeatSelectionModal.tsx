@@ -9,6 +9,7 @@ type Props = {
 };
 
 export default function SeatSelectionModal({ trainId, travelDate, passengerCount, onConfirm, onCancel }: Props) {
+  const [carriageNo, setCarriageNo] = useState('10');
   const [seatMap, setSeatMap] = useState<any[]>([]);
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -16,12 +17,12 @@ export default function SeatSelectionModal({ trainId, travelDate, passengerCount
 
   useEffect(() => {
     fetchSeatMap();
-  }, []);
+  }, [carriageNo]);
 
   const fetchSeatMap = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:3001/api/v1/seats/map?train_id=${trainId}&travel_date=${travelDate}&seat_class=二等座&carriage_no=10`);
+      const res = await fetch(`http://localhost:3001/api/v1/seats/map?train_id=${trainId}&travel_date=${travelDate}&seat_class=二等座&carriage_no=${carriageNo}`);
       if (res.ok) {
         const data = await res.json();
         setSeatMap(data.seats || []);
@@ -57,17 +58,45 @@ export default function SeatSelectionModal({ trainId, travelDate, passengerCount
     }
     
     const seats = selectedSeats.map(seatNo => ({
-      carriage_no: '10',
+      carriage_no: carriageNo,
       seat_no: seatNo
     }));
     
     onConfirm(seats);
   };
 
+  // 按排分组座位
+  const seatsByRow = seatMap.reduce((acc, seat) => {
+    const row = seat.row || parseInt(seat.seat_no);
+    if (!acc[row]) acc[row] = [];
+    acc[row].push(seat);
+    return acc;
+  }, {} as Record<number, any[]>);
+
+  const rows = Object.keys(seatsByRow).map(Number).sort((a, b) => a - b);
+
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-      <div style={{ background: '#fff', padding: 24, width: 500, maxHeight: '80vh', overflow: 'auto', borderRadius: 8 }}>
+      <div style={{ background: '#fff', padding: 24, width: 700, maxHeight: '85vh', overflow: 'auto', borderRadius: 8 }}>
         <div style={{ fontWeight: 600, fontSize: 18, marginBottom: 16 }}>选择座位</div>
+        
+        {/* 车厢选择 */}
+        <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <label style={{ fontWeight: 600 }}>车厢号：</label>
+          <select 
+            value={carriageNo} 
+            onChange={(e) => {
+              setCarriageNo(e.target.value);
+              setSelectedSeats([]);
+              setError('');
+            }}
+            style={{ padding: '6px 12px', border: '1px solid #d9d9d9', borderRadius: 4, fontSize: 14 }}
+          >
+            {Array.from({ length: 16 }, (_, i) => i + 1).map(n => (
+              <option key={n} value={String(n)}>{n}号车厢</option>
+            ))}
+          </select>
+        </div>
         
         <div style={{ marginBottom: 12, color: '#666' }}>
           需要选择 {passengerCount} 个座位，已选择 {selectedSeats.length} 个
@@ -80,8 +109,8 @@ export default function SeatSelectionModal({ trainId, travelDate, passengerCount
         ) : (
           <div>
             <div style={{ marginBottom: 16 }}>
-              <div style={{ fontWeight: 600, marginBottom: 8 }}>10号车厢 - 二等座</div>
-              <div style={{ display: 'flex', gap: 4, marginBottom: 8, fontSize: 12, color: '#666' }}>
+              <div style={{ fontWeight: 600, marginBottom: 8 }}>{carriageNo}号车厢 - 二等座</div>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 8, fontSize: 12, color: '#666' }}>
                 <span>🪟 靠窗</span>
                 <span>🟢 可选</span>
                 <span>🔴 已占</span>
@@ -89,34 +118,60 @@ export default function SeatSelectionModal({ trainId, travelDate, passengerCount
               </div>
             </div>
             
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
-              {seatMap.map(seat => {
-                const isSelected = selectedSeats.includes(seat.seat_no);
-                const isOccupied = seat.occupied;
+            {/* 座位布局 - 按排显示 */}
+            <div style={{ maxHeight: '450px', overflowY: 'auto', border: '1px solid #e8e8e8', borderRadius: 4, padding: 12 }}>
+              {rows.map(rowNum => {
+                const rowSeats = seatsByRow[rowNum].sort((a, b) => a.column.localeCompare(b.column));
                 
                 return (
-                  <button
-                    key={seat.seat_no}
-                    onClick={() => toggleSeat(seat.seat_no, isOccupied)}
-                    disabled={isOccupied}
-                    style={{
-                      padding: '12px 8px',
-                      border: isSelected ? '2px solid #1890ff' : '1px solid #d9d9d9',
-                      borderRadius: 4,
-                      background: isOccupied ? '#f5f5f5' : isSelected ? '#e6f7ff' : '#fff',
-                      cursor: isOccupied ? 'not-allowed' : 'pointer',
-                      fontSize: 13,
-                      fontWeight: isSelected ? 600 : 400,
-                      color: isOccupied ? '#999' : isSelected ? '#1890ff' : '#333',
-                      position: 'relative'
-                    }}
-                  >
-                    <div>{seat.seat_no}</div>
-                    {seat.window && <div style={{ fontSize: 10, color: '#999' }}>🪟</div>}
-                  </button>
+                  <div key={rowNum} style={{ display: 'flex', alignItems: 'center', marginBottom: 8, gap: 8 }}>
+                    <div style={{ width: 30, fontSize: 12, color: '#999', fontWeight: 600, textAlign: 'right' }}>
+                      {rowNum}排
+                    </div>
+                    <div style={{ display: 'flex', gap: 6, flex: 1 }}>
+                      {rowSeats.map(seat => {
+                        const isSelected = selectedSeats.includes(seat.seat_no);
+                        const isOccupied = seat.occupied;
+                        
+                        return (
+                          <button
+                            key={seat.seat_no}
+                            onClick={() => toggleSeat(seat.seat_no, isOccupied)}
+                            disabled={isOccupied}
+                            style={{
+                              flex: 1,
+                              padding: '10px 4px',
+                              border: isSelected ? '2px solid #1890ff' : '1px solid #d9d9d9',
+                              borderRadius: 4,
+                              background: isOccupied ? '#f5f5f5' : isSelected ? '#e6f7ff' : '#fff',
+                              cursor: isOccupied ? 'not-allowed' : 'pointer',
+                              fontSize: 12,
+                              fontWeight: isSelected ? 600 : 400,
+                              color: isOccupied ? '#999' : isSelected ? '#1890ff' : '#333',
+                              position: 'relative',
+                              minWidth: 45
+                            }}
+                          >
+                            <div>{seat.column}</div>
+                            {seat.window && <div style={{ fontSize: 9 }}>🪟</div>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 );
               })}
             </div>
+            
+            {/* 已选座位列表 */}
+            {selectedSeats.length > 0 && (
+              <div style={{ marginTop: 12, padding: 10, background: '#f0f9ff', borderRadius: 4, border: '1px solid #91d5ff' }}>
+                <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4, color: '#1890ff' }}>已选座位：</div>
+                <div style={{ fontSize: 13, color: '#333' }}>
+                  {selectedSeats.map(s => `${carriageNo}车${s}`).join('、')}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
