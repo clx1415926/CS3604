@@ -14,25 +14,19 @@ function TrainList({ trains }) {
             } catch (e) {}
         }
         if (!sid) { setError('请先登录后预订'); return; }
+        
+        // 直接跳转到订单填写页面，不要在这里创建订单
         try {
             setLoadingId(train.trainNo);
-            await fetch('http://localhost:3001/api/v1/seats/lock', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ train_id: train.trainNo, travel_date: train.date, seats: [{ seat_class: '二等座', carriage_no: '10', seat_no: '16A', passenger_id: 'p-001' }] })
-            });
-            await fetch('http://localhost:3001/api/v1/orders', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sid}` },
-                body: JSON.stringify({ train_id: train.trainNo, travel_date: train.date, from_station: train.fromStation, to_station: train.toStation, passengers: [{ passenger_id: 'p-001', name: '系统管理员' }], seat_locks: [{ lock_token: 'lk-001' }] })
-            });
             const qp = new URLSearchParams();
             qp.set('trainNo', train.trainNo);
             qp.set('fromStation', train.fromStation);
             qp.set('toStation', train.toStation);
             qp.set('date', train.date);
             qp.set('sid', sid);
-            const url = `http://localhost:3001/#order-filling?${qp.toString()}`;
+            
+            // 跳转到订单填写页面（端口 5174）
+            const url = `http://localhost:5174/#order-filling?${qp.toString()}`;
             if (process.env.NODE_ENV === 'test') {
                 try { const u = new URL(url); window.location.hash = u.hash; } catch (_) { window.location.hash = `order-filling?${qp.toString()}`; }
             } else {

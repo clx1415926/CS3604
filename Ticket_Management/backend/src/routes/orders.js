@@ -35,6 +35,7 @@ async function requireAuth(req, res, next) {
 }
 
 router.post('/', requireAuth, (req, res) => {
+  console.log('📥 创建订单请求 - body:', JSON.stringify(req.body, null, 2));
   const { train_id, travel_date, from_station, to_station, passengers, seat_locks } = req.body || {};
   if (!train_id || !travel_date || !from_station || !to_station || !Array.isArray(passengers) || passengers.length === 0) {
     return res.status(400).json({ error: 'NO_SEATS_AVAILABLE', message: '座位不足或不可用' });
@@ -42,6 +43,7 @@ router.post('/', requireAuth, (req, res) => {
   if (!Array.isArray(seat_locks) || seat_locks.length === 0) {
     return res.status(400).json({ error: 'NO_SEATS_AVAILABLE', message: '座位不足或不可用' });
   }
+  console.log('🔍 seat_locks数据:', seat_locks);
   const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
   function encodeTime(time, len) { let s = ''; let t = time; for (let i = len; i > 0; i--) { s = ALPHABET[t % 32] + s; t = Math.floor(t / 32); } return s; }
   function encodeRandom(len) {
@@ -67,6 +69,15 @@ router.post('/', requireAuth, (req, res) => {
   const token = req.authToken;
   const key = identityKeyFromToken(token);
   const list = ordersByToken.get(key) || [];
+  
+  // 从 seat_locks 中提取座位信息
+  const seats = seat_locks.map(lock => ({
+    seat_class: '二等座',
+    carriage_no: lock.carriage_no || '10',
+    seat_no: lock.seat_no || '16A'
+  }));
+  console.log('🎫 生成的座位信息:', seats);
+  
   list.push({
     order_id,
     booked_at: new Date().toISOString(),
@@ -78,7 +89,7 @@ router.post('/', requireAuth, (req, res) => {
       id_number: p.id_number,
       phone_number: p.phone_number
     })),
-    seats: [{ seat_class: '二等座', carriage_no: '10', seat_no: '16A' }],
+    seats: seats,
     price_total,
     status: 'unpaid',
   });

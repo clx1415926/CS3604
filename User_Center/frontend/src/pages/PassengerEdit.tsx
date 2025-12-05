@@ -15,6 +15,8 @@ const ID_TYPES = [
 const TRAVELER_TYPES = ['成人', '儿童', '学生', '残疾军人'];
 
 export default function PassengerEdit() {
+  console.log('🚀 PassengerEdit component is rendering');
+  
   const [mode, setMode] = useState<'add' | 'edit'>('add');
   const [passengerId, setPassengerId] = useState('');
   const [formData, setFormData] = useState({
@@ -193,6 +195,82 @@ export default function PassengerEdit() {
       }
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleSendSms = async () => {
+    // 验证手机号
+    const phoneErr = validateField('phone_number', formData.phone_number);
+    if (phoneErr) {
+      setError('请先输入正确的手机号码');
+      return;
+    }
+
+    try {
+      const res = await fetch('http://localhost:8083/api/v1/sms/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
+        },
+        body: JSON.stringify({
+          phone_country_code: formData.phone_country_code,
+          phone_number: formData.phone_number
+        })
+      });
+
+      if (res.ok) {
+        setSmsSent(true);
+        setSmsCountdown(60);
+        const timer = setInterval(() => {
+          setSmsCountdown(prev => {
+            if (prev <= 1) {
+              clearInterval(timer);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+        alert('验证码已发送');
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || '发送验证码失败');
+      }
+    } catch (e) {
+      setError('网络错误，无法发送验证码');
+    }
+  };
+
+  const handleVerifySms = async () => {
+    if (!smsCode) {
+      setError('请输入验证码');
+      return;
+    }
+
+    try {
+      const res = await fetch('http://localhost:8083/api/v1/sms/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
+        },
+        body: JSON.stringify({
+          phone_country_code: formData.phone_country_code,
+          phone_number: formData.phone_number,
+          code: smsCode
+        })
+      });
+
+      if (res.ok) {
+        setSmsVerified(true);
+        setError('');
+        alert('验证成功');
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || '验证码错误');
+      }
+    } catch (e) {
+      setError('网络错误，无法验证');
     }
   };
 

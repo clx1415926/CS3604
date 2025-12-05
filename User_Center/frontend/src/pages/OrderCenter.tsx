@@ -78,6 +78,8 @@ export default function OrderCenter() {
       } else {
         const data = await res.json();
         const list = data.orders || [];
+        // Debug: 查看订单数据
+        console.log('📦 订单数据:', JSON.stringify(list, null, 2));
         // Sort by booked_at desc
         const sorted = list.sort((a: Order, b: Order) => 
           new Date(b.booked_at).getTime() - new Date(a.booked_at).getTime()
@@ -142,8 +144,8 @@ export default function OrderCenter() {
                   {order.passengers.map((p, idx) => (
                     <div key={idx} style={{ display: 'flex', gap: 12, fontSize: 14 }}>
                       <span style={{ width: 80 }}>{p.name}</span>
-                      <span>{order.seats[0]?.seat_class}</span>
-                      <span>{order.seats[0]?.carriage_no}车{order.seats[0]?.seat_no}号</span>
+                      <span>{order.seats[idx]?.seat_class || order.seats[0]?.seat_class}</span>
+                      <span>{order.seats[idx]?.carriage_no || order.seats[0]?.carriage_no}车{order.seats[idx]?.seat_no || order.seats[0]?.seat_no}号</span>
                     </div>
                   ))}
                 </div>

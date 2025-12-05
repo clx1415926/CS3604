@@ -115,49 +115,69 @@ export default function OrderFilling() {
 
   const confirmLock = async () => {
     setShowWarmTip(false);
+    // 显示座位选择模态框，让用户选择座位
+    setShowSeat(true);
+  };
+
+  const handleSeatConfirm = async (selectedSeats: any[]) => {
+    // 用户选择座位后，调用锁座 API
+    console.log('🎯 用户选择的座位:', selectedSeats);
     try {
-      const res = await fetch('http://localhost:3001/api/v1/tickets/lock', {
+      const res = await fetch('http://localhost:3001/api/v1/seats/lock', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           train_id: trainId,
-          seat_type: '二等座', // Simplified
-          passengers: passengers.map(p => ({
-             passenger_id: p.passenger_id,
-             seat_type: '二等座' 
-          }))
+          travel_date: travelDate,
+          seats: selectedSeats
         })
       });
+      
       if (res.ok) {
         const data = await res.json();
+        console.log('🔒 锁座API返回:', data.locks);
         setSeatLocks(data.locks || []);
-        setShowSeat(true);
+        setShowSeat(false);
+        // 锁座成功后直接提交订单
+        submitOrder(data.locks || []);
       } else {
         setMessage('锁座失败，余票不足');
+        setShowSeat(false);
       }
     } catch (e) {
       setMessage('网络错误');
+      setShowSeat(false);
     }
   };
 
-  const submitOrder = async () => {
+  const submitOrder = async (locks?: any[]) => {
     setMessage('');
     try {
       const sid = localStorage.getItem('SESSION_ID') || 'sess-super-12306';
+      const locksToUse = locks || seatLocks;
+      console.log('📤 提交订单 - 使用的锁座数据:', locksToUse);
+      
+      const orderData = {
+        train_id: trainId,
+        travel_date: travelDate,
+        from_station: fromStation,
+        to_station: toStation,
+        passengers: passengers,
+        seat_locks: locksToUse.map(lock => ({ 
+          lock_token: lock.lock_token,
+          seat_no: lock.seat_no,
+          carriage_no: lock.carriage_no
+        }))
+      };
+      console.log('📤 提交订单 - 完整请求体:', JSON.stringify(orderData, null, 2));
+      
       const res = await fetch('http://localhost:3001/api/v1/orders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${sid}`
         },
-        body: JSON.stringify({
-          train_id: trainId,
-          travel_date: travelDate,
-          from_station: fromStation,
-          to_station: toStation,
-          passengers: passengers,
-          seat_locks: seatLocks.map(lock => ({ lock_token: lock.lock_token }))
-        })
+        body: JSON.stringify(orderData)
       });
       
       const data = await res.json().catch(() => ({}));
@@ -231,8 +251,11 @@ export default function OrderFilling() {
 
       {showSeat && (
         <SeatSelectionModal 
-          locks={seatLocks}
-          onConfirm={submitOrder}
+          trainId={trainId}
+          travelDate={travelDate}
+          passengerCount={passengers.length}
+          onConfirm={handleSeatConfirm}
+          onCancel={() => setShowSeat(false)}
         />
       )}
     </div>

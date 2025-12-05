@@ -21,6 +21,13 @@ export default function App() {
   }, []);
 
   const currentPath = route.split('?')[0];
+  
+  console.log('🔍 App Debug Info:', {
+    fullRoute: route,
+    currentPath: currentPath,
+    hash: window.location.hash,
+    href: window.location.href
+  });
 
   const Topbar = (
     <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', padding: '8px 16px', borderBottom: '1px solid #e5e5e5' }}>
