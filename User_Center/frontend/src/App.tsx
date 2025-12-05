@@ -4,7 +4,6 @@ import PersonalInfoView from './pages/PersonalInfoView';
 import PhoneVerification from './pages/PhoneVerification';
 import PassengerList from './pages/PassengerList';
 import PassengerEdit from './pages/PassengerEdit';
-import AddPassenger from './pages/AddPassenger';
 import OrderCenter from './pages/OrderCenter';
 
 function getRoute() {
@@ -112,7 +111,7 @@ export default function App() {
         <div style={{ display: 'flex', alignItems: 'flex-start' }}>
           {Sidebar}
           <div style={{ flex: 1, padding: '0 24px' }}>
-            <AddPassenger />
+            <PassengerEdit />
           </div>
         </div>
       </div>

@@ -13,11 +13,18 @@ app.use('/api/v1/contacts', contactsRouter);
 app.use('/api/v1/seats', seatsRouter);
 app.use('/api/v1/orders', ordersRouter);
 
-// Serve built frontend statically
-const distDir = path.join(__dirname, '../../frontend/dist');
-app.use(express.static(distDir));
+// Redirect root to development server (5174) with session ID
 app.get('/', (req, res) => {
-  res.sendFile(path.join(distDir, 'index.html'));
+  const sid = req.query.sid || '';
+  const redirectUrl = sid 
+    ? `http://localhost:5174/?sid=${encodeURIComponent(sid)}`
+    : 'http://localhost:5174/';
+  console.log(`[Backend] Redirecting / to ${redirectUrl}`);
+  res.redirect(redirectUrl);
 });
+
+// Serve built frontend statically (only for production builds if needed)
+// const distDir = path.join(__dirname, '../../frontend/dist');
+// app.use(express.static(distDir));
 
 module.exports = { app };

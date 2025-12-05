@@ -71,7 +71,13 @@ router.post('/', requireAuth, (req, res) => {
     order_id,
     booked_at: new Date().toISOString(),
     train: { code: train_id, from: from_station, to: to_station, depart_time: '08:00', arrive_time: '13:36' },
-    passengers: passengers.map(p => ({ name: p.name || '未命名乘客' })),
+    passengers: passengers.map(p => ({
+      passenger_id: p.passenger_id,
+      name: p.name || '未命名乘客',
+      id_type: p.id_type,
+      id_number: p.id_number,
+      phone_number: p.phone_number
+    })),
     seats: [{ seat_class: '二等座', carriage_no: '10', seat_no: '16A' }],
     price_total,
     status: 'unpaid',

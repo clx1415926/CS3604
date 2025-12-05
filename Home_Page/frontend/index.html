@@ -493,7 +493,7 @@
             btn.addEventListener('click', function(e){
               var sid2 = (function(){ try { return localStorage.getItem('SESSION_ID'); } catch(e) { return null; } })();
               if (sid2) { 
-                window.location.href = 'http://localhost:3001/?sid=' + encodeURIComponent(sid2); 
+                window.location.href = 'http://localhost:5174/?sid=' + encodeURIComponent(sid2); 
               } else { 
                 window.location.href = 'http://localhost:8082/login.html'; 
               }

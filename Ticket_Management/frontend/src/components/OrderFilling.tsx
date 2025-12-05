@@ -141,9 +141,36 @@ export default function OrderFilling() {
   };
 
   const submitOrder = async () => {
-    // Submit order logic
-    alert('订单提交成功！');
-    window.location.href = '/otn/view/train_order.html';
+    setMessage('');
+    try {
+      const sid = localStorage.getItem('SESSION_ID') || 'sess-super-12306';
+      const res = await fetch('http://localhost:3001/api/v1/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sid}`
+        },
+        body: JSON.stringify({
+          train_id: trainId,
+          travel_date: travelDate,
+          from_station: fromStation,
+          to_station: toStation,
+          passengers: passengers,
+          seat_locks: seatLocks.map(lock => ({ lock_token: lock.lock_token }))
+        })
+      });
+      
+      const data = await res.json().catch(() => ({}));
+      
+      if (res.status === 201) {
+        const orderId = data.order_id || 'o-001';
+        window.location.hash = `#payment?order_id=${orderId}&sid=${encodeURIComponent(sid)}`;
+      } else {
+        setMessage('提交订单失败');
+      }
+    } catch (e) {
+      setMessage('网络错误');
+    }
   };
 
   const togglePassenger = (p: any) => {
@@ -162,7 +189,7 @@ export default function OrderFilling() {
       
       <div className="train-info">
         <h3>{trainId}次列车</h3>
-        <p>{travelDate} {fromStation} -> {toStation}</p>
+        <p>{travelDate} {fromStation} {'->'} {toStation}</p>
       </div>
 
       <div className="passenger-selection">
