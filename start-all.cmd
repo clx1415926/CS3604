@@ -2,7 +2,7 @@
 setlocal
 
 echo [Home_Page] starting...
-start /b cmd /c "cd /d Home_Page\backend && node src\server.js"
+start /b cmd /c "cd /d Home_Page\backend && npm i && node src\server.js"
 
 echo [Login_Register] starting...
 start /b cmd /c "cd /d Login_Register_Page\backend && npm i && set PORT=8082 && npm start"

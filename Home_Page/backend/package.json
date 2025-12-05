@@ -1,0 +1,16 @@
+{
+  "name": "home-page-backend",
+  "version": "1.0.0",
+  "description": "Backend server for 12306 Home Page",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
+  }
+}
