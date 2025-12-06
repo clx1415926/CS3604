@@ -144,13 +144,14 @@ test('should delete a passenger', async () => {
 // @InterfaceID: API-DELETE-Passenger
 // @AcceptanceCriteria: #2
 test('should not delete self', async () => {
-  const listRes = await getPassengers('u-test', {});
+  // Use u-super to ensure self passenger exists (via auto-create or default)
+  const listRes = await getPassengers('u-super', {});
   const self = listRes.body.passengers.find(p => p.is_self);
-  // If no self exists for u-test, we might need to create one or skip
-  // Default data has u-super self, but u-test might not.
-  // Assuming u-test has no self passenger initially unless added.
+  
+  expect(self).toBeDefined(); // Should always exist for system user
+  
   if (self) {
-    const res = await deletePassenger('u-test', self.passenger_id);
+    const res = await deletePassenger('u-super', self.passenger_id);
     expect(res.status).toBe(403);
     expect(res.body.error).toBe('CANNOT_DELETE_SELF');
   }

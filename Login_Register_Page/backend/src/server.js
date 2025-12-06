@@ -2,6 +2,7 @@
 // 与 .artifacts/api_interface.yml 对齐，用于本地联调与测试。
 
 const path = require('path');
+const http = require('http');
 const express = require('express');
 const cors = require('cors');
 const crypto = require('crypto');
@@ -41,7 +42,7 @@ const resetTokenStore = new Map();
 // 预置账户（用于登录桩验证）
 const accountStore = new Map();
 accountStore.set('username:testuser123', { user_id: 'u-001', password: 'Password123!', name: '张三' });
-accountStore.set('phone:13812345678', { user_id: 'u-002', password: 'Password123!', name: '王五' });
+accountStore.set('phone:13812345678', { user_id: 'u-002', password: 'Password123!', name: '王五', id_number: '110101199001011234', phone_number: '13812345678' });
 accountStore.set('email:user@example.com', { user_id: 'u-003', password: 'Password123!', name: '李四' });
 
 (async () => {
@@ -318,20 +319,22 @@ app.post(`${base}/registration/sessions/:session_id/sms/send`, (req, res) => {
   const { phone_country_code, phone_number } = req.body || {};
   if (!validateCNPhone(phone_country_code, phone_number)) return error(res, 400, 'PHONE_INVALID', '请输入正确的手机号');
   const now = Date.now();
-  const rate = smsRate.get(phone_number) || { lastSentAt: 0, countDate: new Date().toDateString(), count: 0 };
+  const key = `${phone_number}:register`;
+  const rate = smsRate.get(key) || { lastSentAt: 0, countDate: new Date().toDateString(), count: 0 };
   if (rate.countDate !== new Date().toDateString()) {
     rate.countDate = new Date().toDateString();
     rate.count = 0;
   }
   if (now - rate.lastSentAt < 60 * 1000) {
-    return error(res, 429, 'SMS_TOO_FREQUENT', '短信发送过于频繁，请稍后再试');
+    const waitSeconds = Math.ceil((60 * 1000 - (now - rate.lastSentAt)) / 1000);
+    return error(res, 429, 'SMS_TOO_FREQUENT', `短信发送过于频繁，请在 ${waitSeconds} 秒后重试`, { retry_after: waitSeconds });
   }
   if (rate.count >= 10) {
     return error(res, 429, 'SMS_DAILY_LIMIT_REACHED', '短信发送次数已达上限，请稍后再试');
   }
   rate.lastSentAt = now;
   rate.count += 1;
-  smsRate.set(phone_number, rate);
+  smsRate.set(key, rate);
   const code = process.env.NODE_ENV === 'test' ? '123456' : generateOtp6();
   session.sms.code = code;
   session.sms.expires_at = now + 5 * 60 * 1000; // 5分钟
@@ -464,6 +467,26 @@ app.post(`${base}/registration/sessions/:session_id/complete`, async (req, res) 
       id_number: session.account.id_number,
       traveler_type: session.account.traveler_type,
     });
+
+    // Trigger User Center to auto-create self passenger
+    // Fire-and-forget call to internal API
+    const reqSync = http.request({
+        hostname: 'localhost',
+        port: 8083,
+        path: `/api/v1/internal/users/${user_id}/init-self-passenger`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-internal-secret': '12306-internal-secret'
+        }
+    }, (resSync) => {
+        // console.log('Sync self passenger status:', resSync.statusCode);
+    });
+    reqSync.on('error', (e) => {
+        console.warn('Failed to trigger self passenger sync (User Center might be down):', e.message);
+    });
+    reqSync.end();
+
   } catch (e) {
     console.warn('DB createUser failed:', e && e.message);
     return error(res, 409, 'DUPLICATE_ACCOUNT', '用户名或手机号已被注册，请更换后重试');
@@ -850,7 +873,8 @@ app.post(`${base}/auth/login/2fa/id-check`, async (req, res) => {
   const hasValidCode = flow.code && Date.now() <= flow.code_expires_at;
   const phone_number = flow.phone_number;
   if (!phone_number) return error(res, 400, 'PHONE_NOT_FOUND', '未找到绑定手机号');
-  const rate = smsRate.get(phone_number) || { lastSentAt: 0, countDate: new Date(now).toDateString(), count: 0 };
+  const key = `${phone_number}:login`;
+  const rate = smsRate.get(key) || { lastSentAt: 0, countDate: new Date(now).toDateString(), count: 0 };
   const nowDateStr = new Date(now).toDateString();
   if (rate.countDate !== nowDateStr) { rate.countDate = nowDateStr; rate.count = 0; }
   if (hasValidCode) {
@@ -864,9 +888,12 @@ app.post(`${base}/auth/login/2fa/id-check`, async (req, res) => {
     if (leak) payload.dev_code = flow.code;
     return res.json(payload);
   }
-  if (now.getTime() - rate.lastSentAt < 60 * 1000) return error(res, 429, 'SMS_TOO_FREQUENT', '短信发送过于频繁，请稍后再试');
+  if (now.getTime() - rate.lastSentAt < 60 * 1000) {
+    const waitSeconds = Math.ceil((60 * 1000 - (now.getTime() - rate.lastSentAt)) / 1000);
+    return error(res, 429, 'SMS_TOO_FREQUENT', `短信发送过于频繁，请在 ${waitSeconds} 秒后重试`, { retry_after: waitSeconds });
+  }
   if (rate.count >= 10) return error(res, 429, 'SMS_DAILY_LIMIT_REACHED', '短信发送次数已达上限，请稍后再试');
-  rate.lastSentAt = now.getTime(); rate.count += 1; smsRate.set(phone_number, rate);
+  rate.lastSentAt = now.getTime(); rate.count += 1; smsRate.set(key, rate);
   const code = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
   flow.code = code; flow.code_expires_at = Date.now() + 5 * 60 * 1000; login2FAFlows.set(flow_id, flow);
   if (process.env.OTP_DEV_LOG !== '0') {
@@ -891,12 +918,16 @@ app.post(`${base}/auth/login/2fa/resend`, (req, res) => {
   }
   const phone_number = flow.phone_number;
   if (!phone_number) return error(res, 400, 'PHONE_NOT_FOUND', '未找到绑定手机号');
-  const rate = smsRate.get(phone_number) || { lastSentAt: 0, countDate: new Date(now).toDateString(), count: 0 };
+  const key = `${phone_number}:login`;
+  const rate = smsRate.get(key) || { lastSentAt: 0, countDate: new Date(now).toDateString(), count: 0 };
   const nowDateStr = new Date(now).toDateString();
   if (rate.countDate !== nowDateStr) { rate.countDate = nowDateStr; rate.count = 0; }
-  if (now.getTime() - rate.lastSentAt < 60 * 1000) return error(res, 429, 'SMS_TOO_FREQUENT', '短信发送过于频繁，请稍后再试');
+  if (now.getTime() - rate.lastSentAt < 60 * 1000) {
+    const waitSeconds = Math.ceil((60 * 1000 - (now.getTime() - rate.lastSentAt)) / 1000);
+    return error(res, 429, 'SMS_TOO_FREQUENT', `短信发送过于频繁，请在 ${waitSeconds} 秒后重试`, { retry_after: waitSeconds });
+  }
   if (rate.count >= 10) return error(res, 429, 'SMS_DAILY_LIMIT_REACHED', '短信发送次数已达上限，请稍后再试');
-  rate.lastSentAt = now.getTime(); rate.count += 1; smsRate.set(phone_number, rate);
+  rate.lastSentAt = now.getTime(); rate.count += 1; smsRate.set(key, rate);
   const code = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
   flow.code = code; flow.code_expires_at = Date.now() + 5 * 60 * 1000; login2FAFlows.set(flow_id, flow);
   if (process.env.OTP_DEV_LOG !== '0') {
@@ -974,12 +1005,16 @@ app.post(`${base}/auth/password/phone/request`, (req, res) => {
     }
   }
   // 速率限制（复用注册短信发送速率限制），允许通过 x-simulate-time 控制测试时间推进
-  const rate = smsRate.get(phone_number) || { lastSentAt: 0, countDate: new Date(now).toDateString(), count: 0 };
+  const key = `${phone_number}:reset`;
+  const rate = smsRate.get(key) || { lastSentAt: 0, countDate: new Date(now).toDateString(), count: 0 };
   const nowDateStr = new Date(now).toDateString();
   if (rate.countDate !== nowDateStr) { rate.countDate = nowDateStr; rate.count = 0; }
-  if (now.getTime() - rate.lastSentAt < 60 * 1000) return error(res, 429, 'SMS_TOO_FREQUENT', '短信发送过于频繁，请稍后再试');
+  if (now.getTime() - rate.lastSentAt < 60 * 1000) {
+    const waitSeconds = Math.ceil((60 * 1000 - (now.getTime() - rate.lastSentAt)) / 1000);
+    return error(res, 429, 'SMS_TOO_FREQUENT', `短信发送过于频繁，请在 ${waitSeconds} 秒后重试`, { retry_after: waitSeconds });
+  }
   if (rate.count >= 10) return error(res, 429, 'SMS_DAILY_LIMIT_REACHED', '短信发送次数已达上限，请稍后再试');
-  rate.lastSentAt = now.getTime(); rate.count += 1; smsRate.set(phone_number, rate);
+  rate.lastSentAt = now.getTime(); rate.count += 1; smsRate.set(key, rate);
   // 生成并保存 6 位验证码
   const code = process.env.NODE_ENV === 'test' ? '123456' : generateOtp6();
   fpSmsStore.set(phone_number, { code, expires_at: Date.now() + 5 * 60 * 1000 });

@@ -83,10 +83,60 @@ pages:
       - 密码错误与手机号格式错误分别给出提示并停留在当前页；新手机号保留。
       - 修改成功后自动返回个人信息页并显示脱敏的新手机号。
 
+  passenger_list:
+    url: "https://kyfw.12306.cn/otn/view/passengers.html"
+    header: "乘车人管理"
+    list:
+      columns: [选择, 姓名, 证件类型, 证件号码(脱敏), 手机号(脱敏), 旅客类型, 核验状态, 操作]
+      actions:
+        - { name: "删除", type: "Button", condition: "非本人乘车人" }
+    actions:
+      - { name: "添加乘车人", navigate: "passenger_form" }
+      - { name: "批量删除", type: "Button", logic: "选中多个非本人乘车人后点击" }
+    acceptanceCriteria:
+      - 列表默认显示当前用户（本人）及其他已添加乘车人。
+      - "本人"乘车人记录自动生成，带有"本人"标签，不可选中，不可删除。
+      - 支持姓名模糊搜索。
+      - 批量删除时不包含"本人"记录。
+
+  passenger_form:
+    url: "https://kyfw.12306.cn/otn/view/passengers.html"
+    sections:
+      basic_info:
+        header: "基本信息"
+        fields:
+          - { name: "证件类型", type: "Dropdown", options: ["居民身份证", "港澳居民来往内地通行证", "台湾居民来往大陆通行证", "护照", "外国人永久居留身份证", "港澳台居民居住证", "海员证", "外国人护照"], required: true }
+          - { name: "姓名", type: "Textbox", placeholder: "请输入姓名", validation: "汉字、字母、点(.)或中点(·)，长度2-20位", required: true }
+          - { name: "证件号码", type: "Textbox", placeholder: "请输入证件号码", validation: "根据证件类型校验", required: true }
+      contact_info:
+        header: "联系方式"
+        hint: "请提供乘车人真实有效的联系方式"
+        fields:
+          - { name: "手机号码", type: "Textbox", placeholder: "请输入手机号码", prefix: "国家代码选择", validation: "格式校验", required: false }
+      additional_info:
+        header: "附加信息"
+        fields:
+          - { name: "优惠(待)类型", type: "Dropdown", options: ["成人", "儿童", "学生", "残疾军人"], required: true }
+    actions:
+      cancel:
+        label: "取消"
+        navigate: "返回常用联系人列表"
+      save:
+        label: "保存"
+        api: "/api/v1/passengers"
+        method: "POST/PATCH"
+    acceptanceCriteria:
+      - 显示基本信息、联系方式、附加信息三个区域。
+      - 姓名、证件类型、证件号码为必填项。
+      - 手机号码选填，不再包含短信验证码验证环节。
+      - 提交时进行表单格式验证（身份证、手机号等）。
+      - 保存成功后提示并返回列表页。
+
 interactions:
   flows:
     - 查看个人信息页 -> 编辑联系方式 -> 点击跳转手机核验 -> 填写并确认 -> 返回个人信息页
     - 查看个人信息页 -> 编辑附加信息 -> 选择下拉 -> 保存 -> 返回查看模式
+    - 常用联系人列表 -> 点击添加/编辑 -> 填写表单(无短信验证) -> 保存 -> 返回列表
   error_handling:
     - 表单验证失败在字段下方显示红色提示；异步操作进行中禁用按钮
 
@@ -96,3 +146,7 @@ dependencies:
   - API-GET-PhoneVerificationContext
   - API-POST-PhoneChange
   - API-GET-CountryCodes
+  - API-GET-Passengers
+  - API-DELETE-Passenger
+  - API-POST-AddPassenger
+  - API-PATCH-UpdatePassenger
