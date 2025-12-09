@@ -229,6 +229,118 @@ html, body { overflow-y: scroll; }
     background: var(--light-blue);
 }
 
+.suggestions-panel {
+    position: absolute;
+    left: 0;
+    top: calc(100% + 2px);
+    width: 640px;
+    min-width: 520px;
+    max-width: 720px;
+    background: #fff;
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+    display: flex;
+    gap: 12px;
+    padding: 12px;
+    z-index: 100;
+    max-height: 380px;
+    overflow: hidden;
+}
+
+.suggestions-sidebar {
+    width: 100px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.side-btn {
+    display: block;
+    width: 100%;
+    border: 1px solid #cbd5e0;
+    background: #f7f9fc;
+    color: #333;
+    border-radius: 4px;
+    padding: 8px 10px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.side-btn.active {
+    background: #e8f3ff;
+    color: #1565c0;
+    border-color: #90caf9;
+}
+
+.suggestions-content {
+    flex: 1;
+    max-height: 356px;
+    overflow: hidden;
+}
+
+.suggestion-tabs {
+    display: flex;
+    gap: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eef2f7;
+    margin-bottom: 10px;
+}
+
+.suggestion-tab {
+    border: none;
+    background: #f7f9fc;
+    border: 1px solid #cbd5e0;
+    color: #333;
+    border-radius: 16px;
+    padding: 6px 10px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.suggestion-tab.active {
+    background: #3b99fc;
+    color: #fff;
+    border-color: #3b99fc;
+}
+
+.suggestions-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-column-gap: 12px;
+    grid-row-gap: 8px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+.suggestion-item {
+    font-size: 14px;
+    color: #333;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+.suggestion-item:hover {
+    background: var(--light-blue);
+}
+
+@media (max-width: 768px) {
+  .suggestions-panel {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    left: 0;
+    right: 0;
+  }
+  .suggestions-grid {
+    grid-template-columns: repeat(3, 1fr);
+    max-height: 240px;
+  }
+}
+
 /* Filter Panel Styles */
 .filter-panel {
     background: #fff;

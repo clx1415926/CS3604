@@ -452,6 +452,65 @@
               my12306.href = 'http://localhost:5176/index.html?sid=' + encodeURIComponent(sidForMy);
             }
           }
+          var logoutBtn = document.getElementById('regist_out');
+          if (logoutBtn) {
+            logoutBtn.addEventListener('click', function(e){
+              e.preventDefault();
+              var sid3 = (function(){ try { return localStorage.getItem('SESSION_ID'); } catch(e){ return null; } })();
+              var finalize = function(){
+                try { localStorage.removeItem('SESSION_ID'); } catch(e) {}
+                try { sessionStorage.clear(); } catch(e) {}
+                var loginEl = document.getElementById('J-header-login');
+                var logoutEl2 = document.getElementById('J-header-logout');
+                var welcomeEl = document.getElementById('welcome-user');
+                var ticketEl = document.getElementById('link-ticket');
+                var personalEl = document.getElementById('link-personal');
+                var my12306El = document.getElementById('my12306');
+                if (welcomeEl) welcomeEl.textContent = '';
+                if (loginEl) loginEl.style.display = '';
+                if (logoutEl2) logoutEl2.style.display = 'none';
+                if (ticketEl) ticketEl.href = 'http://localhost:5173/index.html';
+                if (personalEl) personalEl.href = 'http://localhost:5176/index.html';
+                if (my12306El) my12306El.href = 'http://localhost:5176/index.html';
+                var clean = window.location.origin + window.location.pathname;
+                try { window.location.replace(clean); } catch(e) { window.location.href = clean; }
+              };
+              if (sid3) {
+                fetch('http://localhost:8080/api/v1/auth/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + sid3 } })
+                  .then(function(){ finalize(); })
+                  .catch(function(){
+                    fetch('http://127.0.0.1:8082/api/v1/auth/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + sid3 } })
+                      .then(function(){ finalize(); })
+                      .catch(function(){ finalize(); });
+                  });
+              } else {
+                finalize();
+              }
+            });
+          }
+          var navTicketAnchor = (function(){
+            var list = document.querySelectorAll('.nav .nav-item .nav-hd.item');
+            for (var i = 0; i < list.length; i++) {
+              var txt = (list[i].textContent || '').replace(/\s+/g, '');
+              if (txt.indexOf('车票') !== -1) return list[i];
+            }
+            return null;
+          })();
+          if (navTicketAnchor) {
+            navTicketAnchor.addEventListener('click', function(ev){
+              try {
+                ev.preventDefault();
+              } catch(e) {}
+              var sidForNav = (function(){ try { return localStorage.getItem('SESSION_ID'); } catch(e){ return null; } })();
+              var base = 'http://localhost:5173/index.html';
+              var url = sidForNav ? base + '?sid=' + encodeURIComponent(sidForNav) : base;
+              var before = window.location.href;
+              window.location.href = url;
+              setTimeout(function(){ try { console.log('[HOME] nav ticket ->', url); } catch(e) {} }, 0);
+              setTimeout(function(){ if (window.location.href === before) { try { window.location.assign(url); } catch(e) {} } }, 60);
+              setTimeout(function(){ if (!/\b5173\/index\.html\b/.test(window.location.href)) { try { window.location.replace(url); } catch(e) {} } }, 200);
+            });
+          }
           (function(){
             var trigger = document.getElementById('my12306');
             if (!trigger) return;
