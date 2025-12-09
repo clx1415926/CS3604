@@ -21,6 +21,8 @@ export default function OrderCenter() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [highlightId, setHighlightId] = useState('');
+  const [cancelTarget, setCancelTarget] = useState<string | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
   const orderRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   useEffect(() => {
@@ -93,6 +95,18 @@ export default function OrderCenter() {
     }
   };
 
+  async function doCancel(id: string) {
+    const sid = localStorage.getItem('SESSION_ID');
+    const r = await fetch(`http://localhost:3001/api/v1/orders/${id}/cancel`, { method: 'POST', headers: sid ? { Authorization: 'Bearer ' + sid } : {} });
+    if (r.ok) {
+      setCancelTarget(null);
+      setShowSuccess(true);
+      await fetchOrders();
+    } else {
+      alert('取消失败');
+    }
+  }
+
   if (loading) return <div style={{ padding: 20 }}>加载中...</div>;
   if (error) return <div style={{ padding: 20, color: 'red' }}>{error}</div>;
 
@@ -150,12 +164,88 @@ export default function OrderCenter() {
                   ))}
                 </div>
 
-                <div style={{ flex: 1, textAlign: 'right', fontWeight: 'bold', color: '#f60', fontSize: 18 }}>
+                <div style={{ flex: 1, textAlign: 'center', fontWeight: 'bold', color: '#f60', fontSize: 18 }}>
                   ¥{order.price_total}
+                </div>
+                <div style={{ flex: 1, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                  <div style={{ color: '#999' }}>{order.status === 'paid' ? '支付成功' : (order.status === 'canceled' ? '已取消' : '未支付')}</div>
+                  {order.status === 'unpaid' && (
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      <button 
+                        style={{ padding: '4px 8px', background: '#fff', border: '1px solid #dcdfe6', borderRadius: 4, cursor: 'pointer', color: '#666' }} 
+                        onClick={() => setCancelTarget(order.order_id)}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = '#c6e2ff'; e.currentTarget.style.color = '#409eff'; e.currentTarget.style.backgroundColor = '#ecf5ff'; }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = '#dcdfe6'; e.currentTarget.style.color = '#666'; e.currentTarget.style.backgroundColor = '#fff'; }}
+                      >
+                        取消订单
+                      </button>
+                      <a 
+                        href={`http://localhost:5174/#payment?order_id=${order.order_id}`} 
+                        style={{ padding: '5px 9px', background: '#ff8a00', border: 'none', borderRadius: 4, cursor: 'pointer', color: '#fff', textDecoration: 'none', fontSize: '13px', display: 'inline-block' }}
+                      >
+                        去支付
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {cancelTarget && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: '#fff', borderRadius: 4, width: 480, maxWidth: '90%', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', overflow: 'hidden', fontSize: 14 }}>
+            <div style={{ padding: '0 16px', height: 40, lineHeight: '40px', background: '#2d7dd2', color: '#fff', fontSize: 14, fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>提示</span>
+              <span style={{ cursor: 'pointer', fontSize: 20, opacity: 0.8 }} onClick={() => setCancelTarget(null)}>×</span>
+            </div>
+            <div style={{ padding: '30px 20px', display: 'flex', alignItems: 'flex-start', gap: 16 }}>
+              <div style={{ fontSize: 32, color: '#ffb800', lineHeight: 1 }}>⚠</div>
+              <div>
+                <div style={{ fontWeight: 'bold', marginBottom: 8 }}>您确认取消订单吗？</div>
+                <div style={{ color: '#666', lineHeight: '1.5' }}>一天内3次申请车票成功后取消订单（包含无座票时取消5次计为取消1次），当日将不能在12306继续购票。</div>
+              </div>
+            </div>
+            <div style={{ padding: '10px 20px 20px', display: 'flex', justifyContent: 'center', gap: 12 }}>
+              <button 
+                style={{ background: '#fff', color: '#666', border: '1px solid #dcdfe6', padding: '9px 23px', borderRadius: 4, cursor: 'pointer', fontSize: 14 }}
+                onClick={() => setCancelTarget(null)}
+              >
+                取消
+              </button>
+              <button 
+                style={{ background: '#ff8a00', color: '#fff', border: 'none', padding: '9px 23px', borderRadius: 4, cursor: 'pointer', fontSize: 14 }}
+                onClick={() => doCancel(cancelTarget!)}
+              >
+                确定
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSuccess && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: '#fff', borderRadius: 4, width: 480, maxWidth: '90%', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', overflow: 'hidden', fontSize: 14 }}>
+            <div style={{ padding: '0 16px', height: 40, lineHeight: '40px', background: '#2d7dd2', color: '#fff', fontSize: 14, fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>提示</span>
+              <span style={{ cursor: 'pointer', fontSize: 20, opacity: 0.8 }} onClick={() => setShowSuccess(false)}>×</span>
+            </div>
+            <div style={{ padding: '30px 20px', display: 'flex', alignItems: 'flex-start', gap: 16 }}>
+              <div style={{ fontSize: 32, color: '#2ecc71', lineHeight: 1 }}>✔</div>
+              <div style={{ fontSize: 16, marginTop: 4, fontWeight: 'bold' }}>取消订单成功</div>
+            </div>
+            <div style={{ padding: '10px 20px 20px', display: 'flex', justifyContent: 'center', gap: 12 }}>
+              <button 
+                style={{ background: '#ff8a00', color: '#fff', border: 'none', padding: '9px 23px', borderRadius: 4, cursor: 'pointer', fontSize: 14 }}
+                onClick={() => setShowSuccess(false)}
+              >
+                确定
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -87,10 +87,16 @@ async function updatePassenger(userId, passengerId, body) {
       }
       allowedUpdates.traveler_type = body.traveler_type;
   }
+
+  // Pass identity fields to DB to handle specific restrictions (e.g. Self passenger)
+  if (body.name !== undefined) allowedUpdates.name = body.name;
+  if (body.id_type !== undefined) allowedUpdates.id_type = body.id_type;
+  if (body.id_number !== undefined) allowedUpdates.id_number = body.id_number;
   
   const result = await db.updatePassenger(passengerId, userId, allowedUpdates);
   if (!result.ok) {
      if (result.error === 'NOT_FOUND') return { status: 404, body: { error: 'PASSENGER_NOT_FOUND' } };
+     if (result.error === 'CANNOT_UPDATE_SELF_IDENTITY') return { status: 403, body: { error: 'CANNOT_UPDATE_SELF_IDENTITY', message: '关键身份信息需通过实名认证流程修改' } };
      return { status: 500, body: { error: 'INTERNAL_ERROR' } };
   }
   return { status: 200, body: result.passenger };
@@ -101,7 +107,7 @@ async function deletePassenger(userId, passengerId) {
   const result = await db.deletePassenger(passengerId, userId);
   if (!result.ok) {
     if (result.error === 'NOT_FOUND') return { status: 404, body: { error: 'PASSENGER_NOT_FOUND' } };
-    if (result.error === 'CANNOT_DELETE_SELF') return { status: 403, body: { error: 'CANNOT_DELETE_SELF' } };
+    if (result.error === 'CANNOT_DELETE_SELF') return { status: 403, body: { error: 'CANNOT_DELETE_SELF', message: '该乘车人为系统自动添加，不可删除' } };
     return { status: 500, body: { error: 'INTERNAL_ERROR' } };
   }
   return { status: 204, body: {} };

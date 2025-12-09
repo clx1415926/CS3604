@@ -78,10 +78,82 @@ function saveData() {
   }
 }
 
+const { encrypt, decrypt } = require('../utils/security');
+
+function syncSelfPassengers() {
+  try {
+    const accountsDbPath = path.resolve(__dirname, '../../../../Login_Register_Page/backend/data/accounts.db');
+    if (fs.existsSync(accountsDbPath)) {
+      const raw = fs.readFileSync(accountsDbPath, 'utf8');
+      const lines = raw.split('\n').filter(line => line.trim());
+      
+      let added = false;
+      lines.forEach(line => {
+        try {
+          const user = JSON.parse(line);
+          if (user.user_id) {
+            const existing = state.passengers.find(p => p.user_id === user.user_id && p.is_self);
+            if (!existing) {
+              // Add self passenger
+              const encryptedId = encrypt(user.id_number || '110101199001011234'); // Use provided or default
+              const newSelf = {
+                passenger_id: 'self-' + user.user_id,
+                user_id: user.user_id,
+                name: user.name || user.username,
+                id_type: user.id_type || '居民身份证',
+                id_number: encryptedId,
+                phone_country_code: user.phone_country_code || '+86',
+                phone_number: user.phone_number || '13800000000',
+                traveler_type: user.traveler_type || '成人',
+                verified_status: '已通过',
+                is_self: true,
+                protected_flag: 1,
+                created_at: new Date()
+              };
+              state.passengers.push(newSelf);
+              added = true;
+              console.log(`Synced self passenger for user: ${user.username} (${user.user_id})`);
+            }
+          }
+        } catch (err) {
+          console.error('Failed to parse user line:', err);
+        }
+      });
+      
+      if (added) {
+        saveData();
+        console.log('Self passenger sync completed.');
+      }
+    } else {
+      console.log('Accounts DB not found, skipping sync.');
+    }
+  } catch (e) {
+    console.error('Failed to sync self passengers:', e);
+  }
+}
+
+function findUserInAccounts(userId) {
+  try {
+    const accountsDbPath = path.resolve(__dirname, '../../../../Login_Register_Page/backend/data/accounts.db');
+    if (fs.existsSync(accountsDbPath)) {
+      const raw = fs.readFileSync(accountsDbPath, 'utf8');
+      const lines = raw.split('\n').filter(line => line.trim());
+      for (const line of lines) {
+        try {
+           const u = JSON.parse(line);
+           if (u.user_id === userId) return u;
+        } catch (e) {}
+      }
+    }
+  } catch (e) {
+    console.error('Error reading accounts db:', e);
+  }
+  return null;
+}
+
 // Load data on startup
 loadData();
-
-const { encrypt, decrypt } = require('../utils/security');
+syncSelfPassengers();
 
 function maskPII(input) {
   const result = {};
@@ -163,6 +235,41 @@ async function getCountryCallingCodes() {
 }
 
 async function getPassengers(userId, nameKeyword = '', showFull = false) {
+  // Ensure 'self' passenger exists for this user
+  const existingSelf = state.passengers.find(p => p.user_id === userId && p.is_self);
+  
+  if (!existingSelf) {
+    // Try to find user profile to create self passenger
+    let userProfile = null;
+    
+    if (userId === state.user.user_id) {
+       userProfile = state.user;
+    } else {
+       // Look in external DB
+       userProfile = findUserInAccounts(userId);
+    }
+    
+    if (userProfile) {
+      const encryptedId = encrypt(userProfile.id_number || '110101199001011234');
+      const newSelf = {
+        passenger_id: 'self-' + userProfile.user_id,
+        user_id: userProfile.user_id,
+        name: userProfile.name || userProfile.username,
+        id_type: userProfile.id_type || '居民身份证',
+        id_number: encryptedId,
+        phone_country_code: userProfile.phone_country_code || '+86',
+        phone_number: userProfile.phone_number || '13800000000',
+        traveler_type: userProfile.traveler_type || '成人',
+        verified_status: '已通过',
+        is_self: true,
+        protected_flag: 1,
+        created_at: new Date()
+      };
+      state.passengers.push(newSelf);
+      saveData();
+    }
+  }
+
   let list = state.passengers;
   if (userId) {
     list = list.filter(p => p.user_id === userId);
@@ -278,6 +385,32 @@ async function updatePassenger(passengerId, userId, updates) {
   if (userId && p.user_id !== userId) return { ok: false, error: 'NOT_FOUND' }; // Hide existence
 
   // Apply updates
+  if (p.is_self) {
+    // For self, restrict critical fields (name, id_type, id_number)
+    // Only allow contact info and traveler type updates
+    if (updates.name || updates.id_type || updates.id_number) {
+       // We can either throw error or silently ignore. 
+       // The prompt says "Key identity info need real-name verification flow to modify".
+       // Since we don't have that flow here, we reject these changes.
+       return { ok: false, error: 'CANNOT_UPDATE_SELF_IDENTITY' };
+    }
+  } else {
+     // For others, if name/id changes, we might need re-encryption or checks.
+     // But currently addPassenger sets them. updatePassenger logic below only handles phone/type.
+     // Wait, existing code only updates phone/type anyway:
+     // if (updates.phone_number !== undefined) p.phone_number = updates.phone_number;
+     // ...
+     // If the user sends name/id_number in updates, they are currently ignored by the code below!
+     // So we just need to ensure we don't add them to the list of updated fields if we expand this later.
+     // But wait, if I want to support "edit passenger" fully, I should allow name/id update for normal passengers.
+     // Let's see if the prompt requires fully editable passengers.
+     // "该记录只能修改部分非关键信息... 关键身份信息需通过实名认证流程才能修改" refers to the self record.
+     // Normal passengers usually can't have ID modified after creation in 12306 (you delete and re-add), 
+     // but let's stick to current implementation which only supports phone/type updates.
+     // So actually, the current implementation ALREADY prevents name/id update because it doesn't pick them up!
+     // I will add explicit check to return error for clarity if someone tries.
+  }
+
   if (updates.phone_number !== undefined) p.phone_number = updates.phone_number;
   if (updates.phone_country_code !== undefined) p.phone_country_code = updates.phone_country_code;
   if (updates.traveler_type !== undefined) p.traveler_type = updates.traveler_type;
@@ -309,7 +442,7 @@ async function deletePassenger(passengerId, userId) {
   const p = state.passengers[index];
   if (userId && p.user_id !== userId) return { ok: false, error: 'NOT_FOUND' };
 
-  if (p.is_self) return { ok: false, error: 'CANNOT_DELETE_SELF' };
+  if (p.is_self || p.protected_flag === 1) return { ok: false, error: 'CANNOT_DELETE_SELF' };
   
   state.passengers.splice(index, 1);
   saveData();

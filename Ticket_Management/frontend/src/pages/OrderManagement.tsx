@@ -6,6 +6,7 @@ export default function OrderManagement() {
   const [orders, setOrders] = useState<any[]>([]);
   const [sid, setSid] = useState<string | null>(null);
   const [cancelTarget, setCancelTarget] = useState<string | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
   const hash = window.location.hash || '';
   const hashQuery = (() => { const i = hash.indexOf('?'); return i >= 0 ? hash.slice(i + 1) : ''; })();
   const paramsHash = useMemo(() => new URLSearchParams(hashQuery), []);
@@ -75,7 +76,13 @@ export default function OrderManagement() {
 
   async function doCancel(id: string) {
     const r = await fetch(`http://localhost:3001/api/v1/orders/${id}/cancel`, { method: 'POST', headers: sid ? { Authorization: 'Bearer ' + sid } : {} });
-    if (r.ok) { await refreshOrders(); }
+    if (r.ok) {
+      setCancelTarget(null);
+      setShowSuccess(true);
+      await refreshOrders();
+    } else {
+      alert('取消失败');
+    }
   }
 
   return (
@@ -135,28 +142,48 @@ export default function OrderManagement() {
             <div><span>价格</span><span>：{`¥${Number(o.price_total).toFixed(2)}`}</span></div>
             <div><span>状态</span><span>：{o.status}</span></div>
             <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
-              <button className="btn-primary" onClick={() => setCancelTarget(o.order_id)}>取消订单</button>
+              <button className="btn-cancel" onClick={() => setCancelTarget(o.order_id)}>取消订单</button>
+              {o.status === 'unpaid' && <button className="btn-primary" onClick={() => window.location.hash = `#payment?order_id=${o.order_id}`}>去支付</button>}
             </div>
           </div>
         ))}
       </div>
-      {/* Off-screen template to satisfy immediate getByText/getByRole lookup in tests */}
-      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-        <div>您确认取消订单吗？</div>
-        <div>一天内3次申请车票成功后取消订单（包含无座票时取消5次计为取消1次），当日将不能在12306继续购票。</div>
-        <button>确定</button>
-      </div>
+      
       {cancelTarget && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: '#fff', padding: 16, width: 480 }}>
-            <div style={{ fontWeight: 600, marginBottom: 8 }}>您确认取消订单吗？</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <span style={{ color: '#f0b400' }}>⚠</span>
-              <span>一天内3次申请车票成功后取消订单（包含无座票时取消5次计为取消1次），当日将不能在12306继续购票。</span>
+        <div className="modal-backdrop">
+          <div className="modal-container">
+            <div className="modal-header">
+              <span>提示</span>
+              <span className="modal-close" onClick={() => setCancelTarget(null)}>×</span>
             </div>
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button onClick={() => setCancelTarget(null)}>取消</button>
-              <button className="btn-primary" onClick={async () => { await doCancel(cancelTarget!); setCancelTarget(null); }}>确定</button>
+            <div className="modal-body">
+              <div className="modal-icon">⚠</div>
+              <div>
+                <div style={{ fontWeight: 'bold', marginBottom: 8 }}>您确认取消订单吗？</div>
+                <div style={{ color: '#666', lineHeight: '1.5' }}>一天内3次申请车票成功后取消订单（包含无座票时取消5次计为取消1次），当日将不能在12306继续购票。</div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-cancel" onClick={() => setCancelTarget(null)}>取消</button>
+              <button className="btn-primary" onClick={() => doCancel(cancelTarget!)}>确定</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSuccess && (
+        <div className="modal-backdrop">
+          <div className="modal-container">
+            <div className="modal-header">
+              <span>提示</span>
+              <span className="modal-close" onClick={() => setShowSuccess(false)}>×</span>
+            </div>
+            <div className="modal-body">
+              <div className="modal-icon success">✔</div>
+              <div style={{ fontSize: '16px', marginTop: 4, fontWeight: 'bold' }}>取消订单成功</div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-primary" onClick={() => setShowSuccess(false)}>确定</button>
             </div>
           </div>
         </div>

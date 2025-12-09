@@ -12,6 +12,7 @@ interface Passenger {
   traveler_type: string;
   verified_status: string;
   is_self: boolean;
+  protected_flag?: number;
 }
 
 export default function PassengerList() {
@@ -76,7 +77,7 @@ export default function PassengerList() {
       });
       if (!res.ok) {
         const d = await res.json();
-        alert(d.error || '删除失败');
+        alert(d.message || d.error || '删除失败');
         return;
       }
       fetchPassengers();
@@ -143,10 +144,10 @@ export default function PassengerList() {
                   <input 
                     type="checkbox" 
                     onChange={(e) => {
-                      if (e.target.checked) setSelectedIds(new Set(passengers.map(p => p.passenger_id)));
+                      if (e.target.checked) setSelectedIds(new Set(passengers.filter(p => !p.is_self && p.protected_flag !== 1).map(p => p.passenger_id)));
                       else setSelectedIds(new Set());
                     }}
-                    checked={passengers.length > 0 && selectedIds.size === passengers.length}
+                    checked={passengers.length > 0 && selectedIds.size === passengers.filter(p => !p.is_self && p.protected_flag !== 1).length}
                   />
                 </th>
                 <th>姓名</th>
@@ -167,6 +168,7 @@ export default function PassengerList() {
                       type="checkbox" 
                       checked={selectedIds.has(p.passenger_id)}
                       onChange={() => toggleSelect(p.passenger_id)}
+                      disabled={p.is_self || p.protected_flag === 1}
                     />
                   </td>
                   <td>{p.name}{p.is_self && <span className="tag">本人</span>}</td>
@@ -180,7 +182,13 @@ export default function PassengerList() {
                     </span>
                   </td>
                   <td>
-                    <button onClick={() => handleDelete(p.passenger_id)} disabled={p.is_self}>删除</button>
+                    {(p.is_self || p.protected_flag === 1) ? (
+                      <span title="该乘车人为系统自动添加，不可删除" style={{ display: 'inline-block', cursor: 'not-allowed' }}>
+                        <button disabled style={{ pointerEvents: 'none' }}>删除</button>
+                      </span>
+                    ) : (
+                      <button onClick={() => handleDelete(p.passenger_id)}>删除</button>
+                    )}
                   </td>
                 </tr>
               ))}

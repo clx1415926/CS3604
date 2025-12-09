@@ -103,6 +103,19 @@ const server = http.createServer(async (req, res) => {
       return send(res, r.status, data, reqInfo);
     }
 
+    // Internal Routes
+    if (req.method === 'POST' && u.pathname.match(/^\/api\/v1\/internal\/users\/[^\/]+\/init-self-passenger$/)) {
+      if (req.headers['x-internal-secret'] !== '12306-internal-secret') {
+          return send(res, 403, { error: 'FORBIDDEN' });
+      }
+      const parts = u.pathname.split('/');
+      const targetUserId = parts[parts.length - 2]; 
+      
+      // Trigger getPassengers which does the lazy sync
+      await passengerRoutes.getPassengers(targetUserId, {});
+      return send(res, 200, { ok: true });
+    }
+
     // Passenger Routes
     if (u.pathname === '/api/v1/passengers') {
       if (req.method === 'GET') {
