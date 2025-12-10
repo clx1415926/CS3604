@@ -195,7 +195,7 @@ function QueryForm({ onQuery, stations, disabled, initialFrom, initialTo, initia
     }, []);
 
     return (
-        <form onSubmit={handleSubmit} className="query-form">
+        <form onSubmit={handleSubmit} className="query-form query-box">
             <div className="form-row">
                 <div className="form-group radio-group">
                     <label><input type="radio" name="trip-type" value="single" defaultChecked /> 单程</label>
@@ -208,6 +208,8 @@ function QueryForm({ onQuery, stations, disabled, initialFrom, initialTo, initia
                     <input
                         type="text"
                         id="fromStation"
+                        name="leftTicketDTO.from_station_name"
+                        className="inp-txt"
                         value={fromStation}
                         onChange={handleFromChange}
                         placeholder="出发地"
@@ -239,6 +241,8 @@ function QueryForm({ onQuery, stations, disabled, initialFrom, initialTo, initia
                     <input
                         type="text"
                         id="toStation"
+                        name="leftTicketDTO.to_station_name"
+                        className="inp-txt"
                         value={toStation}
                         onChange={handleToChange}
                         placeholder="目的地"
@@ -265,6 +269,8 @@ function QueryForm({ onQuery, stations, disabled, initialFrom, initialTo, initia
                     <input
                         type="date"
                         id="departDate"
+                        name="leftTicketDTO.train_date"
+                        className="inp_selected"
                         value={departDate}
                         onChange={(e) => setDepartDate(e.target.value)}
                         required
@@ -275,7 +281,7 @@ function QueryForm({ onQuery, stations, disabled, initialFrom, initialTo, initia
                     <label><input type="radio" name="passenger-type" value="normal" defaultChecked /> 普通</label>
                     <label><input type="radio" name="passenger-type" value="student" /> 学生</label>
                 </div>
-                <button type="submit" className="submit-btn" disabled={disabled}>查询</button>
+                <button type="submit" id="query_ticket" className="submit-btn btn92s" disabled={disabled}>查询</button>
             </div>
             {error && <p className="error-message">{error}</p>}
         </form>

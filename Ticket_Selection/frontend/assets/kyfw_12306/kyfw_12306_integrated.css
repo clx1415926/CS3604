@@ -1,0 +1,536 @@
+/**
+ * 12306官方车票查询页样式集成文件
+ * 根据UI规范复刻官方样式
+ */
+
+/* ========== 全局样式 ========== */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Tahoma, '宋体', Arial, sans-serif;
+    font-size: 12px;
+    color: #333333;
+    background-color: #FFFFFF;
+    line-height: normal;
+}
+
+/* ========== 查询表单样式 (QueryForm) ========== */
+.query-form {
+    background: #f8f8f8;
+    padding: 20px;
+    border: 1px solid #CFCDC7;
+    margin-bottom: 10px;
+}
+
+.query-form .form-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.query-form .form-group {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.query-form .form-group label {
+    font-size: 12px;
+    color: #333;
+    margin-bottom: 3px;
+}
+
+.query-form .form-group input[type="text"],
+.query-form .form-group input[type="date"],
+.inp-txt,
+.inp_selected {
+    font-size: 12px;
+    color: #999999;
+    background-color: #FFFFFF;
+    border: 1px solid #CFCDC7;
+    padding: 5px 0 5px 5px;
+    width: 119px;
+    height: 29px;
+    box-sizing: border-box;
+}
+
+.query-form .form-group input:focus {
+    border-color: #348FF3;
+    outline: none;
+    color: #333;
+}
+
+/* 查询按钮 */
+.submit-btn,
+.btn92s,
+#query_ticket {
+    width: 92px;
+    height: 30px;
+    background: url(./images/bg_btn.png) no-repeat center center;
+    background-size: cover;
+    border: none;
+    color: #FFFFFF;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    text-align: center;
+    line-height: 30px;
+    display: inline-block;
+    text-decoration: none;
+}
+
+.submit-btn:hover,
+.btn92s:hover {
+    opacity: 0.9;
+}
+
+.submit-btn:disabled {
+    background: #ddd;
+    cursor: not-allowed;
+    color: #999;
+}
+
+/* 站点交换按钮 */
+.swap-btn {
+    background: #fff;
+    border: 1px solid #CFCDC7;
+    width: 30px;
+    height: 30px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 16px;
+    color: #348FF3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.swap-btn:hover {
+    background: #e8f3ff;
+    border-color: #348FF3;
+}
+
+/* 单选按钮组 */
+.query-form .radio-group {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+}
+
+.query-form .radio-group label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    margin-bottom: 0;
+    color: #333;
+}
+
+/* ========== 筛选面板样式 (FilterPanel) ========== */
+.filter-panel {
+    background: #fff;
+    padding: 15px 20px;
+    border: 1px solid #CFCDC7;
+    margin-bottom: 10px;
+}
+
+.filter-group {
+    margin-bottom: 15px;
+}
+
+.filter-group h4 {
+    margin: 0 0 10px 0;
+    font-size: 12px;
+    color: #333;
+    font-weight: bold;
+}
+
+.checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    color: #666666;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: 13px;
+    height: 13px;
+    margin: 0;
+    cursor: pointer;
+}
+
+/* 筛选按钮 */
+.filter-actions {
+    margin-top: 15px;
+    text-align: right;
+}
+
+.reset-btn {
+    background: #fff;
+    color: #333;
+    border: 1px solid #CFCDC7;
+    padding: 6px 16px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.reset-btn:hover {
+    background: #f8f8f8;
+    border-color: #348FF3;
+}
+
+/* ========== 列车列表样式 (TrainList) ========== */
+.train-list-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 12px;
+    color: #000000;
+    background: #fff;
+}
+
+.train-list-table thead {
+    background: url(./images/bg_tlisthd.png) repeat-x center top;
+    background-color: #e8f0f6;
+}
+
+.train-list-table th {
+    padding: 10px 8px;
+    text-align: center;
+    font-weight: bold;
+    color: #333;
+    border: 1px solid #CFCDC7;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.train-list-table td {
+    padding: 10px 8px;
+    text-align: center;
+    border: 1px solid #CFCDC7;
+    font-size: 12px;
+}
+
+.train-list-table tbody tr {
+    background: #fff;
+}
+
+.train-list-table tbody tr:hover {
+    background: #f8f8f8;
+}
+
+.train-list-table tbody tr:nth-child(even) {
+    background: #fafafa;
+}
+
+.train-list-table tbody tr:nth-child(even):hover {
+    background: #f8f8f8;
+}
+
+/* 车次号 */
+.train-no {
+    font-weight: bold;
+    color: #348FF3;
+    font-size: 14px;
+}
+
+/* 车站信息 */
+.station-info {
+    text-align: center;
+}
+
+.station-info .station-name {
+    display: block;
+    color: #333;
+    line-height: 1.6;
+}
+
+/* 时间信息 */
+.time-info {
+    text-align: center;
+}
+
+.time-info .time {
+    display: block;
+    color: #333;
+    line-height: 1.6;
+    font-family: Arial, Tahoma, sans-serif;
+}
+
+/* 历时 */
+.duration {
+    color: #666;
+    font-family: Arial, Tahoma, sans-serif;
+}
+
+/* 席别信息 */
+.seat-cell {
+    text-align: center;
+}
+
+.seat-available {
+    color: #00CC66;
+    font-weight: bold;
+}
+
+.seat-unavailable {
+    color: #999;
+}
+
+.seat-none {
+    color: #ccc;
+}
+
+/* 价格 */
+.price {
+    color: #FF8000;
+    font-weight: bold;
+    font-size: 13px;
+}
+
+/* 预订按钮 */
+.book-btn,
+.action-cell button {
+    background: #348FF3;
+    color: #fff;
+    border: none;
+    padding: 6px 16px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    min-width: 60px;
+}
+
+.book-btn:hover {
+    background: #2d7dd2;
+}
+
+.book-btn:disabled {
+    background: #ddd;
+    cursor: not-allowed;
+    color: #999;
+}
+
+/* 无结果提示 */
+.no-results-message {
+    text-align: center;
+    padding: 40px;
+    font-size: 14px;
+    color: #666;
+    background: #f8f8f8;
+    border: 1px solid #CFCDC7;
+    margin-top: 20px;
+}
+
+/* ========== 建议列表样式 ========== */
+.suggestions-list {
+    position: absolute;
+    left: 0;
+    top: calc(100% + 2px);
+    width: 100%;
+    margin: 0;
+    padding: 4px 0;
+    background: #fff;
+    border: 1px solid #7f9db9;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 100;
+    list-style: none;
+}
+
+.suggestions-list li {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 12px;
+    color: #333;
+    text-align: left;
+}
+
+.suggestions-list li:hover {
+    background: #316ac5;
+    color: #fff;
+}
+
+/* ========== 建议面板样式 ========== */
+.suggestions-panel {
+    position: absolute;
+    left: 0;
+    top: calc(100% + 2px);
+    width: 600px;
+    background: #fff;
+    border: 1px solid #7f9db9;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    display: flex;
+    gap: 0;
+    z-index: 100;
+    max-height: 400px;
+    overflow: hidden;
+}
+
+.suggestions-sidebar {
+    width: 100px;
+    background: #eef1f8;
+    border-right: 1px solid #dcdcdd;
+    display: flex;
+    flex-direction: column;
+    padding: 10px 8px;
+}
+
+.side-btn {
+    display: block;
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: #666;
+    border-radius: 4px;
+    padding: 8px 10px;
+    cursor: pointer;
+    font-size: 12px;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.side-btn.active {
+    background: #298cce;
+    color: #fff;
+}
+
+.suggestions-content {
+    flex: 1;
+    padding: 10px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.suggestion-tabs {
+    display: flex;
+    gap: 8px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #66c8e8;
+    background: #298cce;
+    margin: -10px -10px 10px -10px;
+    padding: 10px 10px 0 10px;
+}
+
+.suggestion-tab {
+    border: none;
+    background: transparent;
+    color: #e6f9ff;
+    border-radius: 5px 5px 0 0;
+    padding: 6px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    height: 25px;
+    line-height: 13px;
+}
+
+.suggestion-tab.active {
+    background: #66c8e8;
+    color: #fff;
+    font-weight: bold;
+}
+
+.suggestions-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-column-gap: 8px;
+    grid-row-gap: 6px;
+    max-height: 340px;
+    overflow-y: auto;
+}
+
+.suggestion-item {
+    font-size: 12px;
+    color: #666;
+    cursor: pointer;
+    padding: 6px 6px;
+    text-align: left;
+}
+
+.suggestion-item:hover {
+    background: #e8f3ff;
+}
+
+/* ========== 错误提示样式 ========== */
+.error-message {
+    color: #cc0000;
+    font-size: 12px;
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: #fff2f2;
+    border: 1px solid #ff8f41;
+    border-radius: 3px;
+}
+
+/* ========== 响应式调整 ========== */
+@media (max-width: 768px) {
+    .query-form .form-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .query-form .form-group input {
+        width: 100%;
+    }
+    
+    .suggestions-panel {
+        width: 100%;
+        flex-direction: column;
+    }
+    
+    .suggestions-sidebar {
+        width: 100%;
+        flex-direction: row;
+        border-right: none;
+        border-bottom: 1px solid #dcdcdd;
+    }
+    
+    .suggestions-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .train-list-table {
+        font-size: 11px;
+    }
+    
+    .train-list-table th,
+    .train-list-table td {
+        padding: 6px 4px;
+    }
+}
+
+/* ========== 主色调定义 ========== */
+:root {
+    --primary-blue: #348FF3;
+    --secondary-orange: #FF8000;
+    --accent-darkblue: #184F87;
+    --text-primary: #333333;
+    --text-secondary: #666666;
+    --text-muted: #999999;
+    --border-default: #CFCDC7;
+    --bg-light: #F8F8F8;
+}
+
+/* ========== 容器布局 ========== */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.train-list-wrapper {
+    margin-top: 20px;
+    min-height: 400px;
+}
+

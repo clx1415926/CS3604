@@ -282,199 +282,6 @@
 }
 ```
 
-**身份验证弹窗（二次验证）**
-```json
-{
-  "componentName": "IdentityVerificationModal",
-  "structure": "Fixed Modal",
-  "styles": {
-    "position": "fixed",
-    "top": "0",
-    "left": "0",
-    "right": "0",
-    "bottom": "0",
-    "zIndex": "9999",
-    "display": "flex",
-    "alignItems": "center",
-    "justifyContent": "center",
-    "padding": "0",
-    "background": "transparent",
-    "border": "none",
-    "outline": "none",
-    "margin": "0",
-    "boxShadow": "none"
-  },
-  "overlayStyles": {
-    "display": "none"
-  },
-  "contentStyles": {
-    "position": "relative",
-    "background": "#FFFFFF",
-    "border": "1px solid #DEDEDE",
-    "borderRadius": "4px",
-    "boxShadow": "0 2px 8px rgba(0, 0, 0, 0.06)",
-    "width": "100%",
-    "maxWidth": "360px",
-    "maxHeight": "90vh",
-    "overflow": "auto",
-    "zIndex": "1",
-    "animation": "modalFadeIn 0.3s ease-out"
-  },
-  "headerStyles": {
-    "display": "flex",
-    "alignItems": "center",
-    "justifyContent": "space-between",
-    "padding": "16px 20px",
-    "borderBottom": "1px solid #EFEFEF"
-  },
-  "bodyStyles": {
-    "padding": "20px"
-  },
-  "inputStyles": {
-    "width": "100%",
-    "height": "44px",
-    "padding": "4px 10px",
-    "border": "1px solid #DADADA",
-    "borderRadius": "2px",
-    "fontFamily": "Tahoma",
-    "fontSize": "14px",
-    "color": "#333333"
-  },
-  "buttonStyles": {
-    "height": "44px",
-    "padding": "4px 10px",
-    "background": "#3B99FC",
-    "color": "#FFFFFF",
-    "border": "none",
-    "borderRadius": "2px",
-    "fontFamily": "Tahoma, 宋体",
-    "fontSize": "16px",
-    "fontWeight": "600"
-  },
-  "importantNotes": {
-    "noOverlay": "弹窗不使用半透明背景遮罩层，仅显示弹窗内容",
-    "noContainerBorder": "弹窗容器本身完全透明，无边框、无阴影、无轮廓",
-    "styleConsistency": "弹窗样式必须与登录框完全一致（边框、圆角、阴影、尺寸）",
-    "pseudoElements": "必须移除所有伪元素（::before、::after）以避免额外的边框或视觉效果"
-  }
-}
-```
-
-示例代码
-```html
-<!-- 身份验证弹窗 -->
-<div id="sms-modal" class="modal" role="dialog" aria-modal="true" hidden>
-  <div class="modal-overlay"></div>
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3 id="sms-title">身份验证</h3>
-      <button id="sms-close" class="modal-close" aria-label="关闭">×</button>
-    </div>
-    <div class="modal-body">
-      <!-- Step 1: 身份证后4位校验 -->
-      <div id="sms-step-id">
-        <p class="hint">请输入登录账号绑定的证件号后4位</p>
-        <div class="input-group">
-          <input type="text" id="id-last4" inputmode="numeric" pattern="\d{4}" maxlength="4" placeholder="请输入后4位" />
-        </div>
-        <div class="actions">
-          <button id="id-verify" class="primary-btn">验证</button>
-        </div>
-        <div id="sms-error" class="error"></div>
-        <div id="sms-status" class="status"></div>
-      </div>
-      
-      <!-- Step 2: 短信验证码输入 -->
-      <div id="sms-step-code" hidden>
-        <p class="hint">我们已向绑定手机号 <span id="sms-masked-phone">***********</span> 发送6位数字验证码</p>
-        <div class="input-group">
-          <input type="text" id="sms-code" inputmode="numeric" pattern="\d{6}" maxlength="6" placeholder="请输入验证码" />
-        </div>
-        <div class="actions">
-          <button id="sms-verify" class="primary-btn">确认登录</button>
-          <button id="sms-resend" class="secondary-btn" disabled>重新发送</button>
-          <span class="countdown" id="sms-countdown">剩余 05:00</span>
-        </div>
-        <div id="sms-error-2" class="error"></div>
-        <div id="sms-status-2" class="status"></div>
-      </div>
-    </div>
-  </div>
-</div>
-```
-
-**身份验证弹窗样式详细说明：**
-
-### 弹窗容器样式规范
-- **定位与布局**：
-  - `position: fixed`，覆盖整个视口
-  - 使用 `display: flex`、`align-items: center`、`justify-content: center` 实现居中
-  - `z-index: 9999` 确保在最上层
-- **视觉样式**：
-  - `background: transparent` 完全透明，无背景色
-  - `border: none` 无边框
-  - `outline: none` 无轮廓
-  - `box-shadow: none` 无阴影
-  - `padding: 0` 无内边距
-  - `margin: 0` 无外边距
-- **伪元素处理**：
-  - `::before` 和 `::after` 必须设置为 `display: none`，避免额外的边框或视觉效果
-
-### 遮罩层规范
-- **显示状态**：遮罩层（`.modal-overlay`）必须隐藏：`display: none !important`
-- **说明**：弹窗不使用半透明背景遮罩，仅显示弹窗内容本身
-
-### 弹窗内容样式规范
-- **尺寸与定位**：
-  - `max-width: 360px`（与登录框宽度一致）
-  - `max-height: 90vh` 确保在小屏幕上可滚动
-  - 使用 `margin-left: auto` 和 `margin-right: auto` 确保水平居中
-- **视觉样式**（与登录框完全一致）：
-  - `background: #FFFFFF` 白色背景
-  - `border: 1px solid #DEDEDE` 边框颜色与登录框一致
-  - `border-radius: 4px` 圆角与登录框一致
-  - `box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06)` 阴影与登录框一致
-- **动画效果**：
-  - 使用 `modalFadeIn` 动画，0.3s 淡入效果
-  - 从 `opacity: 0` 和 `scale(0.95)` 过渡到完全显示
-
-### 弹窗头部样式规范
-- **布局**：`display: flex`，`justify-content: space-between`
-- **边框**：`border-bottom: 1px solid #EFEFEF`（与登录框标签栏一致）
-- **标题**：`font-size: 16px`，`font-weight: 600`，`color: #333333`
-- **关闭按钮**：`28px × 28px`，灰色 `#999999`，hover 时变为 `#333333`
-
-### 输入框样式规范（与登录框输入框一致）
-- **尺寸**：`height: 44px`（与登录框输入框一致）
-- **边框**：`1px solid #DADADA`，`border-radius: 2px`
-- **字体**：`Tahoma`，`14px`，`color: #333333`
-- **Focus 状态**：边框变为 `#3B99FC`
-- **占位符**：`color: #999999`
-
-### 按钮样式规范
-- **主按钮**（验证/确认登录）：
-  - `height: 44px`（与登录按钮一致）
-  - `background: #3B99FC`，`color: #FFFFFF`
-  - `font-family: Tahoma, "宋体"`，`font-size: 16px`，`font-weight: 600`
-  - Hover：`background: #2A88EB`
-  - Active：`background: #1E7AD5`
-- **次要按钮**（重新发送）：
-  - `height: 44px`
-  - 白色背景，蓝色边框和文字
-  - Hover：浅蓝色背景 `#F0F8FF`
-
-### 提示文字样式规范
-- **错误提示**：`color: #E12525`，`font-size: 12px`
-- **状态提示**：`color: #27AE60`，`font-size: 12px`
-- **倒计时**：`color: #999999`，`font-size: 12px`
-
-### 关键实现要点
-1. **无遮罩层**：弹窗不使用半透明背景，直接显示在页面上
-2. **容器透明**：弹窗容器本身完全透明，无任何视觉元素
-3. **样式一致性**：弹窗内容样式必须与登录框完全一致
-4. **伪元素处理**：必须移除所有伪元素以避免额外的边框
-5. **居中显示**：使用 flexbox 确保弹窗在页面中居中
-
 **辅助工具栏（无障碍/读屏工具）**
 ```json
 {
@@ -494,6 +301,227 @@
     { "element": "IconSound", "styles": { "backgroundImage": "url(../toolbar/img/sound_normal.png)", "width": "24px", "height": "24px" } },
     { "element": "IconVolume", "styles": { "backgroundImage": "url(../toolbar/img/vol_normal.png)", "width": "24px", "height": "24px" } },
     { "element": "IconHelp", "styles": { "backgroundImage": "url(../toolbar/img/help1.png)", "width": "24px", "height": "24px" } }
+  ]
+}
+```
+
+**二次验证弹窗（2FA身份验证）**
+```json
+{
+  "componentName": "TwoFactorAuthModal",
+  "structure": "Modal Dialog",
+  "description": "用于登录后验证用户证件号后4位的身份验证弹窗，设计风格与登录面板保持一致",
+  "htmlStructure": {
+    "id": "sms-modal",
+    "class": "modal",
+    "attributes": {
+      "role": "dialog",
+      "aria-modal": "true",
+      "aria-labelledby": "sms-title"
+    }
+  },
+  "styles": {
+    "modalContainer": {
+      "position": "fixed",
+      "top": "0",
+      "left": "0",
+      "right": "0",
+      "bottom": "0",
+      "zIndex": "9999",
+      "display": "flex",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": "0",
+      "boxSizing": "border-box",
+      "background": "transparent",
+      "border": "none",
+      "outline": "none",
+      "margin": "0",
+      "boxShadow": "none",
+      "description": "弹窗容器完全透明，无任何视觉元素（边框、阴影、背景）"
+    },
+    "modalOverlay": {
+      "display": "none",
+      "description": "遮罩层完全隐藏，不显示半透明背景"
+    },
+    "modalContent": {
+      "position": "relative",
+      "background": "#FFFFFF",
+      "border": "1px solid #DEDEDE",
+      "borderRadius": "4px",
+      "boxShadow": "0 2px 8px rgba(0, 0, 0, 0.06)",
+      "width": "100%",
+      "maxWidth": "360px",
+      "maxHeight": "90vh",
+      "overflow": "auto",
+      "zIndex": "1",
+      "animation": "modalFadeIn 0.3s ease-out",
+      "margin": "0",
+      "padding": "0",
+      "outline": "none",
+      "description": "弹窗内容区域，视觉风格与登录面板完全一致"
+    },
+    "modalHeader": {
+      "display": "flex",
+      "alignItems": "center",
+      "justifyContent": "space-between",
+      "padding": "16px",
+      "borderBottom": "1px solid #EFEFEF"
+    },
+    "modalTitle": {
+      "margin": "0",
+      "fontSize": "16px",
+      "color": "#333333",
+      "fontWeight": "600",
+      "fontFamily": "Tahoma, 宋体"
+    },
+    "modalClose": {
+      "background": "none",
+      "border": "none",
+      "fontSize": "24px",
+      "color": "#999999",
+      "cursor": "pointer",
+      "padding": "0",
+      "width": "24px",
+      "height": "24px",
+      "lineHeight": "24px",
+      "textAlign": "center",
+      "transition": "color 0.3s ease"
+    },
+    "modalCloseHover": {
+      "color": "#333333"
+    },
+    "modalBody": {
+      "padding": "20px"
+    },
+    "hint": {
+      "fontSize": "14px",
+      "color": "#666666",
+      "marginBottom": "15px",
+      "lineHeight": "1.5"
+    },
+    "inputGroup": {
+      "marginBottom": "15px"
+    },
+    "input": {
+      "width": "100%",
+      "height": "44px",
+      "padding": "4px 10px",
+      "border": "1px solid #DADADA",
+      "borderRadius": "2px",
+      "fontSize": "14px",
+      "color": "#333333",
+      "fontFamily": "Tahoma",
+      "boxSizing": "border-box",
+      "transition": "border-color 0.3s ease"
+    },
+    "inputFocus": {
+      "borderColor": "#3B99FC",
+      "outline": "none"
+    },
+    "inputPlaceholder": {
+      "color": "#999999"
+    },
+    "actions": {
+      "display": "flex",
+      "gap": "10px",
+      "alignItems": "center",
+      "marginTop": "20px"
+    },
+    "primaryButton": {
+      "flex": "1",
+      "height": "44px",
+      "padding": "4px 10px",
+      "backgroundColor": "#3B99FC",
+      "color": "#FFFFFF",
+      "border": "none",
+      "borderRadius": "2px",
+      "fontSize": "16px",
+      "fontWeight": "600",
+      "cursor": "pointer",
+      "fontFamily": "Tahoma, 宋体",
+      "transition": "background-color 0.3s ease"
+    },
+    "primaryButtonHover": {
+      "backgroundColor": "#2A88EB"
+    },
+    "primaryButtonActive": {
+      "backgroundColor": "#1E7AD5"
+    },
+    "primaryButtonDisabled": {
+      "backgroundColor": "#CCCCCC",
+      "cursor": "not-allowed"
+    },
+    "secondaryButton": {
+      "height": "44px",
+      "padding": "4px 16px",
+      "background": "#FFFFFF",
+      "color": "#3B99FC",
+      "border": "1px solid #3B99FC",
+      "borderRadius": "2px",
+      "fontSize": "14px",
+      "cursor": "pointer",
+      "fontFamily": "Tahoma, 宋体",
+      "transition": "all 0.3s ease"
+    },
+    "secondaryButtonHover": {
+      "background": "#F0F8FF",
+      "borderColor": "#2A88EB",
+      "color": "#2A88EB"
+    },
+    "secondaryButtonDisabled": {
+      "opacity": "0.5",
+      "cursor": "not-allowed"
+    },
+    "countdown": {
+      "fontSize": "12px",
+      "color": "#999999",
+      "marginLeft": "8px"
+    },
+    "error": {
+      "color": "#E12525",
+      "fontSize": "12px",
+      "marginTop": "8px",
+      "lineHeight": "1.5"
+    },
+    "status": {
+      "color": "#27AE60",
+      "fontSize": "12px",
+      "marginTop": "8px",
+      "lineHeight": "1.5"
+    }
+  },
+  "animation": {
+    "name": "modalFadeIn",
+    "keyframes": {
+      "from": {
+        "opacity": "0",
+        "transform": "translateY(-20px)"
+      },
+      "to": {
+        "opacity": "1",
+        "transform": "translateY(0)"
+      }
+    },
+    "duration": "0.3s",
+    "timingFunction": "ease-out"
+  },
+  "importantNotes": [
+    "弹窗容器（#sms-modal）必须完全透明，不显示任何边框、阴影、背景色",
+    "遮罩层（.modal-overlay）必须完全隐藏（display: none），不显示半透明背景",
+    "弹窗内容（.modal-content）的视觉风格必须与登录面板（LoginPanel）保持完全一致",
+    "所有样式必须使用 !important 确保优先级，避免被全局样式覆盖",
+    "必须移除所有伪元素（::before, ::after）的边框和内容",
+    "弹窗容器使用 flexbox 居中对齐，确保在各种屏幕尺寸下都能正确居中显示"
+  ],
+  "behaviorRequirements": [
+    "默认状态下弹窗隐藏（hidden 属性）",
+    "显示时通过移除 hidden 属性触发",
+    "关闭按钮点击后添加 hidden 属性隐藏弹窗",
+    "输入框获得焦点时显示蓝色边框高亮",
+    "主按钮支持禁用状态（disabled），显示灰色背景",
+    "发送验证码按钮支持倒计时状态，倒计时期间禁用按钮",
+    "支持错误提示和成功状态提示"
   ]
 }
 ```
@@ -535,8 +563,27 @@
 - 用户名输入：`assets/kyfw_12306_login/screenshots/username_input.png`
 
 **质量与一致性校验**
-- 视觉一致性：颜色与字体栈按“全局样式”与“组件 JSON”强约束使用。
+- 视觉一致性：颜色与字体栈按"全局样式"与"组件 JSON"强约束使用。
 - 资源有效性：所有 CSS/JS/图片/字体已下载并可通过相对路径加载。
-- 结构完整性：主要交互元素已采集并在“组件样式详解”中以 JSON 描述。
+- 结构完整性：主要交互元素已采集并在"组件样式详解"中以 JSON 描述。
 - 访问提示：铁路未授权其他网站或 APP 开展类似服务内容，建议使用官方 APP。
+
+**2FA验证弹窗优化说明**
+- 问题背景：原始弹窗实现存在视觉突兀问题，包括半透明蓝色背景、淡色边框、占据半屏等问题。
+- 优化目标：将弹窗风格与登录面板完全统一，移除所有干扰性视觉元素，保持页面风格一致性。
+- 实施方案：
+  * 移除弹窗容器的所有视觉属性（背景、边框、阴影、内边距）
+  * 完全隐藏半透明遮罩层
+  * 将弹窗内容样式调整为与登录面板一致（相同的边框色、阴影、圆角）
+  * 移除所有伪元素可能产生的边框效果
+  * 使用 !important 确保样式优先级，避免全局样式冲突
+- 技术要点：
+  * 使用 ID 选择器（#sms-modal）提高样式优先级
+  * 通过 flexbox 实现弹窗居中对齐
+  * 限制弹窗最大宽度为 360px，与登录面板保持一致
+  * 添加淡入动画效果提升用户体验
+- 兼容性处理：
+  * 使用 `.modal:not(#sms-modal)` 选择器排除全局 modal 样式对登录页弹窗的影响
+  * 确保在不同浏览器中样式表现一致
+  * 移动端自适应，最大高度限制为 90vh
 
