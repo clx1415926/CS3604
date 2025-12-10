@@ -1,7 +1,7 @@
 @font-face {
   font-family: "icon";
-  src: url('/12306_homepage/www.12306.cn/index/fonts/iconfont716f.woff') format('woff'),
-       url('/12306_homepage/www.12306.cn/index/fonts/iconfont716f.ttf') format('truetype');
+  src: url('./fonts/iconfont716f.woff') format('woff'),
+       url('./fonts/iconfont716f.ttf') format('truetype');
 }
 
 .icon {

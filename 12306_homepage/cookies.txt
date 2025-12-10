@@ -1,5 +1,0 @@
-# HTTrack Website Copier Cookie File
-# This file format is compatible with Netscape cookies
-www.12306.cn	TRUE	/	FALSE	1999999999	BIGipServerpool_index	467665418.43286.0000
-.baidu.com	TRUE	/	FALSE	1999999999	BAIDUID	18D47CE70085083C7D6AFFAC2B9DF15D:FG=1
-

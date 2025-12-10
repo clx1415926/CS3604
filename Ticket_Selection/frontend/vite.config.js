@@ -25,10 +25,6 @@ export default defineConfig({
         target: 'http://localhost:3000',
         changeOrigin: true,
       },
-      '/12306_homepage': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-      },
     },
   },
 });

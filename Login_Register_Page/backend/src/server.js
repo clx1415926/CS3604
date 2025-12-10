@@ -16,6 +16,7 @@ const staticDir = path.resolve(__dirname, '../../frontend/src');
 app.use(express.static(staticDir));
 const staticRoot = path.resolve(__dirname, '../../');
 app.use(express.static(staticRoot));
+
 // 顶层 img 资源目录挂载到 /img，便于页面引入统一素材
 const projectImgDir = path.resolve(__dirname, '../../../img');
 app.use('/img', express.static(projectImgDir));

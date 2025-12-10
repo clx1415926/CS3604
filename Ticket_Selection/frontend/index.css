@@ -291,7 +291,7 @@ html, body { overflow-y: scroll; }
   }
 }
 
-@font-face { font-family: "icon"; src: url('/12306_homepage/www.12306.cn/index/fonts/iconfont716f.woff') format('woff'), url('/12306_homepage/www.12306.cn/index/fonts/iconfont716f.ttf') format('truetype'); }
+@font-face { font-family: "icon"; src: url('./assets/fonts/iconfont716f.woff') format('woff'), url('./assets/fonts/iconfont716f.ttf') format('truetype'); }
 .icon { font-family: "icon" !important; font-size: 16px; font-style: normal; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 .icon-search:before { content: "\e690"; }
 .icon-down:before { content: "\e728"; }
