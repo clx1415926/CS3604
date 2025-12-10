@@ -14,7 +14,7 @@
       <div class="wrapper">
         <div class="header-con">
           <h1 class="logo">
-            <a href="http://localhost:8080/" style="background-image: url('./assets/top_pic.png');">中国铁路12306</a>
+            <a href="http://localhost:8080/">中国铁路12306</a>
           </h1>
           <div class="header-right">
             <!-- 搜索条 -->
@@ -121,6 +121,10 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- 主内容区 -->
+    <div class="wrapper">
       <section class="ticket-search-card" aria-label="车票查询">
         <aside class="ticket-side" aria-label="功能导航">
           <ul>
@@ -138,9 +142,9 @@
           </div>
           <form id="ticket-form" class="ticket-form" autocomplete="off">
             <div class="form-row">
-              <label for="fromStationText">出发地</label>
+              <label for="fromStation">出发地</label>
               <div class="input-wrap">
-                <input id="fromStationText" name="from" type="text" placeholder="简拼/全拼/汉字" aria-label="出发地" />
+                <input id="fromStation" name="from" type="text" placeholder="简拼/全拼/汉字" aria-label="出发地" />
                 <button type="button" class="icon-btn" aria-label="定位" title="定位" disabled>
                   <i class="icon icon-location"></i>
                 </button>
@@ -152,18 +156,18 @@
               </button>
             </div>
             <div class="form-row">
-              <label for="toStationText">到达地</label>
+              <label for="toStation">到达地</label>
               <div class="input-wrap">
-                <input id="toStationText" name="to" type="text" placeholder="简拼/全拼/汉字" aria-label="到达地" />
+                <input id="toStation" name="to" type="text" placeholder="简拼/全拼/汉字" aria-label="到达地" />
                 <button type="button" class="icon-btn" aria-label="定位" title="定位" disabled>
                   <i class="icon icon-location"></i>
                 </button>
               </div>
             </div>
             <div class="form-row">
-              <label for="train_date">出发日期</label>
+              <label for="departDate">出发日期</label>
               <div class="input-wrap">
-                <input id="train_date" name="date" type="date" aria-label="出发日期" />
+                <input id="departDate" name="date" type="date" aria-label="出发日期" />
                 <button type="button" class="icon-btn" aria-label="日历" title="日历" disabled>
                   <i class="icon icon-time1"></i>
                 </button>
@@ -177,15 +181,11 @@
               </div>
             </div>
             <div class="form-row submit-row">
-              <button type="submit" class="submit-btn" id="search_one" aria-label="查询">查 询</button>
+              <button type="submit" class="submit-btn" aria-label="查询">查 询</button>
             </div>
           </form>
         </div>
       </section>
-    </div>
-
-    <!-- 主内容区 -->
-    <div class="wrapper">
 
       <!-- 功能入口区 -->
       <div class="actions-section">
@@ -397,9 +397,9 @@
               try {
                 ev.preventDefault();
                 console.log('[HOME] ticket link click', { isTrusted: ev && ev.isTrusted, type: ev && ev.type });
-                var from = (document.getElementById('fromStationText')||{}).value || '';
-                var to = (document.getElementById('toStationText')||{}).value || '';
-                var date = (document.getElementById('train_date')||{}).value || '';
+                var from = (document.getElementById('fromStation')||{}).value || '';
+                var to = (document.getElementById('toStation')||{}).value || '';
+                var date = (document.getElementById('departDate')||{}).value || '';
                 var student = (document.getElementById('opt-student')||{}).checked ? '1' : '0';
                 var hs = (document.getElementById('opt-highspeed')||{}).checked ? '1' : '0';
                 var params = [

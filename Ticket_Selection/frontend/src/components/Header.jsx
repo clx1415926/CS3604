@@ -81,7 +81,7 @@ const Header = () => {
               <li className="menu-item menu-line">|</li>
               <li id="J-header-login" className="menu-item menu-login" role="menuitem" style={{ display: userInfo ? 'none' : '' }}>
                 <a id="J-btn-login" href="http://localhost:8082/login.html" className="menu-nav-hd">登录</a>
-                <a href="http://localhost:8082/register.html" className="ml">注册</a>
+                <a href="http://localhost:8082/login.html" className="ml">注册</a>
               </li>
               <li id="J-header-logout" className="menu-item menu-nav menu-login" role="menuitem" style={{ display: userInfo ? '' : 'none' }}>
                 您好，<a href="javascript:;" className="txt-primary menu-nav-my-hd" id="welcome-user">{(userInfo && (userInfo.username || userInfo.name)) || ''}</a>&nbsp;|&nbsp;<a id="regist_out" className="logout" href="javascript:;" onClick={handleLogout}>退出</a>
