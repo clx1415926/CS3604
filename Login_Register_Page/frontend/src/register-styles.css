@@ -1,0 +1,875 @@
+/* ====== 12306 注册页面专用样式 ====== */
+/* 基于 UI_REPLICATION_SPECS_REGISTER.md 规范实现 */
+
+/* ====== 全局样式变量 ====== */
+:root {
+  /* 12306 官方色彩规范 */
+  --primary: #3B99FC;
+  --secondary: #FF8000;
+  --error: #E12525;
+  --warning: #FF9027;
+  --text-primary: #333333;
+  --text-secondary: #666666;
+  --text-muted: #999999;
+  --border-default: #DADADA;
+  --bg-light: #F8F8F8;
+  --bg-panel: #EAeded;
+  --bg-dark-blue: #184F87;
+  
+  /* 步骤条专用颜色 */
+  --step-bg: #E3EDF4;
+  --step-active-bg: #60C6E7;
+  --step-text: #999999;
+  --step-active-text: #FFFFFF;
+}
+
+/* ====== 全局重置 ====== */
+.page-register * {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ====== 页面容器 ====== */
+.page-register {
+  font-family: Tahoma, "宋体", "Microsoft YaHei", sans-serif;
+  font-size: 12px;
+  color: var(--text-primary);
+  background-color: #FFFFFF;
+  line-height: normal;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ====== Header 样式 ====== */
+.page-register .site-header {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  background-color: var(--bg-dark-blue);
+  border-bottom: 1px solid #EFEFEF;
+}
+
+.page-register .site-header .container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.page-register .logo-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  background-color: #FFFFFF;
+  padding: 6px 12px;
+  border-radius: 3px;
+}
+
+.page-register .logo-img {
+  height: 40px;
+  width: auto;
+  display: block;
+}
+
+.page-register .nav a {
+  color: #FFFFFF;
+  text-decoration: none;
+  margin: 0 8px;
+  opacity: 0.9;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.page-register .nav a:hover {
+  opacity: 1;
+}
+
+/* ====== 主内容区 ====== */
+.page-register main {
+  flex: 1;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px 16px;
+}
+
+.page-register .breadcrumb {
+  color: var(--text-muted);
+  margin-bottom: 16px;
+  font-size: 12px;
+}
+
+/* ====== 卡片容器 ====== */
+.page-register .card {
+  background: #FFFFFF;
+  border: 1px solid #DEDEDE;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+  margin-bottom: 20px;
+}
+
+.page-register .card-title {
+  padding: 12px 16px;
+  border-bottom: 1px solid #EFEFEF;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  background-color: var(--bg-light);
+}
+
+/* ====== 步骤条样式 ====== */
+.page-register .steps {
+  display: flex;
+  padding: 10px 16px;
+  background-color: #FFFFFF;
+  border-bottom: 1px solid #EFEFEF;
+  gap: 0;
+  overflow: hidden;
+}
+
+.page-register .step {
+  width: 225px;
+  height: 30px;
+  line-height: 30px;
+  padding: 0;
+  background-color: var(--step-bg);
+  color: var(--step-text);
+  text-align: center;
+  font-weight: 400;
+  font-size: 14px;
+  overflow: hidden;
+  position: relative;
+  transition: all 0.3s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.page-register .step:first-child {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.page-register .step:last-child {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.page-register .step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: -15px;
+  top: 0;
+  width: 0;
+  height: 0;
+  border-left: 15px solid var(--step-bg);
+  border-top: 15px solid transparent;
+  border-bottom: 15px solid transparent;
+  z-index: 2;
+  transition: border-left-color 0.3s ease-in-out;
+}
+
+.page-register .step.past {
+  background-color: #C8E6F5;
+  color: var(--text-secondary);
+}
+
+.page-register .step.past:not(:last-child)::after {
+  border-left-color: #C8E6F5;
+}
+
+.page-register .step.active {
+  background-color: var(--step-active-bg);
+  color: var(--step-active-text);
+  font-weight: 700;
+}
+
+.page-register .step.active:not(:last-child)::after {
+  border-left-color: var(--step-active-bg);
+}
+
+/* ====== 表单容器 ====== */
+.page-register .form-grid {
+  padding: 40px 20px 20px;
+  background-color: #FFFFFF;
+}
+
+/* ====== 表单行样式 ====== */
+.page-register .form-row {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 5px 0;
+  margin-bottom: 5px;
+}
+
+.page-register .form-row label {
+  text-align: right;
+  color: var(--text-secondary);
+  font-size: 12px;
+  padding-top: 8px;
+  padding-right: 5px;
+}
+
+.page-register .form-row label.required::after {
+  content: '*';
+  color: var(--error);
+  margin-left: 4px;
+}
+
+/* ====== 字段容器 ====== */
+.page-register .field {
+  width: 100%;
+  max-width: 400px;
+}
+
+/* ====== 复选框行的字段容器 ====== */
+.page-register .checkbox-row .field {
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* ====== 输入框样式 ====== */
+.page-register .field input[type="text"],
+.page-register .field input[type="password"],
+.page-register .field input[type="email"],
+.page-register .field input[type="tel"],
+.page-register .field select {
+  width: 100%;
+  height: 30px;
+  padding: 4px 10px;
+  border: 1px solid var(--border-default);
+  border-radius: 2px;
+  font-family: Tahoma;
+  font-size: 12px;
+  color: var(--text-primary);
+  background-color: #FFFFFF;
+  transition: border-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+}
+
+.page-register .field input:focus,
+.page-register .field select:focus {
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 153, 252, 0.2);
+}
+
+.page-register .field input::placeholder {
+  color: var(--text-muted);
+}
+
+.page-register .field input[disabled],
+.page-register .field select[disabled] {
+  background-color: var(--bg-light);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* ====== Select 下拉框样式 ====== */
+.page-register .field select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg width="12" height="8" xmlns="http://www.w3.org/2000/svg"%3E%3Cpath d="M6 8L0 0h12z" fill="%23999"/%3E%3C/svg%3E');
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 28px;
+}
+
+/* ====== 电话号码字段 ====== */
+.page-register .phone-field {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ====== 验证码字段 ====== */
+.page-register .sms-field {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.page-register .sms-field button {
+  height: 30px;
+  padding: 0 16px;
+  border: 1px solid var(--primary);
+  background: #FFFFFF;
+  color: var(--primary);
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 12px;
+  white-space: nowrap;
+  transition: all 0.3s ease-in-out;
+}
+
+.page-register .sms-field button:hover:not([disabled]) {
+  background: var(--primary);
+  color: #FFFFFF;
+}
+
+.page-register .sms-field button[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-register .countdown {
+  color: var(--text-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* ====== 提示信息样式 ====== */
+.page-register .hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+.page-register .error {
+  color: var(--error);
+  font-size: 12px;
+  margin-top: 4px;
+  min-height: 16px;
+  line-height: 1.5;
+}
+
+.page-register .status {
+  color: #27AE60;
+  font-size: 12px;
+  margin-top: 4px;
+  min-height: 16px;
+  line-height: 1.5;
+}
+
+/* ====== 密码强度指示器 ====== */
+.page-register .strength {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.page-register .strength .bar {
+  display: inline-block;
+  height: 6px;
+  width: 120px;
+  background: #EFEFEF;
+  border-radius: 3px;
+  position: relative;
+  overflow: hidden;
+}
+
+.page-register .strength .bar::after {
+  content: "";
+  position: absolute;
+  height: 100%;
+  width: var(--strength-w, 40px);
+  background: var(--strength-color, var(--error));
+  border-radius: 3px;
+  left: 0;
+  transition: width 0.3s ease-in-out, background 0.3s ease-in-out;
+}
+
+.page-register .strength .text {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* ====== 复选框和单选框样式 ====== */
+.page-register .checkbox-row {
+  grid-template-columns: 140px 1fr;
+}
+
+.page-register .checkbox,
+.page-register .radio {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.6;
+  cursor: pointer;
+  flex-wrap: nowrap;
+}
+
+.page-register .radio-group {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.page-register .checkbox input[type="checkbox"],
+.page-register .radio input[type="radio"] {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  flex-shrink: 0;
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.page-register .checkbox-text {
+  display: inline-block;
+  white-space: nowrap;
+  line-height: 1.6;
+}
+
+.page-register .checkbox a,
+.page-register .radio a {
+  color: var(--primary);
+  text-decoration: none;
+  transition: color 0.3s ease-in-out;
+  white-space: nowrap;
+  display: inline;
+}
+
+.page-register .checkbox a:hover,
+.page-register .radio a:hover {
+  text-decoration: underline;
+  color: #2A88EB;
+}
+
+/* ====== 按钮组样式 ====== */
+.page-register .actions {
+  display: flex;
+  justify-content: center;
+  padding: 20px 0;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+.page-register .actions button {
+  height: 30px;
+  padding: 0 24px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 400;
+  transition: background-color 0.3s ease-in-out;
+}
+
+.page-register .actions .primary {
+  background-color: var(--secondary);
+  color: #FFFFFF;
+}
+
+.page-register .actions .primary:hover {
+  background-color: var(--warning);
+}
+
+.page-register .actions .primary:active {
+  background-color: #E67300;
+}
+
+.page-register .actions .primary[disabled] {
+  background-color: #CCCCCC;
+  cursor: not-allowed;
+}
+
+.page-register .actions .secondary {
+  background-color: #FFFFFF;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-default);
+}
+
+.page-register .actions .secondary:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* ====== 服务条款框 ====== */
+.page-register .terms-box {
+  height: 200px;
+  overflow-y: auto;
+  border: 1px solid var(--border-default);
+  padding: 12px;
+  margin-bottom: 12px;
+  background: #FFFFFF;
+  white-space: pre-wrap;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  border-radius: 2px;
+}
+
+/* ====== 完成页面样式 ====== */
+.page-register .complete {
+  padding: 40px 24px;
+  text-align: center;
+}
+
+.page-register .complete p {
+  font-size: 16px;
+  color: var(--text-primary);
+  margin-bottom: 20px;
+  line-height: 1.8;
+}
+
+.page-register .complete button {
+  height: 36px;
+  padding: 0 32px;
+  background-color: var(--primary);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s ease-in-out;
+}
+
+.page-register .complete button:hover {
+  background-color: #2A88EB;
+}
+
+/* ====== Footer 样式 ====== */
+.page-register .site-footer {
+  background-color: var(--bg-light);
+  border-top: 1px solid #EFEFEF;
+  padding: 24px 0;
+  margin-top: auto;
+}
+
+.page-register .site-footer .container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.page-register .footer-con {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #EFEFEF;
+  gap: 40px;
+}
+
+.page-register .foot-links {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.page-register .foot-links .foot-con-tit {
+  text-align: left;
+  margin-bottom: 15px;
+  width: 100%;
+}
+
+.page-register .foot-links-list {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin: 0;
+  padding: 0;
+  align-items: center;
+}
+
+.page-register .foot-links-list li {
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+.page-register .foot-links-list a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 12px;
+  transition: color 0.3s ease-in-out;
+  white-space: nowrap;
+  line-height: 1.5;
+}
+
+.page-register .foot-links-list a:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.page-register .foot-code {
+  display: flex;
+  list-style: none;
+  gap: 30px;
+  align-items: flex-start;
+  margin: 0;
+  padding: 0;
+  justify-content: flex-start;
+}
+
+.page-register .foot-code > li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 0 0 auto;
+  width: 120px;
+  text-align: center;
+}
+
+.page-register .foot-con-tit {
+  font-size: 14px;
+  color: #333333;
+  margin-bottom: 15px;
+  font-weight: 600;
+  text-align: center;
+  width: 100%;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.page-register .code-pic {
+  text-align: center;
+  margin-top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.page-register .code-pic img {
+  width: 100px;
+  height: 100px;
+  display: block;
+  margin: 0 auto;
+  object-fit: contain;
+}
+
+.page-register .code-tips {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 8px;
+  line-height: 1.5;
+  max-width: 120px;
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.page-register .footer-txt {
+  text-align: center;
+  padding: 20px 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+  position: relative;
+}
+
+.page-register .footer-txt p {
+  margin: 5px 0;
+}
+
+.page-register .footer-txt .mr {
+  margin-right: 10px;
+}
+
+.page-register .footer-txt a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.3s ease-in-out;
+}
+
+.page-register .footer-txt a:hover {
+  text-decoration: underline;
+  color: var(--primary);
+}
+
+
+/* ====== 工具类 ====== */
+.page-register .hidden {
+  display: none !important;
+}
+
+.page-register .text-center {
+  text-align: center;
+}
+
+.page-register .text-right {
+  text-align: right;
+}
+
+.page-register .text-left {
+  text-align: left;
+}
+
+.page-register .mt-8 {
+  margin-top: 8px;
+}
+
+.page-register .mt-16 {
+  margin-top: 16px;
+}
+
+.page-register .mb-8 {
+  margin-bottom: 8px;
+}
+
+.page-register .mb-16 {
+  margin-bottom: 16px;
+}
+
+/* ====== 响应式布局 ====== */
+@media (max-width: 768px) {
+  .page-register .site-header {
+    height: 50px;
+    padding: 0 12px;
+  }
+  
+  .page-register .logo-img {
+    height: 32px;
+  }
+  
+  .page-register main {
+    padding: 12px 8px;
+  }
+  
+  .page-register .form-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  
+  .page-register .form-row label {
+    text-align: left;
+    padding-top: 0;
+  }
+  
+  .page-register .steps {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .page-register .step {
+    width: 100%;
+    padding-right: 0;
+  }
+  
+  .page-register .step:not(:last-child)::after {
+    display: none;
+  }
+  
+  .page-register .phone-field {
+    grid-template-columns: 100px 1fr;
+  }
+  
+  .page-register .sms-field {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .page-register .field {
+    max-width: 100%;
+  }
+  
+  .page-register .footer-con {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .page-register .foot-links {
+    width: 100%;
+  }
+  
+  .page-register .foot-code {
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+  }
+  
+  .page-register .foot-code > li {
+    width: 100px;
+    margin: 0 auto;
+  }
+  
+  .page-register .code-pic img {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .page-register .code-tips {
+    max-width: 100px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-register .card-title {
+    font-size: 16px;
+    padding: 10px 12px;
+  }
+  
+  .page-register .form-grid {
+    padding: 20px 12px;
+  }
+  
+  .page-register .actions button {
+    width: 100%;
+  }
+}
+
+/* ====== 触控优化 ====== */
+@media (hover: none) and (pointer: coarse) {
+  .page-register .actions button,
+  .page-register .sms-field button {
+    min-height: 44px;
+  }
+  
+  .page-register .field input,
+  .page-register .field select {
+    min-height: 44px;
+    font-size: 16px; /* 避免 iOS 自动缩放 */
+  }
+}
+
+/* ====== 打印样式 ====== */
+@media print {
+  .page-register .site-header,
+  .page-register .site-footer,
+  .page-register .nav,
+  .page-register .actions {
+    display: none;
+  }
+  
+  .page-register .card {
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+}
+
+/* ====== 可访问性增强 ====== */
+.page-register *:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* ====== 动画效果 ====== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-register .card {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* ====== 高DPI适配 ====== */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .page-register .logo-img {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
+

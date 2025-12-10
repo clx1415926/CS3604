@@ -327,6 +327,20 @@
       "verified_status": "已通过",
       "is_self": false,
       "created_at": "2025-12-05T08:35:58.285Z"
+    },
+    {
+      "passenger_id": "self-d62754eb-aad7-4b1b-93c6-ebaf681c36b5",
+      "user_id": "d62754eb-aad7-4b1b-93c6-ebaf681c36b5",
+      "name": "ChenLuxuan",
+      "id_type": "居民身份证",
+      "id_number": "4ab23aa9330656f047bbdc9bd8d6d829:ad91eaede0eaaecd418ff50f59c2f06d54ac9f6dc30345c878fe9a56b5322318",
+      "phone_country_code": "+86",
+      "phone_number": "13817327076",
+      "traveler_type": "成人",
+      "verified_status": "已通过",
+      "is_self": true,
+      "protected_flag": 1,
+      "created_at": "2025-12-10T11:29:49.008Z"
     }
   ]
 }

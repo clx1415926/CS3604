@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>中国铁路12306 - 用户注册</title>
+    <link rel="stylesheet" href="/assets/kyfw_12306_register/css/common_css.css_cssVersion_1.9093" />
+    <link rel="stylesheet" href="register-styles.css" />
+    <script>
+      // API 基址配置
+      (function(){
+        try{
+          var params = new URLSearchParams(location.search);
+          var port = params.get('api_port') || '8082';
+          window.API_BASE = 'http://127.0.0.1:' + port + '/api/v1';
+        }catch(e){}
+      })();
+    </script>
+  </head>
+  <body class="page-register">
+    <!-- 头部 -->
+    <header class="site-header">
+      <div class="container">
+        <a href="http://localhost:8080/" class="logo-link">
+          <img src="/assets/kyfw_12306_register/images/logo.png" alt="中国铁路12306" class="logo-img" />
+        </a>
+        <nav class="nav">
+          <a id="nav-home" href="http://localhost:8080/">首页</a>
+        </nav>
+      </div>
+    </header>
+
+    <!-- 主内容 -->
+    <main>
+      <div class="breadcrumb">客运首页 > 注册</div>
+
+      <section class="card">
+        <h1 class="card-title">用户注册</h1>
+
+        <!-- 步骤条 -->
+        <div class="steps">
+          <div class="step active" data-step="account">填写账户信息</div>
+          <div class="step" data-step="phone">身份信息验证</div>
+          <div class="step" data-step="identity">手机核验</div>
+          <div class="step" data-step="terms">服务条款确认</div>
+          <div class="step" data-step="complete">注册完成</div>
+        </div>
+
+        <!-- 步骤1：账户信息填写 -->
+        <form id="account-form" class="form-grid" autocomplete="off">
+          <div class="form-row">
+            <label for="username" class="required">用户名</label>
+            <div class="field">
+              <input id="username" name="username" type="text" placeholder="字母开头，6-30位，仅字母/数字/下划线" required />
+              <div class="hint">字母开头，6-30位，仅字母/数字/下划线</div>
+              <div class="error" id="username-error"></div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label for="password" class="required">登录密码</label>
+            <div class="field">
+              <input id="password" name="password" type="password" placeholder="8-20位，需包含字母、数字" required />
+              <div class="strength">
+                <span class="bar" id="strength-bar"></span>
+                <span class="text" id="strength-text">弱</span>
+              </div>
+              <div class="error" id="password-error"></div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label for="confirm_password" class="required">确认密码</label>
+            <div class="field">
+              <input id="confirm_password" name="confirm_password" type="password" placeholder="请再次输入密码" required />
+              <div class="error" id="confirm-error"></div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label for="name" class="required">姓名</label>
+            <div class="field">
+              <input id="name" name="name" type="text" placeholder="请输入真实姓名" required />
+              <div class="hint">请输入与有效身份证件上相符的姓名</div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label for="id_type" class="required">证件类型</label>
+            <div class="field">
+              <select id="id_type" name="id_type" required>
+                <option value="居民身份证">中国居民身份证</option>
+                <option value="护照">护照</option>
+                <option value="港澳居民来往内地通行证">港澳居民来往内地通行证</option>
+                <option value="台湾居民来往大陆通行证">台湾居民来往大陆通行证</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label for="id_number" class="required">证件号码</label>
+            <div class="field">
+              <input id="id_number" name="id_number" type="text" placeholder="请输入证件号码" required />
+              <div class="error" id="id-error"></div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label for="traveler_type">优惠（待）类型</label>
+            <div class="field">
+              <select id="traveler_type" name="traveler_type" required>
+                <option value="成人">成人</option>
+                <option value="儿童">儿童</option>
+                <option value="学生">学生</option>
+                <option value="残疾军人">残疾军人</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label for="phone_number" class="required">手机号码</label>
+            <div class="field phone-field">
+              <select id="phone_country_code" name="phone_country_code">
+                <option value="+86">+86 中国大陆</option>
+                <option value="+852">+852 香港</option>
+                <option value="+853">+853 澳门</option>
+                <option value="+886">+886 台湾</option>
+              </select>
+              <input id="phone_number" name="phone_number" type="tel" placeholder="请输入手机号码" required />
+            </div>
+            <div class="error" id="phone-error"></div>
+          </div>
+
+          <div class="form-row">
+            <label for="email">电子邮箱</label>
+            <div class="field">
+              <input id="email" name="email" type="email" placeholder="用于找回密码（选填）" />
+              <div class="hint">可用于找回密码</div>
+            </div>
+          </div>
+
+          <div class="form-row checkbox-row">
+            <label></label>
+            <div class="field">
+              <label class="checkbox" for="terms">
+                <input type="checkbox" id="terms" />
+                <span class="checkbox-text">我已阅读并同意遵守<a id="link-terms" href="terms.html" target="_blank" rel="noopener noreferrer">《中国铁路客户服务中心网站服务条款》</a>和<a id="link-privacy" href="privacy.html" target="_blank" rel="noopener noreferrer">《隐私政策》</a></span>
+              </label>
+              <div class="error" id="terms-error"></div>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button type="submit" class="primary">下一步</button>
+          </div>
+        </form>
+
+        <!-- 步骤2：手机验证 -->
+        <form id="phone-form" class="form-grid hidden">
+          <div class="form-row">
+            <label>发送方式</label>
+            <div class="field radio-group">
+              <label class="radio">
+                <input type="radio" name="code_channel" value="sms" checked /> 短信验证码
+              </label>
+              <label class="radio">
+                <input type="radio" name="code_channel" value="email" /> 邮件验证码
+              </label>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label for="sms_code" class="required">验证码</label>
+            <div class="field sms-field">
+              <input id="sms_code" type="text" placeholder="请输入6位验证码" maxlength="6" />
+              <button id="send_code" type="button">获取验证码</button>
+              <span id="countdown" class="countdown"></span>
+            </div>
+          </div>
+          <div class="form-row">
+            <label></label>
+            <div class="field">
+              <div class="error" id="code-error"></div>
+              <div class="status" id="code-status"></div>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button id="verify_code" type="button" class="primary">验证</button>
+          </div>
+        </form>
+
+        <!-- 步骤3：身份核验 -->
+        <form id="identity-form" class="form-grid hidden">
+          <div class="form-row">
+            <label>身份核验</label>
+            <div class="field">
+              <button id="verify_identity" type="button" class="primary">开始核验</button>
+            </div>
+          </div>
+          <div class="form-row">
+            <label></label>
+            <div class="field">
+              <div class="error" id="identity-error"></div>
+              <div class="status" id="identity-status"></div>
+            </div>
+          </div>
+        </form>
+
+        <!-- 步骤4：服务条款确认 -->
+        <form id="terms-form" class="form-grid hidden">
+          <div class="form-row">
+            <label>服务条款</label>
+            <div class="field">
+              <div id="terms-content" class="terms-box">正在加载服务条款...</div>
+              <label class="checkbox">
+                <input type="checkbox" id="agree_terms_final" /> 我已阅读并同意以上服务条款
+              </label>
+              <div class="error" id="terms-final-error"></div>
+            </div>
+          </div>
+          <div class="actions">
+            <button id="accept_terms" type="button" class="primary">确认并继续</button>
+          </div>
+        </form>
+
+        <!-- 步骤5：注册完成 -->
+        <div id="complete-section" class="complete hidden">
+          <p>✓ 账户创建成功！</p>
+          <p>正在为您跳转到登录页面...</p>
+          <button id="goto_login" class="primary">前往登录</button>
+        </div>
+      </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-con">
+          <div class="foot-links">
+            <h2 class="foot-con-tit">友情链接</h2>
+            <ul class="foot-links-list">
+              <li><a href="https://www.12306.cn/index/" target="_blank" rel="noopener noreferrer">12306官网</a></li>
+              <li><a href="https://www.china-railway.com.cn/" target="_blank" rel="noopener noreferrer">中国国家铁路集团</a></li>
+              <li><a href="http://www.mot.gov.cn/" target="_blank" rel="noopener noreferrer">交通运输部</a></li>
+              <li><a href="http://www.gov.cn/" target="_blank" rel="noopener noreferrer">中国政府网</a></li>
+              <li><a href="http://www.creditchina.gov.cn/" target="_blank" rel="noopener noreferrer">信用中国</a></li>
+            </ul>
+          </div>
+          <ul class="foot-code">
+            <li>
+              <h2 class="foot-con-tit">中国铁路官方微信</h2>
+              <div class="code-pic">
+                <img src="/assets/kyfw_12306_register/images/zgtlwb.png" alt="中国铁路官方微信">
+              </div>
+            </li>
+            <li>
+              <h2 class="foot-con-tit">中国铁路官方微博</h2>
+              <div class="code-pic">
+                <img src="/assets/kyfw_12306_register/images/zgtlwx.png" alt="中国铁路官方微博">
+              </div>
+            </li>
+            <li>
+              <h2 class="foot-con-tit">12306 公众号</h2>
+              <div class="code-pic">
+                <img src="/assets/kyfw_12306_register/images/public.png" alt="12306 公众号">
+              </div>
+            </li>
+            <li>
+              <h2 class="foot-con-tit">铁路12306</h2>
+              <div class="code-pic">
+                <img src="/assets/kyfw_12306_register/images/download.png" alt="铁路12306">
+                <div class="code-tips">官方APP下载，目前铁路未授权其他网站或APP开展类似服务内容，敬请广大用户注意。</div>
+              </div>
+            </li>
+          </ul>
+        </div>
+        <div class="footer-txt">
+          <p>
+            <span class="mr">版权所有©2008-2025</span>
+            <span class="mr">中国铁道科学研究院集团有限公司</span>
+            <span>技术支持：铁旅科技有限公司</span>
+          </p>
+          <p>
+            <span class="mr">
+              <img src="/assets/kyfw_12306_register/images/gongan.png" alt="公安" style="width:13px;height:13px;vertical-align:middle;margin-right:3px;">
+              <a target="_blank" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=11010802038392" style="color:#666666;">京公网安备 11010802038392号</a>
+            </span>
+            <span class="mr">|</span>
+            <span class="mr">京ICP备05020493号-4</span>
+            <span class="mr">|</span>
+            <span>ICP证：京B2-20202537</span>
+          </p>
+        </div>
+      </div>
+    </footer>
+
+    <script src="app.js"></script>
+    <script>
+      // 配置首页链接
+      (function(){
+        try{
+          var HOME_URL = (window && window.HOME_URL) || 'http://localhost:8080/';
+          var a = document.getElementById('nav-home');
+          if(a) a.setAttribute('href', HOME_URL);
+        }catch(e){}
+      })();
+    </script>
+  </body>
+</html>
+

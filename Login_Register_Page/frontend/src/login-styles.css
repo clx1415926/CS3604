@@ -393,155 +393,278 @@
 }
 
 /* ====== 弹窗样式 ====== */
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 9999;
+/* 身份验证弹窗样式 - 与登录框风格一致 */
+.page-login #sms-modal,
+#sms-modal {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 9999 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  -moz-box-shadow: none !important;
+  text-shadow: none !important;
+  -webkit-text-shadow: none !important;
+  -moz-text-shadow: none !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+/* 确保弹窗容器没有任何伪元素边框 */
+.page-login #sms-modal::before,
+.page-login #sms-modal::after,
+#sms-modal::before,
+#sms-modal::after {
+  display: none !important;
+  content: none !important;
+}
+
+.page-login #sms-modal[hidden],
+#sms-modal[hidden] {
+  display: none !important;
+}
+
+/* 隐藏遮罩层 */
+.page-login .modal-overlay,
+#sms-modal .modal-overlay {
+  display: none !important;
+}
+
+/* 弹窗内容 - 与登录框风格一致 */
+.page-login .modal-content,
+#sms-modal .modal-content {
+  position: relative !important;
+  background: #FFFFFF !important;
+  border: 1px solid #DEDEDE !important;
+  border-radius: 4px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+  width: 100% !important;
+  max-width: 360px !important;
+  max-height: 90vh !important;
+  overflow: auto !important;
+  z-index: 1 !important;
+  animation: modalFadeIn 0.3s ease-out;
+  margin: 0 !important;
+  padding: 0 !important;
+  outline: none !important;
+  /* 确保居中显示 */
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* 确保弹窗内容没有任何伪元素边框 */
+.page-login .modal-content::before,
+.page-login .modal-content::after,
+#sms-modal .modal-content::before,
+#sms-modal .modal-content::after {
+  display: none !important;
+  content: none !important;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* 弹窗头部 - 与登录框标签风格一致 */
+.page-login .modal-header,
+#sms-modal .modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #EFEFEF;
+}
+
+.page-login .modal-header h3,
+#sms-modal .modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #333333;
+  font-weight: 600;
+}
+
+.page-login .modal-close,
+#sms-modal .modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  line-height: 1;
+  color: #999999;
+  cursor: pointer;
+  padding: 0;
+  width: 28px;
+  height: 28px;
+  transition: color 0.3s ease-in-out;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.modal[hidden] {
-  display: none;
-}
-
-.modal-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0,0,0,0.5);
-}
-
-.modal-content {
-  position: relative;
-  background: #FFFFFF;
-  border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  width: 90%;
-  max-width: 500px;
-  max-height: 90vh;
-  overflow: auto;
-  z-index: 1;
-}
-
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid #DEDEDE;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 18px;
-  color: #333333;
-  font-weight: 600;
-}
-
-.modal-close {
-  background: none;
-  border: none;
-  font-size: 28px;
-  line-height: 1;
-  color: #999999;
-  cursor: pointer;
-  padding: 0;
-  width: 32px;
-  height: 32px;
-  transition: color 0.3s ease-in-out;
-}
-
-.modal-close:hover {
+.page-login .modal-close:hover,
+#sms-modal .modal-close:hover {
   color: #333333;
 }
 
-.modal-body {
+/* 弹窗内容区域 */
+.page-login .modal-body,
+#sms-modal .modal-body {
   padding: 20px;
 }
 
-.hint {
+/* 弹窗提示文字 */
+.page-login .modal-body .hint,
+#sms-modal .modal-body .hint {
   font-size: 14px;
   color: #666666;
   margin-bottom: 15px;
   line-height: 1.6;
 }
 
-.input-group {
+/* 弹窗输入框组 - 与登录框输入框风格一致 */
+.page-login .modal-body .input-group,
+#sms-modal .modal-body .input-group {
   margin-bottom: 15px;
 }
 
-.input-group input {
+.page-login .modal-body .input-group input,
+#sms-modal .modal-body .input-group input {
   width: 100%;
-  height: 40px;
-  padding: 0 12px;
+  height: 44px;
+  padding: 4px 10px;
   border: 1px solid #DADADA;
   border-radius: 2px;
+  font-family: Tahoma;
   font-size: 14px;
+  color: #333333;
   transition: border-color 0.3s ease-in-out;
+  box-sizing: border-box;
 }
 
-.input-group input:focus {
+.page-login .modal-body .input-group input:focus,
+#sms-modal .modal-body .input-group input:focus {
   border-color: #3B99FC;
   outline: none;
 }
 
-.actions {
+.page-login .modal-body .input-group input::placeholder,
+#sms-modal .modal-body .input-group input::placeholder {
+  color: #999999;
+}
+
+/* 弹窗按钮组 */
+.page-login .modal-body .actions,
+#sms-modal .modal-body .actions {
   display: flex;
   gap: 10px;
   align-items: center;
   margin-top: 20px;
 }
 
-.primary-btn {
-  padding: 10px 24px;
+/* 弹窗主按钮 - 与登录按钮风格一致 */
+.page-login .modal-body .primary-btn,
+#sms-modal .modal-body .primary-btn {
+  flex: 1;
+  height: 44px;
+  padding: 4px 10px;
   background: #3B99FC;
   color: #FFFFFF;
   border: none;
   border-radius: 2px;
   cursor: pointer;
-  font-size: 14px;
+  font-family: Tahoma, "宋体";
+  font-size: 16px;
+  font-weight: 600;
   transition: background-color 0.3s ease-in-out;
 }
 
-.primary-btn:hover {
+.page-login .modal-body .primary-btn:hover,
+#sms-modal .modal-body .primary-btn:hover {
   background: #2A88EB;
 }
 
-.primary-btn:disabled {
+.page-login .modal-body .primary-btn:active,
+#sms-modal .modal-body .primary-btn:active {
+  background: #1E7AD5;
+}
+
+.page-login .modal-body .primary-btn:disabled,
+#sms-modal .modal-body .primary-btn:disabled {
   background-color: #CCCCCC;
   cursor: not-allowed;
 }
 
-.secondary-btn {
-  padding: 10px 24px;
+/* 弹窗次要按钮 - 与登录页面链接风格一致 */
+.page-login .modal-body .secondary-btn,
+#sms-modal .modal-body .secondary-btn {
+  height: 44px;
+  padding: 4px 16px;
   background: #FFFFFF;
   color: #3B99FC;
   border: 1px solid #3B99FC;
   border-radius: 2px;
   cursor: pointer;
+  font-family: Tahoma;
   font-size: 14px;
-  transition: background-color 0.3s ease-in-out;
+  transition: all 0.3s ease-in-out;
 }
 
-.secondary-btn:hover:not([disabled]) {
+.page-login .modal-body .secondary-btn:hover:not([disabled]),
+#sms-modal .modal-body .secondary-btn:hover:not([disabled]) {
   background: #F0F8FF;
+  border-color: #2A88EB;
+  color: #2A88EB;
 }
 
-.secondary-btn[disabled] {
+.page-login .modal-body .secondary-btn[disabled],
+#sms-modal .modal-body .secondary-btn[disabled] {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.countdown {
-  font-size: 14px;
-  color: #666666;
+/* 弹窗倒计时文字 */
+.page-login .modal-body .countdown,
+#sms-modal .modal-body .countdown {
+  font-size: 12px;
+  color: #999999;
+  margin-left: 8px;
+}
+
+/* 弹窗错误提示 - 与登录页面一致 */
+.page-login .modal-body .error,
+#sms-modal .modal-body .error {
+  color: #E12525;
+  font-size: 12px;
+  margin-top: 8px;
+  min-height: 16px;
+  line-height: 1.5;
+}
+
+/* 弹窗状态提示 - 与登录页面一致 */
+.page-login .modal-body .status,
+#sms-modal .modal-body .status {
+  color: #27AE60;
+  font-size: 12px;
+  margin-top: 8px;
+  min-height: 16px;
+  line-height: 1.5;
 }
 
 /* ====== 页脚样式 ====== */
