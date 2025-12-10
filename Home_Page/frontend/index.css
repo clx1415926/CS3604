@@ -49,20 +49,27 @@ body {
 }
 
 .logo {
-  font-size: 24px;
-  font-weight: bold;
+  width: 200px;
+  height: 40px;
   margin: 0;
 }
 
 .logo a {
-  display: block;
-  width: 200px;
-  height: 50px;
-  background-repeat: no-repeat;
-  background-size: contain;
-  background-position: left center;
+
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: url('./assets/logo.png') no-repeat 0 0 !important;
+  background-size: contain !important;
   text-indent: -9999px;
   overflow: hidden;
+}
+
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .logo a {
+    background-image: url('./assets/logo@2x.png') !important;
+    background-size: contain !important;
+  }
 }
 
 .header-right {
@@ -545,47 +552,47 @@ body {
 .service-icon {
   width: 48px;
   height: 48px;
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-position: center;
+  background-size: contain !important;
+  background-repeat: no-repeat !important;
+  background-position: center center !important;
   margin-bottom: 10px;
-  display: inline-block;
+  display: inline-block !important;
 }
 
 /* 服务图标映射 - 使用单独的 PNG 图片 */
 /* 重点旅客预约 */
 .service-icon.ico-s2 {
-  background-image: url('./assets/service1.png');
+  background-image: url('./assets/service1.png') !important;
 }
 
 /* 遗失物品查找 */
 .service-icon.ico-s6 {
-  background-image: url('./assets/service2.png');
+  background-image: url('./assets/service2.png') !important;
 }
 
 /* 约车服务 */
 .service-icon.ico-s4 {
-  background-image: url('./assets/service3.png');
+  background-image: url('./assets/service3.png') !important;
 }
 
 /* 便民托运 */
 .service-icon.ico-s5 {
-  background-image: url('./assets/service4.png');
+  background-image: url('./assets/service4.png') !important;
 }
 
 /* 车站引导 */
 .service-icon.ico-s3 {
-  background-image: url('./assets/service5.png');
+  background-image: url('./assets/service5.png') !important;
 }
 
 /* 站车风采 */
 .service-icon.ico-s7 {
-  background-image: url('./assets/service6.png');
+  background-image: url('./assets/service6.png') !important;
 }
 
 /* 用户反馈 */
 .service-icon.ico-s9 {
-  background-image: url('./assets/service7.png');
+  background-image: url('./assets/service7.png') !important;
 }
 
 .service-item div {
