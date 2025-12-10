@@ -4,7 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>中国铁路12306 - 欢迎登录</title>
-    <link rel="stylesheet" href="assets/iconfont.css" />
+    <link rel="stylesheet" href="/assets/kyfw_12306_login/css/global.css" />
+    <link rel="stylesheet" href="/assets/kyfw_12306_login/css/common.css" />
+    <link rel="stylesheet" href="/assets/kyfw_12306_login/css/public.css" />
+    <link rel="stylesheet" href="/assets/kyfw_12306_login/fonts/iconfont.css" />
     <link rel="stylesheet" href="login-styles.css" />
     <script>
       // 在页面加载前声明后端 API 基址，支持通过 ?api_port=XXXX 覆盖端口
@@ -23,48 +26,10 @@
       <div class="wrapper">
         <div class="header-con">
           <h1 class="logo">
-            <a href="http://localhost:8080/">中国铁路12306</a>
+            <a href="http://localhost:8080/" style="background-image: url('/assets/kyfw_12306_login/images/logo.png');"></a>
           </h1>
-          <div class="header-right">
-            <!-- 搜索条 -->
-            <div class="header-search">
-              <div class="search-bd">
-                <input type="text" class="search-input" id="search-input" placeholder="搜索车票、餐饮、常旅客、相关规章" aria-label="搜索车票、餐饮、常旅客、相关规章">
-              </div>
-              <a class="search-btn" href="javascript:;" aria-label="点击搜索">
-                <i class="icon icon-search"></i>
-              </a>
-            </div>
-            <!-- 右侧菜单 -->
-            <ul class="header-menu" role="menubar">
-              <li class="menu-item">
-                <a href="javascript:;" class="menu-nav-hd">无障碍</a>
-              </li>
-              <li class="menu-item menu-line">|</li>
-              <li class="menu-item">
-                <a href="javascript:;" class="menu-nav-hd">敬老版</a>
-              </li>
-              <li class="menu-item menu-line">|</li>
-              <li class="menu-item menu-nav" role="menuitem">
-                <a href="javascript:;" class="menu-nav-hd item">English <i class="caret"></i></a>
-              </li>
-              <li class="menu-item menu-line">|</li>
-              <li class="menu-item menu-nav" role="menuitem">
-                <a href="javascript:;" class="menu-nav-hd item" id="my12306">我的12306 <i class="caret"></i></a>
-              </li>
-              <li class="menu-item menu-line">|</li>
-              <li id="J-header-login" class="menu-item menu-login" role="menuitem">
-                <a id="J-btn-login" href="login.html" class="menu-nav-hd">登录</a>
-                <a href="index.html" class="ml">注册</a>
-              </li>
-              <li id="J-header-logout" style="display: none" class="menu-item menu-nav menu-login" role="menuitem">
-                您好，<a href="javascript:;" class="txt-primary menu-nav-my-hd" id="welcome-user"></a>&nbsp;|&nbsp;<a id="regist_out" class="logout" href="javascript:;">退出</a>
-              </li>
-            </ul>
-          </div>
         </div>
       </div>
-      <!-- 导航栏在登录页隐藏 -->
     </div>
 
     <!-- 登录区域 -->
@@ -73,7 +38,7 @@
       <div class="loginSlide">
         <div class="bd">
           <ul>
-            <li style="background-image: url('assets/banner-login-20200924.jpg')">
+            <li style="background-image: url('/assets/kyfw_12306_login/images/banner-login-20200924.jpg')">
               <a href="javascript:;"></a>
             </li>
           </ul>
@@ -97,7 +62,7 @@
             <form id="login-form" autocomplete="off">
               <div class="login-item">
                 <label for="identifier" class="item-label">
-                  <i class="icon icon-user"></i>
+                  <i class="iconfont icon-user"></i>
                 </label>
                 <input 
                   type="text" 
@@ -113,7 +78,7 @@
 
               <div class="login-item">
                 <label for="password" class="item-label">
-                  <i class="icon icon-pwd"></i>
+                  <i class="iconfont icon-pwd"></i>
                 </label>
                 <input 
                   type="password" 
@@ -132,8 +97,8 @@
               </div>
               
               <div class="login-links">
-                <a href="index.html" class="link">注册12306</a>
-                <a href="forgot-password.html" id="forgot-password" class="link">忘记密码</a>
+                <a href="index.html" class="link">注册12306账号</a>
+                <a href="forgot-password.html" id="forgot-password" class="link">忘记密码？</a>
               </div>
               
               <div class="login-hint">铁路12306服务时间：每日5:00-次日1:00；周二5:00-24:00</div>
@@ -146,9 +111,14 @@
           <div class="login-qr" id="tab-qr" role="tabpanel" aria-labelledby="tab-qr-btn" style="display: none;">
             <div class="qr-area">
               <div class="qr-box">
-                <img id="qr-image" alt="登录二维码" />
+                <img id="qr-image" alt="使用12306APP扫描本二维码进行登录" />
               </div>
               <div class="qr-status" id="qr-status">请点击下方按钮生成二维码</div>
+              <div class="qr-tips">
+                <span>扫一扫登录</span>
+                <span>更快</span>
+                <span>更安全</span>
+              </div>
               <div class="qr-actions">
                 <button id="qr-generate" class="qr-btn">生成二维码</button>
                 <button id="qr-refresh" class="qr-btn" disabled>刷新</button>
@@ -219,25 +189,25 @@
           <li>
             <h2 class="foot-con-tit">中国铁路官方微信</h2>
             <div class="code-pic">
-              <img src="assets/zgtlwb.png" alt="中国铁路官方微信">
+              <img src="/assets/kyfw_12306_login/images/zgtlwb.png" alt="中国铁路官方微信">
             </div>
           </li>
           <li>
             <h2 class="foot-con-tit">中国铁路官方微博</h2>
             <div class="code-pic">
-              <img src="assets/zgtlwx.png" alt="中国铁路官方微博">
+              <img src="/assets/kyfw_12306_login/images/zgtlwx.png" alt="中国铁路官方微博">
             </div>
           </li>
           <li>
             <h2 class="foot-con-tit">12306 公众号</h2>
             <div class="code-pic">
-              <img src="assets/public.png" alt="12306 公众号">
+              <img src="/assets/kyfw_12306_login/images/public.png" alt="12306 公众号">
             </div>
           </li>
           <li>
             <h2 class="foot-con-tit">铁路12306</h2>
             <div class="code-pic">
-              <img src="assets/download.png" alt="铁路12306">
+              <img src="/assets/kyfw_12306_login/images/download.png" alt="铁路12306">
               <div class="code-tips">官方APP下载，目前铁路未授权其他网站或APP开展类似服务内容，敬请广大用户注意。</div>
             </div>
           </li>
@@ -251,7 +221,7 @@
         </p>
         <p>
           <span class="mr">
-            <img src="assets/gongan.png" alt="公安" style="width:13px">
+            <img src="/assets/kyfw_12306_login/images/gongan.png" alt="公安" style="width:13px;vertical-align:middle;">
             <a target="blank" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=11010802038392" style="color:#c1c1c1">京公网安备 11010802038392号</a>
           </span>
           <span class="mr">|</span>
@@ -260,7 +230,7 @@
           <span>ICP证：京B2-20202537</span>
         </p>
         <div class="a11y-link">
-          <img src="assets/footer-slh.jpg" alt="适老化无障碍服务" style="display: block;width: 130px;height: 46px;">
+          <img src="/assets/kyfw_12306_login/images/footer-slh.jpg" alt="适老化无障碍服务" style="display: block;width: 130px;height: 46px;">
         </div>
       </div>
     </div>

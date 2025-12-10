@@ -21,6 +21,10 @@ app.use(express.static(staticRoot));
 const projectImgDir = path.resolve(__dirname, '../../../img');
 app.use('/img', express.static(projectImgDir));
 
+// 挂载12306登录页面静态资源到 /assets
+const assetsDir = path.resolve(__dirname, '../../../assets');
+app.use('/assets', express.static(assetsDir));
+
 // In-memory stores
 const sessions = new Map();
 const loginSessions = new Map(); // key: session_id -> { user_id, last_active_at }

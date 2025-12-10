@@ -6,11 +6,23 @@
   padding: 0;
 }
 
+:root {
+  --primary: #3B99FC;
+  --primary-light: #61ADFD;
+  --hover: #E8F3FF;
+  --border-light: #EFEFEF;
+  --border-default: #DEDEDE;
+  --text-primary: #333333;
+  --text-secondary: #555555;
+  --text-muted: #999999;
+  --bg-light: #F8F8F8;
+}
+
 body {
-  font-family: "Microsoft YaHei", "SimSun", Arial, sans-serif;
+  font-family: Tahoma, "宋体", Arial, sans-serif;
   font-size: 12px;
-  color: #333;
-  background-color: #f5f5f5;
+  color: var(--text-primary);
+  background-color: #FFFFFF;
   line-height: 1.5;
 }
 
@@ -21,7 +33,8 @@ body {
 
 /* 头部样式 */
 .header {
-  background: transparent !important;
+  background-color: #FFFFFF !important;
+  border-bottom: 1px solid var(--border-light) !important;
   color: #fff;
   position: relative;
   z-index: 9999;
@@ -31,8 +44,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 60px;
-  padding: 0 20px;
+  height: 64px;
+  padding: 0 24px;
 }
 
 .logo {
@@ -42,8 +55,14 @@ body {
 }
 
 .logo a {
-  color: #fff;
-  text-decoration: none;
+  display: block;
+  width: 200px;
+  height: 50px;
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: left center;
+  text-indent: -9999px;
+  overflow: hidden;
 }
 
 .header-right {
@@ -170,7 +189,7 @@ body {
 .footer a,
 .foot-links .foot-con-tit,
 .foot-links a span,
-.footer-txt { color: #333; }
+.footer-txt { color: var(--text-primary); }
 
 .foot-links a:hover span { color: #1e88e5; }
 
@@ -219,9 +238,9 @@ body {
 .section-first {
   position: relative;
   width: 100%;
-  height: 200px;
+  height: 450px;
   overflow: hidden;
-  background-color: #e3f2fd;
+  background-color: #FFFFFF;
 }
 
 .fullSlide {
@@ -281,17 +300,23 @@ body {
 
 /* 车票查询卡片 */
 .ticket-search-card {
+  position: absolute;
+  top: 50px;
+  left: 50px;
+  width: 510px;
+  height: 350px;
   display: flex;
-  background: rgba(255,255,255,0.95);
-  border-radius: 6px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+  background-color: #FFFFFF;
+  border: 1px solid var(--border-default);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  border-radius: 4px;
   overflow: hidden;
-  margin: 20px 0 30px;
+  margin: 0;
 }
 
 .ticket-side {
-  width: 120px;
-  background: #e6f2ff;
+  width: 100px;
+  background: var(--primary);
   padding: 10px 0;
 }
 .ticket-side ul { list-style: none; margin: 0; padding: 0; }
@@ -303,7 +328,7 @@ body {
 .ticket-side li .icon { font-size: 18px; }
 
 .ticket-main { flex: 1; padding: 16px 18px; background: #fff; }
-.ticket-tabs { display: flex; gap: 18px; border-bottom: 2px solid #dedede; margin-bottom: 16px; }
+.ticket-tabs { display: flex; gap: 16px; border-bottom: 1px solid var(--border-light); padding: 0 0 8px 0; margin-bottom: 0; }
 .ticket-tabs .tab { background: none; border: none; color: #9aa7b2; padding: 8px 0; cursor: default; }
 .ticket-tabs .tab.active { color: #2a7be4; border-bottom: 2px solid #2a7be4; }
 
@@ -313,17 +338,17 @@ body {
 .ticket-form .submit-row { grid-column: 1 / span 2; }
 
 .ticket-form label { color: #666; font-size: 14px; }
-.ticket-form .input-wrap { display: flex; align-items: center; border: 1px solid #e5e5e5; border-radius: 4px; height: 40px; background: #fff; }
+.ticket-form .input-wrap { display: flex; align-items: center; border: 1px solid var(--border-light); border-radius: 5px; height: 32px; background: #fff; }
 .ticket-form input[type="text"],
-.ticket-form input[type="date"] { flex: 1; border: none; outline: none; padding: 0 10px; font-size: 14px; background: transparent; }
+.ticket-form input[type="date"] { flex: 1; border: none; outline: none; padding: 4px 10px; font-size: 12px; background: transparent; height: 32px; }
 .ticket-form .icon-btn { width: 40px; height: 38px; margin: 1px; border: none; border-left: 1px solid #e5e5e5; background: #f9f9f9; cursor: not-allowed; }
 .swap-btn { width: 32px; height: 32px; border-radius: 16px; border: none; background: #ffb74d; color: #fff; display: flex; align-items: center; justify-content: center; }
 
 .ticket-form .options .checks { display: flex; align-items: center; gap: 20px; }
 .ticket-form .check input { margin-right: 6px; }
 
-.submit-btn { display: block; width: 220px; height: 40px; background: #ff7f00; color: #fff; border: none; border-radius: 4px; font-size: 16px; margin: 8px auto 0; cursor: pointer; }
-.submit-btn:hover { background: #ff9a33; }
+.submit-btn { display: block; width: 100%; height: 44px; background: var(--primary); color: #fff; border: none; border-radius: 2px; font-size: 14px; margin: 8px 0 0; cursor: pointer; }
+.submit-btn:hover { background: #2A88EB; }
 
 @media (max-width: 768px) {
   .ticket-search-card { flex-direction: column; }
@@ -875,16 +900,12 @@ body {
     border-bottom: none;
   }
 }
-.header .wrapper,
-.header-con,
-.header-right { background: transparent !important; box-shadow: none; border: none; }
-
-/* 统一顶部灰色背景为页面基色，消除台阶式交错 */
-body { background-color: #f5f5f5; }
-.header-con { position: relative; z-index: 1; }
-.header-right { position: relative; z-index: 1; }
-
 /* 顶部所有子元素背景统一透明，避免灰底断层 */
+.header-search,
+.search-bd,
+.header-menu,
+.menu-item,
+.menu-line { background: transparent !important; }
 .header-search,
 .search-bd,
 .header-menu,
