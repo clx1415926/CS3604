@@ -341,6 +341,20 @@
       "is_self": true,
       "protected_flag": 1,
       "created_at": "2025-12-10T11:29:49.008Z"
+    },
+    {
+      "passenger_id": "self-51ec7ff8-e61d-4a66-bc65-1723065e441a",
+      "user_id": "51ec7ff8-e61d-4a66-bc65-1723065e441a",
+      "name": "呵呵",
+      "id_type": "居民身份证",
+      "id_number": "09df4e4970223b2e5c7a33d8b8c430e5:d8d448cac64a27015e65140436ac09d21a7a80fca8ae5f1310d0ef2cf0c9c9af",
+      "phone_country_code": "+86",
+      "phone_number": "13300000000",
+      "traveler_type": "成人",
+      "verified_status": "已通过",
+      "is_self": true,
+      "protected_flag": 1,
+      "created_at": "2025-12-10T14:41:24.525Z"
     }
   ]
 }
