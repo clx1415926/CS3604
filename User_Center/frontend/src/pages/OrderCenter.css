@@ -1,0 +1,128 @@
+.order-center {
+  padding: 0;
+}
+
+.order-tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid #e6e6e6;
+  margin-bottom: 12px;
+}
+
+.order-tab {
+  height: 36px;
+  line-height: 36px;
+  padding: 0 16px;
+  border: 1px solid #e6e6e6;
+  border-bottom: none;
+  background: #f9f9f9;
+  color: #333;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  cursor: pointer;
+}
+
+.order-tab.active {
+  background: #ffffff;
+  color: #2e6fe7;
+  border-color: #e6e6e6;
+}
+
+.order-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 16px;
+}
+
+.order-filter-label {
+  color: #666;
+}
+
+.order-filter-date {
+  height: 30px;
+  border: 1px solid #dedede;
+  border-radius: 4px;
+  padding: 0 8px;
+  background: #fff;
+}
+
+.order-filter-sep {
+  color: #999;
+}
+
+.order-filter-input {
+  width: 220px;
+  height: 30px;
+  border: 1px solid #dedede;
+  border-radius: 4px;
+  padding: 0 10px;
+  background: #fff;
+}
+
+.order-filter-btn {
+  height: 30px;
+  padding: 0 14px;
+  border: none;
+  background: #ff8a00;
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.empty-card {
+  min-height: 280px;
+  border: 1px solid #c7dbff;
+  background: #f7fbff;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: #6aa8ff;
+}
+
+.empty-text {
+  font-size: 14px;
+}
+
+.empty-line {
+  margin: 4px 0;
+}
+
+.empty-link {
+  color: #2e6fe7;
+  text-decoration: underline;
+}
+
+.order-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.hint-panel {
+  border: 1px solid #ffd8a8;
+  background: #fff7e6;
+  border-radius: 4px;
+  padding: 12px 16px;
+  margin-top: 16px;
+}
+
+.hint-title {
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.hint-list {
+  color: #666;
+  line-height: 1.8;
+}
+

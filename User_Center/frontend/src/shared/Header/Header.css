@@ -1,0 +1,217 @@
+/* Header.css */
+
+/* Ensure the header uses the correct font family */
+.header {
+  font-family: "Microsoft YaHei", "SimSun", Arial, sans-serif;
+  background: #fff; /* White background for User Center */
+  color: #333;
+  position: relative;
+  z-index: 9999;
+}
+
+.header * {
+  box-sizing: border-box;
+}
+
+.wrapper {
+  width: 1200px;
+  margin: 0 auto;
+}
+
+/* 头部样式 */
+.header-con {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  padding: 0 20px;
+  background-color: #fff !important; /* Force white background for header content area */
+}
+
+.logo {
+  width: 200px;
+  height: 40px;
+  margin: 0 !important; /* Reset margin strictly */
+  padding: 0 !important;
+  float: none !important; /* Prevent float interference */
+}
+
+.logo a {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: var(--logo-url, url('../../assets/logo.png')) no-repeat 0 0 !important;
+  background-size: contain !important; /* Ensure logo scales correctly */
+  text-indent: -9999px;
+  overflow: hidden;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .logo a {
+    background-image: var(--logo-2x-url, url('../../assets/logo@2x.png')) !important;
+    background-size: contain !important;
+  }
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 搜索框 */
+.header-search {
+  display: flex;
+  align-items: center;
+  width: 380px;
+}
+
+.search-bd {
+  position: relative;
+  width: 350px;
+}
+
+.search-input {
+  width: 100%;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid #ccc;
+  border-radius: 2px;
+  font-size: 12px;
+}
+
+.search-btn {
+  width: 30px;
+  height: 32px;
+  background-color: #ff6d00;
+  color: #fff;
+  border: none;
+  border-radius: 0 2px 2px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.search-btn:hover {
+  background-color: #ff8500;
+}
+
+.search-btn .icon {
+  font-size: 16px;
+  color: #fff;
+}
+
+/* 头部菜单 */
+.header-menu {
+  display: flex;
+  align-items: center;
+  list-style: none;
+  gap: 4px;
+  flex-wrap: nowrap;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+}
+
+.menu-item.menu-nav { position: relative; z-index: 100; }
+.menu-nav-bd { position: absolute; top: 100%; left: 0; background: #fff; border: 1px solid #EFEFEF; min-width: 180px; display: none; z-index: 1000000; margin: 0; padding: 6px 0; list-style: none; box-shadow: 0 6px 16px rgba(0,0,0,0.12); pointer-events: auto; }
+.menu-item.menu-nav:hover .menu-nav-bd { display: block; }
+.menu-item.menu-nav:focus-within .menu-nav-bd { display: block; }
+.menu-item.menu-nav.open .menu-nav-bd { display: block; }
+.menu-nav-bd li { height: 28px; line-height: 28px; }
+.menu-nav-bd a { display: block; padding: 0 10px; color: #333; text-decoration: none; }
+.menu-nav-bd a:hover { color: #3b99fc; background: #F8F8F8; }
+.menu-nav-bd .nav-line { height: 1px; margin: 6px 8px; background: #EFEFEF; }
+
+.header.menu-open .nav-box { pointer-events: none; }
+
+.menu-item a {
+  color: #3b99fc;
+  text-decoration: none;
+  padding: 0 4px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.menu-item a:hover {
+  text-decoration: underline;
+  color: #1e88e5;
+}
+
+.menu-line {
+  color: #a6c9ff;
+  margin: 0 2px;
+}
+
+.menu-login a.ml {
+  margin-left: 4px;
+}
+
+.menu-login { white-space: nowrap; }
+
+#J-header-logout { color: #666; }
+#J-header-logout a { color: #3b99fc; }
+
+.caret {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid #666; /* Changed to #666 to be visible on white background */
+  margin-left: 4px;
+}
+
+@media (max-width: 768px) {
+  .header-menu { gap: 4px; flex-wrap: wrap; }
+  .menu-item a { padding: 0 4px; }
+}
+
+@media (max-width: 480px) {
+  .header-menu { gap: 3px; }
+  .menu-item a { padding: 0 3px; }
+}
+
+/* 导航栏 */
+.nav-box {
+  background-color: #3b99fc !important; /* Updated to lighter blue to match typical 12306 nav bar */
+  border-top: none !important; /* Remove border if it causes color mismatch */
+  background-image: linear-gradient(to right, #3b99fc, #3b99fc) !important; /* Ensure solid color */
+}
+
+.nav {
+  display: flex;
+  list-style: none;
+  height: 40px;
+  align-items: center;
+}
+
+.nav-item {
+  position: relative;
+}
+
+.nav-hd {
+  display: block;
+  padding: 0 20px;
+  height: 40px;
+  line-height: 40px;
+  color: #fff !important;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.nav-item.active .nav-hd,
+.nav-hd:hover {
+  background-color: #2a7be4 !important; /* Darker blue for hover/active */
+}
+
+.nav-item .icon-down {
+  font-size: 10px;
+  margin-left: 4px;
+}

@@ -1,0 +1,240 @@
+.passenger-list-page {
+  font-family: "Microsoft YaHei", "Arial", sans-serif;
+  color: #333;
+  padding: 10px;
+}
+
+/* Search Bar */
+.search-box {
+  padding: 10px 0;
+  display: flex;
+  align-items: center;
+}
+
+.search-form {
+  display: flex;
+  align-items: center;
+}
+
+.search-input-wrapper {
+  position: relative;
+  margin-right: 5px;
+}
+
+.search-input {
+  width: 160px;
+  height: 30px;
+  border: 1px solid #DEDEDE;
+  padding: 4px 10px;
+  box-sizing: border-box; /* ensure width/height includes padding/border */
+  line-height: normal; /* reset line-height */
+  outline: none;
+  color: #333333;
+  font-size: 14px;
+  background-color: #FFFFFF;
+}
+
+.search-input:focus {
+  border-color: #3b99fc;
+}
+
+.search-clear-icon {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #ccc;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.passenger-list-page .search-btn {
+  width: 130px;
+  height: 30px;
+  padding: 4px 10px;
+  background-color: #FFFFFF;
+  border: 1px solid #DEDEDE;
+  cursor: pointer;
+  border-radius: 0;
+  color: #333333;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.passenger-list-page .search-btn:hover {
+  background-color: #f0f0f0;
+  border-color: #DEDEDE;
+}
+
+/* Toolbar */
+.toolbar {
+  padding: 10px 0; /* Removed side padding to align with table if needed, or keep it? Spec doesn't specify toolbar padding but action button is there. */
+  /* Actually, the spec for Action Buttons is just "Action Buttons" component. */
+  /* But in the image, the toolbar is just a container for buttons. */
+  /* Let's keep it simple. */
+  background-color: transparent;
+  border: none;
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  margin-right: 10px;
+  cursor: pointer;
+  font-size: 12px;
+  border: none;
+  padding: 0;
+  background: none;
+}
+
+/* Add Button Spec: 
+   bg: #FF8000, color: #FFFFFF, border: 1px solid #FF8000, 
+   height: 30px, padding: 4px 15px, borderRadius: 4px 
+*/
+.add-btn {
+  background-color: transparent;
+  color: #000000;
+  border: none;
+  height: auto;
+  padding: 0;
+  border-radius: 0;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.add-btn::before {
+  content: "";
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="%2336B37E"/><path d="M12 6v12M6 12h12" stroke="%23FFFFFF" stroke-width="2" stroke-linecap="round"/></svg>') no-repeat center/contain;
+}
+
+.add-btn:hover {
+  opacity: 0.85;
+}
+
+/* Remove the circle icon for add button, as spec implies a standard button style */
+.icon-add-circle {
+  display: none;
+}
+
+/* Batch Delete Button - Keep as is or make it look like a link/text button? 
+   The image showed it next to Add. The spec doesn't explicitly style it, 
+   but usually it's a secondary action. 
+   I'll keep it as a text button with icon for now, but maybe adjust margins.
+*/
+.delete-batch-btn {
+  color: #333;
+  margin-left: 10px;
+}
+
+.icon-delete-trash {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-right: 5px;
+  color: #d9534f;
+  font-size: 16px;
+  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23d9534f"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>') no-repeat center;
+}
+.icon-delete-trash:empty::before {
+  content: "";
+}
+
+/* Table */
+.passenger-table {
+  width: 988px; /* Spec: 988px */
+  /* or 100% if container is small? Spec says 988px explicitly. */
+  border-collapse: collapse;
+  background-color: #F8F8F8; /* Spec says table bg is F8F8F8? Or header? */
+  /* Spec: "styles": { "backgroundColor": "#F8F8F8" } for PassengerTable component */
+  /* But headerStyles also says bg F8F8F8. */
+  /* Usually body is white. Let's assume table bg matches header for now, or maybe the container? */
+  /* Actually, if I set table bg to F8F8F8, the rows will be that color unless overridden. */
+  /* Let's check rowStyles: doesn't mention bg color. */
+  /* But standard 12306 rows are white. */
+  /* I will set table bg to transparent/white and header to F8F8F8. */
+  margin-top: 10px;
+  border: none; /* Spec doesn't mention border for table itself, only rows */
+}
+
+.passenger-table th,
+.passenger-table td {
+  padding: 0; /* Reset padding, height controls vertical size */
+  text-align: center;
+  font-size: 14px;
+  color: #333333;
+}
+
+.passenger-table th {
+  height: 40px;
+  background-color: #F8F8F8;
+  font-weight: 400;
+  color: #333333;
+  border: none; /* Spec doesn't mention border for header cells? */
+}
+
+.passenger-table tbody tr {
+  height: 40px;
+  border-bottom: 1px dashed #DEDEDE; /* Spec: borderBottom: "1px dashed #DEDEDE" */
+  background-color: #FFFFFF; /* Ensure rows are white */
+}
+
+.passenger-table tbody tr:hover {
+  background-color: #f5f5f5;
+}
+
+.passenger-table td {
+  /* height is handled by tr height usually, but can set here too */
+  height: 40px;
+}
+
+/* Columns */
+.col-seq { width: 80px; }
+.col-name { width: 100px; }
+.col-id-type { width: 150px; }
+.col-id-no { width: 200px; }
+.col-phone { width: 150px; }
+.col-status { width: 100px; }
+.col-op { width: 80px; }
+
+/* Sequence Wrapper */
+.seq-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.row-checkbox {
+  margin-right: 8px;
+}
+
+/* Status */
+.status-icon-img {
+  vertical-align: middle;
+}
+
+/* Operation */
+.op-btn {
+  color: #999;
+  cursor: pointer;
+  font-size: 16px; /* Icon size */
+  /* Try to mimic the icon in the image - a small card with person? Or just a delete X? */
+  /* The image shows an empty operation column for the first row. */
+  /* For delete, usually it's an X or a trash can. I'll use a simple X for now as placeholder or the trash icon. */
+  /* But wait, the code uses "✖". */
+}
+.op-btn:hover {
+  color: #d9534f;
+}
+
+.error-msg {
+  color: red;
+  margin: 10px 0;
+}

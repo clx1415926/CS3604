@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
+import './assets/kyfw_12306_bind_tel/css/ticket_common_v70001.css';
 import HomePage from './pages/HomePage';
 import PersonalInfoView from './pages/PersonalInfoView';
 import PhoneVerification from './pages/PhoneVerification';
 import PassengerList from './pages/PassengerList';
 import PassengerEdit from './pages/PassengerEdit';
 import OrderCenter from './pages/OrderCenter';
+import Header from './components/Header';
+import Footer from './components/Footer';
 
 function getRoute() {
   const h = window.location.hash.replace('#', '');
@@ -29,11 +32,7 @@ export default function App() {
     href: window.location.href
   });
 
-  const Topbar = (
-    <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', padding: '8px 16px', borderBottom: '1px solid #e5e5e5' }}>
-      <a href="http://localhost:8080/" style={{ display: 'inline-block', padding: '6px 10px', background: '#2e6fe7', color: '#fff', borderRadius: 4, textDecoration: 'none' }}>首页</a>
-    </div>
-  );
+  const Topbar = null;
 
   const Sidebar = (
     <div style={{ width: 220, padding: 16, borderRight: '1px solid #e5e5e5', boxSizing: 'border-box' }}>
@@ -75,46 +74,49 @@ export default function App() {
   if (currentPath === '/otn/view/information.html') {
     return (
       <div>
-        {Topbar}
-        <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+        <Header />
+        <div style={{ display: 'flex', alignItems: 'flex-start', width: '1200px', margin: '0 auto', minHeight: '500px' }}>
           {Sidebar}
           <div style={{ flex: 1, padding: '0 24px' }}>
             <PersonalInfoView />
           </div>
         </div>
+        <Footer />
       </div>
     );
   }
   if (currentPath === '/otn/view/userSecurity_bindTel.html') {
     return (
       <div>
-        {Topbar}
-        <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+        <Header />
+        <div style={{ display: 'flex', alignItems: 'flex-start', width: '1200px', margin: '0 auto', minHeight: '500px' }}>
           {Sidebar}
           <div style={{ flex: 1, padding: '0 24px' }}>
             <PhoneVerification />
           </div>
         </div>
+        <Footer />
       </div>
     );
   }
   if (currentPath === '/otn/view/passengers.html') {
     return (
       <div>
-        {Topbar}
-        <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+        <Header />
+        <div style={{ display: 'flex', alignItems: 'flex-start', width: '1200px', margin: '0 auto', minHeight: '500px' }}>
           {Sidebar}
           <div style={{ flex: 1, padding: '0 24px' }}>
             <PassengerList />
           </div>
         </div>
+        <Footer />
       </div>
     );
   }
   if (currentPath === '/otn/view/add_passenger.html') {
     return (
       <div>
-        {Topbar}
+        <Header />
         <div style={{ display: 'flex', alignItems: 'flex-start' }}>
           {Sidebar}
           <div style={{ flex: 1, padding: '0 24px' }}>
@@ -127,20 +129,21 @@ export default function App() {
   if (currentPath === '/otn/view/train_order.html') {
     return (
       <div>
-        {Topbar}
-        <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+        <Header />
+        <div style={{ display: 'flex', alignItems: 'flex-start', width: '1200px', margin: '0 auto', minHeight: '500px' }}>
           {Sidebar}
           <div style={{ flex: 1, padding: '0 24px' }}>
             <OrderCenter />
           </div>
         </div>
+        <Footer />
       </div>
     );
   }
   
   return (
     <div>
-      {Topbar}
+      <Header />
       <div style={{ display: 'flex', alignItems: 'flex-start' }}>
         {Sidebar}
         <div style={{ flex: 1, padding: '24px' }}>

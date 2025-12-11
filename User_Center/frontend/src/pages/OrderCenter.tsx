@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import './OrderCenter.css';
 
 interface Order {
   order_id: string;
@@ -16,6 +17,13 @@ interface Order {
   status: string;
 }
 
+function formatDate(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 export default function OrderCenter() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
@@ -24,6 +32,30 @@ export default function OrderCenter() {
   const [cancelTarget, setCancelTarget] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const orderRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const [activeTab, setActiveTab] = useState<'unfinished' | 'upcoming' | 'history'>('unfinished');
+  const today = formatDate(new Date());
+  const [startDate, setStartDate] = useState(today);
+  const [endDate, setEndDate] = useState(today);
+  const [query, setQuery] = useState('');
+
+  // Unified SID reader: hash (?sid=...), search (?sid=...), session/local storage
+  const getSid = () => {
+    const fromHash = (() => {
+      const h = window.location.hash || '';
+      const m = h.match(/sid=([^&]+)/);
+      return m ? decodeURIComponent(m[1]) : '';
+    })();
+    const fromSearch = (() => {
+      const s = window.location.search || '';
+      const m = s.match(/sid=([^&]+)/);
+      return m ? decodeURIComponent(m[1]) : '';
+    })();
+    const fromSession = sessionStorage.getItem('session_id') || '';
+    const fromLocal = localStorage.getItem('SESSION_ID') || '';
+    const sid = fromHash || fromSearch || fromSession || fromLocal;
+    if (sid) { try { localStorage.setItem('SESSION_ID', sid); } catch (e) {} }
+    return sid;
+  };
 
   useEffect(() => {
     // Extract orderId from hash query params
@@ -33,12 +65,8 @@ export default function OrderCenter() {
       setHighlightId(match[1]);
     }
 
-    // Extract SID from URL to ensure login state
-    const mSid = hash.match(/[?&]sid=([^&]+)/);
-    if (mSid) {
-      const sid = decodeURIComponent(mSid[1]);
-      localStorage.setItem('SESSION_ID', sid);
-    }
+    // Ensure SID is captured from hash/search and persisted locally
+    getSid();
 
     fetchOrders();
   }, []);
@@ -61,7 +89,7 @@ export default function OrderCenter() {
     setLoading(true);
     try {
       // Get session ID
-      const sid = localStorage.getItem('SESSION_ID');
+      const sid = getSid();
       if (!sid) {
         setError('请先登录');
         setLoading(false);
@@ -96,7 +124,7 @@ export default function OrderCenter() {
   };
 
   async function doCancel(id: string) {
-    const sid = localStorage.getItem('SESSION_ID');
+    const sid = getSid();
     const r = await fetch(`http://localhost:3001/api/v1/orders/${id}/cancel`, { method: 'POST', headers: sid ? { Authorization: 'Bearer ' + sid } : {} });
     if (r.ok) {
       setCancelTarget(null);
@@ -107,17 +135,82 @@ export default function OrderCenter() {
     }
   }
 
+  function inDateRange(booked_at: string) {
+    try {
+      const t = new Date(booked_at).getTime();
+      if (startDate) {
+        const s = new Date(startDate);
+        s.setHours(0, 0, 0, 0);
+        if (t < s.getTime()) return false;
+      }
+      if (endDate) {
+        const e = new Date(endDate);
+        e.setHours(23, 59, 59, 999);
+        if (t > e.getTime()) return false;
+      }
+      return true;
+    } catch {
+      return true;
+    }
+  }
+
+  function matchQuery(order: Order) {
+    const q = query.trim();
+    if (!q) return true;
+    if (order.order_id.includes(q)) return true;
+    if (order.train.code.includes(q)) return true;
+    if (order.passengers.some(p => p.name.includes(q))) return true;
+    return false;
+  }
+
+  const displayOrders = orders
+    .filter(o => {
+      if (activeTab === 'unfinished') return o.status === 'unpaid';
+      if (activeTab === 'upcoming') return o.status === 'paid';
+      return o.status === 'canceled';
+    })
+    .filter(o => inDateRange(o.booked_at))
+    .filter(o => matchQuery(o));
+
   if (loading) return <div style={{ padding: 20 }}>加载中...</div>;
   if (error) return <div style={{ padding: 20, color: 'red' }}>{error}</div>;
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2 style={{ fontSize: 20, marginBottom: 20 }}>火车票订单</h2>
-      {orders.length === 0 ? (
-        <div>暂无订单</div>
+    <div className="order-center">
+      <div className="order-tabs">
+        <button className={`order-tab ${activeTab === 'unfinished' ? 'active' : ''}`} onClick={() => setActiveTab('unfinished')}>未完成订单</button>
+        <button className={`order-tab ${activeTab === 'upcoming' ? 'active' : ''}`} onClick={() => setActiveTab('upcoming')}>未出行订单</button>
+        <button className={`order-tab ${activeTab === 'history' ? 'active' : ''}`} onClick={() => setActiveTab('history')}>历史订单</button>
+      </div>
+
+      <div className="order-filter-row">
+        <span className="order-filter-label">按订单日期查询</span>
+        <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="order-filter-date" />
+        <span className="order-filter-sep">—</span>
+        <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="order-filter-date" />
+        <input className="order-filter-input" placeholder="订单编号/车次/旅客姓名" value={query} onChange={e => setQuery(e.target.value)} />
+        <button className="order-filter-btn" onClick={() => { setStartDate(startDate); setEndDate(endDate); setQuery(query); }}>查询</button>
+      </div>
+
+      {displayOrders.length === 0 ? (
+        <div className="empty-card">
+          <div className="empty-content">
+            <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+              <rect x="12" y="10" width="32" height="44" rx="4" stroke="#6aa8ff" strokeWidth="2" />
+              <circle cx="46" cy="42" r="9" stroke="#6aa8ff" strokeWidth="2" />
+              <line x1="51" y1="47" x2="58" y2="54" stroke="#6aa8ff" strokeWidth="2" />
+              <line x1="18" y1="20" x2="36" y2="20" stroke="#6aa8ff" strokeWidth="2" />
+              <line x1="18" y1="26" x2="32" y2="26" stroke="#6aa8ff" strokeWidth="2" />
+            </svg>
+            <div className="empty-text">
+              <div className="empty-line">您没有{activeTab === 'unfinished' ? '未完成' : activeTab === 'upcoming' ? '未出行' : '历史'}的订单哦～</div>
+              <div className="empty-line">您可以通过<a href="http://localhost:5173/index.html" className="empty-link">车票预订</a>功能，来制定出行计划。</div>
+            </div>
+          </div>
+        </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {orders.map(order => (
+        <div className="order-list">
+          {displayOrders.map(order => (
             <div
               key={order.order_id}
               ref={el => orderRefs.current[order.order_id] = el}
@@ -143,7 +236,6 @@ export default function OrderCenter() {
                   </span>
                 </div>
               </div>
-              
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 4 }}>
@@ -153,7 +245,6 @@ export default function OrderCenter() {
                     {order.train.depart_time} 开
                   </div>
                 </div>
-                
                 <div style={{ flex: 2, display: 'flex', flexDirection: 'column', gap: 4 }}>
                   {order.passengers.map((p, idx) => (
                     <div key={idx} style={{ display: 'flex', gap: 12, fontSize: 14 }}>
@@ -163,7 +254,6 @@ export default function OrderCenter() {
                     </div>
                   ))}
                 </div>
-
                 <div style={{ flex: 1, textAlign: 'center', fontWeight: 'bold', color: '#f60', fontSize: 18 }}>
                   ¥{order.price_total}
                 </div>
@@ -193,6 +283,16 @@ export default function OrderCenter() {
           ))}
         </div>
       )}
+
+      <div className="hint-panel">
+        <div className="hint-title">温馨提示</div>
+        <ul className="hint-list">
+          <li>未完成订单请在规定时间内完成网上支付。</li>
+          <li>如订单成功或取消订单之后，您将无法购买其他车票。</li>
+          <li>支付失败或订单异常，请前往人工窗口办理或联系在线客服。</li>
+          <li>更多事项详见相关站点公告及客运组织规则。</li>
+        </ul>
+      </div>
 
       {cancelTarget && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import './PersonalInfoView.css';
 
 export default function PersonalInfoView() {
   const [username, setUsername] = useState<string>('');
@@ -101,62 +102,132 @@ export default function PersonalInfoView() {
       setShowTravelerEdit(false);
     } catch (e) { setAdditionalMessage('网络异常，请稍后再试'); }
   };
+
   return (
-    <div>
-      <section>
-        <h2>基本信息</h2>
-        <div>用户名: {username || '未登录'}</div>
-        <div>姓名: {name || '未登录'}</div>
-        <div>国家/地区: {country || '中国'}</div>
-        <div>证件类型: {idType || '居民身份证'}</div>
-        <div>证件号码(脱敏): {idMasked || ''}</div>
-        <div>核验状态: {verifiedStatus || '已通过'}</div>
-      </section>
+    <div className="personal-info-container">
+      <div className="info-section">
+        <div className="section-header">
+            <div className="section-title">基本信息</div>
+        </div>
+        
+        <div className="info-item">
+            <div className="info-label"><span className="required-star">*</span>用户名：</div>
+            <div className="info-value">{username || '未登录'}</div>
+        </div>
+        
+        <div className="info-item">
+            <div className="info-label"><span className="required-star">*</span>姓名：</div>
+            <div className="info-value">{name || '未登录'}</div>
+        </div>
 
-      <section>
-        <h2>联系方式</h2>
-        <div>{phoneMasked ? `(${phoneCountryCode || '+86'}) ${phoneMasked}` : `(${phoneCountryCode || '+86'}) `}</div>
-        <div>{emailMasked}</div>
-        <button onClick={() => setShowEditOptions(true)}>编辑</button>
+        <div className="info-item">
+            <div className="info-label">国家/地区：</div>
+            <div className="info-value">{country || '中国China'}</div>
+        </div>
+
+        <div className="info-item">
+            <div className="info-label"><span className="required-star">*</span>证件类型：</div>
+            <div className="info-value">{idType || '居民身份证'}</div>
+        </div>
+
+        <div className="info-item">
+            <div className="info-label"><span className="required-star">*</span>证件号码：</div>
+            <div className="info-value">{idMasked || ''}</div>
+        </div>
+
+        <div className="info-item">
+            <div className="info-label">核验状态：</div>
+            <div className="info-value" style={{ color: '#FF8000' }}>{verifiedStatus === 'VERIFIED' ? '已通过' : (verifiedStatus || '已通过')}</div>
+        </div>
+      </div>
+
+      <div className="dashed-line"></div>
+
+      <div className="info-section">
+        <div className="section-header">
+            <div className="section-title">联系方式</div>
+            <button className="edit-btn" onClick={() => setShowEditOptions(!showEditOptions)}>{showEditOptions ? '收起' : '编辑'}</button>
+        </div>
+
+        <div className="info-item">
+            <div className="info-label"><span className="required-star">*</span>手机号：</div>
+            <div className="info-value">
+                {phoneMasked ? `(${phoneCountryCode || '+86'}) ${phoneMasked}` : `(${phoneCountryCode || '+86'}) `}
+            </div>
+            {verifiedStatus === 'VERIFIED' && <span className="verify-link">已通过核验</span>}
+        </div>
+
+        <div className="info-item">
+            <div className="info-label">邮箱：</div>
+            <div className="info-value">{emailMasked}</div>
+        </div>
+
         {showEditOptions && (
-          <div>
-            <a href="#/otn/view/userSecurity_bindTel.html" onClick={(e) => onGoPhoneVerify(e)}>去手机核验更改</a>
-            {errorText ? <div>{errorText}</div> : null}
+          <div className="edit-area">
+            <div style={{ marginBottom: 10 }}>
+                <a 
+                    href="#/otn/view/userSecurity_bindTel.html" 
+                    onClick={(e) => onGoPhoneVerify(e)}
+                    style={{ color: '#0077FF', textDecoration: 'none', fontSize: 14 }}
+                >
+                    去手机核验更改 &gt;
+                </a>
+            </div>
+            {errorText ? <div style={{ color: 'red', fontSize: 12 }}>{errorText}</div> : null}
           </div>
         )}
-      </section>
+      </div>
 
-      <section>
-        <h2>附加信息</h2>
-        <div>优惠(待)类型: {travelerType || '成人'}</div>
-        <button onClick={(e) => {
-          if (!sid || !sidValid) {
-            if (e) e.preventDefault();
-            setAdditionalMessage('您还未登陆，请先登录');
-            setShowTravelerEdit(false);
-            return;
-          }
-          setShowTravelerEdit(true);
-          setNewTravelerType(travelerType || '成人');
-          setAdditionalMessage('');
-        }}>编辑</button>
+      <div className="dashed-line"></div>
+
+      <div className="info-section">
+        <div className="section-header">
+            <div className="section-title">附加信息</div>
+            <button className="edit-btn" onClick={(e) => {
+                if (!sid || !sidValid) {
+                    if (e) e.preventDefault();
+                    setAdditionalMessage('您还未登陆，请先登录');
+                    setShowTravelerEdit(false);
+                    return;
+                }
+                setShowTravelerEdit(!showTravelerEdit);
+                setNewTravelerType(travelerType || '成人');
+                setAdditionalMessage('');
+            }}>{showTravelerEdit ? '收起' : '编辑'}</button>
+        </div>
+
+        <div className="info-item">
+            <div className="info-label"><span className="required-star">*</span>优惠(待)类型：</div>
+            <div className="info-value">{travelerType || '成人'}</div>
+        </div>
+
         {showTravelerEdit && (
-          <div>
-            <select value={newTravelerType} onChange={(e) => setNewTravelerType(e.target.value)}>
-              <option value="成人">成人</option>
-              <option value="儿童">儿童</option>
-              <option value="学生">学生</option>
-              <option value="残疾军人">残疾军人</option>
-            </select>
-            <button onClick={() => {
-              if (!sid || !sidValid) { setAdditionalMessage('您还未登陆，请先登录'); return; }
-              onSaveTravelerType();
-            }}>保存</button>
-            <button onClick={() => { setShowTravelerEdit(false); }}>取消</button>
-            {additionalMessage ? <div>{additionalMessage}</div> : null}
+          <div className="edit-area">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                <select 
+                    value={newTravelerType} 
+                    onChange={(e) => setNewTravelerType(e.target.value)}
+                    style={{ padding: '4px 8px', borderRadius: 4, border: '1px solid #ddd' }}
+                >
+                    <option value="成人">成人</option>
+                    <option value="儿童">儿童</option>
+                    <option value="学生">学生</option>
+                    <option value="残疾军人">残疾军人</option>
+                </select>
+                <button 
+                    onClick={() => {
+                        if (!sid || !sidValid) { setAdditionalMessage('您还未登陆，请先登录'); return; }
+                        onSaveTravelerType();
+                    }}
+                    style={{ background: '#FF8000', color: '#fff', border: 'none', padding: '5px 15px', borderRadius: 4, cursor: 'pointer' }}
+                >
+                    保存
+                </button>
+            </div>
+            {additionalMessage ? <div style={{ color: '#FF8000', fontSize: 12 }}>{additionalMessage}</div> : null}
           </div>
         )}
-      </section>
+      </div>
     </div>
   );
 }

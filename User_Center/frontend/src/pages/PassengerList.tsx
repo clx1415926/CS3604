@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import './PassengerList.css';
+import gonganIcon from '../assets/passenger_assets/gongan.png';
 
 interface Passenger {
   passenger_id: string;
@@ -87,7 +89,10 @@ export default function PassengerList() {
   };
 
   const handleBatchDelete = async () => {
-    if (selectedIds.size === 0) return;
+    if (selectedIds.size === 0) {
+      alert('请选择要删除的乘车人');
+      return;
+    }
     if (!window.confirm(`确认删除选中的 ${selectedIds.size} 位乘车人吗？`)) return;
     
     for (const id of Array.from(selectedIds)) {
@@ -114,22 +119,25 @@ export default function PassengerList() {
 
   return (
     <div className="passenger-list-page">
-      <div className="header">
-        <h2>乘车人管理</h2>
-        <div className="actions">
-          <a href="#/otn/view/add_passenger.html" className="btn-primary">添加乘车人</a>
-        </div>
-      </div>
-
-      <div className="search-bar">
-        <form onSubmit={handleSearch}>
-          <input 
-            type="text" 
-            placeholder="请输入乘车人姓名" 
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-          />
-          <button type="submit">查询</button>
+      {/* Search Bar */}
+      <div className="search-box">
+        <form onSubmit={handleSearch} className="search-form">
+          <div className="search-input-wrapper">
+            <input 
+              id="_search_name"
+              className="search-input"
+              type="text" 
+              placeholder="请输入乘客姓名" 
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+            />
+            {keyword && (
+              <span className="search-clear-icon" onClick={() => { setKeyword(''); fetchPassengers(); }}>
+                ✖
+              </span>
+            )}
+          </div>
+          <button type="submit" id="serch_btn" className="search-btn">查询</button>
         </form>
       </div>
 
@@ -137,70 +145,75 @@ export default function PassengerList() {
       
       <div className="list-container">
         {loading ? <div>加载中...</div> : (
-          <table>
-            <thead>
-              <tr>
-                <th>
-                  <input 
-                    type="checkbox" 
-                    onChange={(e) => {
-                      if (e.target.checked) setSelectedIds(new Set(passengers.filter(p => !p.is_self && p.protected_flag !== 1).map(p => p.passenger_id)));
-                      else setSelectedIds(new Set());
-                    }}
-                    checked={passengers.length > 0 && selectedIds.size === passengers.filter(p => !p.is_self && p.protected_flag !== 1).length}
-                  />
-                </th>
-                <th>姓名</th>
-                <th>证件类型</th>
-                <th>证件号码</th>
-                <th>手机号</th>
-                <th>旅客类型</th>
-                <th>核验状态</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {passengers.length === 0 && <tr><td colSpan={8} style={{textAlign:'center'}}>暂无乘车人</td></tr>}
-              {passengers.map(p => (
-                <tr key={p.passenger_id}>
-                  <td>
-                    <input 
-                      type="checkbox" 
-                      checked={selectedIds.has(p.passenger_id)}
-                      onChange={() => toggleSelect(p.passenger_id)}
-                      disabled={p.is_self || p.protected_flag === 1}
-                    />
-                  </td>
-                  <td>{p.name}{p.is_self && <span className="tag">本人</span>}</td>
-                  <td>{p.id_type}</td>
-                  <td>{p.id_number_masked || p.id_number}</td>
-                  <td>{p.phone_number_masked || p.phone_number}</td>
-                  <td>{p.traveler_type}</td>
-                  <td>
-                    <span className={`status-${p.verified_status === '已通过' ? 'success' : 'pending'}`}>
-                      {p.verified_status}
-                    </span>
-                  </td>
-                  <td>
-                    {(p.is_self || p.protected_flag === 1) ? (
-                      <span title="该乘车人为系统自动添加，不可删除" style={{ display: 'inline-block', cursor: 'not-allowed' }}>
-                        <button disabled style={{ pointerEvents: 'none' }}>删除</button>
-                      </span>
-                    ) : (
-                      <button onClick={() => handleDelete(p.passenger_id)}>删除</button>
-                    )}
-                  </td>
+          <>
+             {/* Toolbar */}
+            <div className="toolbar">
+              <a href="#/otn/view/add_passenger.html" className="toolbar-btn add-btn" style={{ textDecoration: 'none' }}>
+                {/* Spec doesn't use the circle icon anymore */}
+                添加
+              </a>
+              <button className="toolbar-btn delete-batch-btn" onClick={handleBatchDelete}>
+                <span className="icon-delete-trash"></span>
+                批量删除
+              </button>
+            </div>
+
+            <table className="passenger-table order-panel-head">
+              <thead>
+                <tr>
+                  <th className="col-seq">序号</th>
+                  <th className="col-name">姓名</th>
+                  <th className="col-id-type">证件类型</th>
+                  <th className="col-id-no">证件号码</th>
+                  <th className="col-phone">手机／电话</th>
+                  <th className="col-status">核验状态</th>
+                  <th className="col-op">操作</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {passengers.length === 0 && <tr><td colSpan={7} style={{textAlign:'center'}}>暂无乘车人</td></tr>}
+                {passengers.map((p, index) => (
+                  <tr key={p.passenger_id} className="passenger-row">
+                    <td>
+                       <div className="seq-wrapper">
+                         {!(p.is_self || p.protected_flag === 1) && (
+                           <input 
+                             type="checkbox" 
+                             className="row-checkbox"
+                             checked={selectedIds.has(p.passenger_id)}
+                             onChange={() => toggleSelect(p.passenger_id)}
+                           />
+                         )}
+                         <span className="seq-num">{index + 1}</span>
+                       </div>
+                    </td>
+                    <td>{p.name}</td>
+                    <td>{p.id_type}</td>
+                    <td>{p.id_number_masked || p.id_number}</td>
+                    <td>{p.phone_number_masked || p.phone_number ? `(+${p.phone_country_code || '86'})${p.phone_number_masked || p.phone_number}` : ''}</td>
+                    <td>
+                       <div className={`status-${p.verified_status === '已通过' ? 'verified' : 'pending'}`}>
+                          {p.verified_status === '已通过' ? (
+                            '已通过'
+                          ) : (
+                            <span>{p.verified_status}</span>
+                          )}
+                       </div>
+                    </td>
+                    <td>
+                      {(p.is_self || p.protected_flag === 1) ? (
+                         null
+                      ) : (
+                        <span className="op-btn" onClick={() => handleDelete(p.passenger_id)}>删除</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
         )}
       </div>
-      {selectedIds.size > 0 && (
-        <div className="batch-actions">
-          <button onClick={handleBatchDelete}>批量删除</button>
-        </div>
-      )}
     </div>
   );
 }

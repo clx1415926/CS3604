@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import './BindTelForm.css';
 
 export default function PhoneVerification() {
   const [countryCode, setCountryCode] = useState('+86');
@@ -44,7 +45,7 @@ export default function PhoneVerification() {
           if (!r.ok) return false;
           const d = await r.json();
           if (d && d.phone_country_code) setCountryCode(String(d.phone_country_code));
-          if (d && d.phone_masked) setCurrentMasked(`(${String(d.phone_country_code || '+86')}) ${String(d.phone_masked)}`);
+          if (d && d.phone_masked) setCurrentMasked(`${String(d.phone_country_code || '+86')}-${String(d.phone_masked)}`);
           if (d && d.verified_status) setVerifiedStatus(String(d.verified_status));
           return true;
         } catch (e) { return false; }
@@ -95,36 +96,62 @@ export default function PhoneVerification() {
 
   if (blocked) {
     return (
-      <div>
-        <h1>手机核验</h1>
-        {message && <div>{message}</div>}
+      <div className="bind-tel-container">
+        <h1 style={{ fontSize: '18px', marginBottom: '20px' }}>手机核验</h1>
+        {message && <div style={{ color: '#FF8000' }}>{message}</div>}
       </div>
     );
   }
   return (
-    <div>
-      <h1>手机核验</h1>
-      <p>{currentMasked ? `${currentMasked} 已通过核验` : ''}</p>
+    <div className="bind-tel-container">
+      <h1 style={{ fontSize: '18px', marginBottom: '20px' }}>手机核验</h1>
+      
+      <div className="form-item">
+        <label><span className="required-star">*</span>原手机号：</label>
+        <span>{currentMasked}</span>
+        <span className="verified-link">已通过核验</span>
+      </div>
 
-      <label>
-        国家代码
-        <select value={countryCode} onChange={(e) => setCountryCode(e.target.value)}>
+      <div className="form-item">
+        <label><span className="required-star">*</span>新手机号：</label>
+        <select 
+            className="input" 
+            style={{ width: '80px', marginRight: '10px' }} 
+            value={countryCode} 
+            onChange={(e) => setCountryCode(e.target.value)}
+        >
           <option value="+86">+86</option>
           <option value="+1">+1</option>
         </select>
-      </label>
-
-      <div>
-        <input placeholder="请输入新手机号" value={phone} onChange={(e) => setPhone(e.target.value)} />
+        <input 
+            className="input" 
+            style={{ width: '220px' }}
+            value={phone} 
+            data-testid="phone-input"
+            onChange={(e) => setPhone(e.target.value)} 
+        />
       </div>
-      <div>
-        <input type="password" placeholder="请输入密码" value={password} onChange={(e) => setPassword(e.target.value)} />
-      </div>
-      <button onClick={onConfirm}>确认</button>
-      <button onClick={() => { window.location.hash = '/otn/view/information.html'; }}>取消</button>
-      {message && <div>{message}</div>}
 
-      <div>{currentMasked}</div>
+      <div className="dashed-line"></div>
+      
+      <div className="form-item">
+        <label><span className="required-star">*</span>登录密码：</label>
+        <input 
+            type="password" 
+            className="input" 
+            value={password} 
+            data-testid="password-input"
+            onChange={(e) => setPassword(e.target.value)} 
+        />
+        <span className="input-hint">正确输入密码才能修改密保</span>
+      </div>
+      
+      {message && <div style={{ color: '#FF8000', marginLeft: '110px', marginBottom: '10px' }}>{message}</div>}
+
+      <div className="actions">
+        <button className="cancel-btn" onClick={() => { window.location.hash = '/otn/view/information.html'; }}>取消</button>
+        <button className="btn-primary" onClick={onConfirm}>确认</button>
+      </div>
     </div>
   );
 }

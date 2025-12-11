@@ -1,0 +1,6 @@
+.footer { width: 1200px; height: 274px; background-color: #F8F8F8; color: #333333; margin: 40px auto 0; padding: 40px 0; font-size: 14px; box-sizing: border-box; }
+.footer-con { width: 100%; padding: 0 20px; }
+.footer-links h2 { font-size: 16px; margin-bottom: 20px; font-weight: normal; }
+.footer-links ul { display: flex; gap: 20px; list-style: none; padding: 0; margin: 0; }
+.footer-links ul li img { max-height: 40px; }
+.footer-txt { margin-top: 40px; text-align: center; color: #666; border-top: 1px solid #DEDEDE; padding-top: 20px; }

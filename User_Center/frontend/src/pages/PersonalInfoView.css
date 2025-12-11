@@ -1,0 +1,89 @@
+.personal-info-container {
+    width: 100%;
+    padding: 20px;
+    background-color: #fff;
+    box-sizing: border-box;
+}
+
+.info-section {
+    margin-bottom: 30px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.section-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+}
+
+.edit-btn {
+    width: 80px;
+    height: 30px;
+    background-color: #fff;
+    border: 1px solid #DEDEDE;
+    border-radius: 4px;
+    color: #333;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.edit-btn:hover {
+    background-color: #f8f8f8;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    font-size: 14px;
+    color: #333;
+}
+
+.info-label {
+    width: 120px;
+    text-align: right;
+    margin-right: 15px;
+    color: #666;
+}
+
+.required-star {
+    color: #FF8000;
+    margin-right: 4px;
+    vertical-align: middle;
+}
+
+.info-value {
+    color: #333;
+}
+
+.verify-status {
+    color: #FF8000;
+    margin-left: 20px;
+}
+
+.verify-link {
+    color: #FF8000;
+    margin-left: 20px;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.dashed-line {
+    border-top: 1px dashed #eee;
+    margin: 30px 0;
+    width: 100%;
+}
+
+.edit-area {
+    margin-left: 135px;
+    margin-top: 10px;
+    background: #f8f8f8;
+    padding: 15px;
+    border-radius: 4px;
+}
