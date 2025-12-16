@@ -65,11 +65,6 @@ export default function PersonalInfoView() {
     (async () => {
       const ok = await tryFetch(`${base}/auth/session/account`);
       setSidValid(ok);
-      if (!ok) {
-        const altBase = base.replace('8082', '8083');
-        const okAlt = await tryFetch(`${altBase}/auth/session/account`);
-        setSidValid(okAlt);
-      }
     })();
   }, []);
   useEffect(() => {

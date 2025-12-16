@@ -56,11 +56,21 @@ export default function PassengerList() {
       const res = await fetch(url, {
         headers: getAuthHeaders() as HeadersInit
       });
-      if (!res.ok) throw new Error('Failed to fetch passengers');
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        const msg = (data && (data.message || data.error)) || '获取乘车人信息失败，请稍后重试';
+        setError(msg);
+        setPassengers([]);
+        return;
+      }
       const data = await res.json();
       setPassengers(data.passengers || []);
     } catch (err: any) {
-      setError(err.message);
+      if (err && err.message === 'Failed to fetch') {
+        setError('获取乘车人信息失败，请检查网络或稍后重试');
+      } else {
+        setError('获取乘车人信息失败，请稍后重试');
+      }
     } finally {
       setLoading(false);
     }

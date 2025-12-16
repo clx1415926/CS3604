@@ -27,31 +27,71 @@ const SharedHeader: React.FC<Props> = ({
   const [logged, setLogged] = useState(false);
 
   useEffect(() => {
-    const sid = sessionStorage.getItem('session_id') || localStorage.getItem('SESSION_ID') || '';
+    const getSid = () => {
+      const fromHash = (() => {
+        const h = window.location.hash || '';
+        const m = h.match(/sid=([^&]+)/);
+        return m ? decodeURIComponent(m[1]) : '';
+      })();
+      const fromSearch = (() => {
+        const s = window.location.search || '';
+        const m = s.match(/sid=([^&]+)/);
+        return m ? decodeURIComponent(m[1]) : '';
+      })();
+      const fromSession = sessionStorage.getItem('session_id') || '';
+      const fromLocal = localStorage.getItem('SESSION_ID') || '';
+      const sid = fromHash || fromSearch || fromSession || fromLocal;
+      if (sid) {
+        try {
+          localStorage.setItem('SESSION_ID', sid);
+        } catch (e) {}
+      }
+      return sid;
+    };
+
+    const sid = getSid();
     setLogged(!!sid);
-    
-    if (sid) {
-      fetch('http://localhost:8082/api/v1/auth/session/profile', {
+
+    if (!sid) {
+      setNick('');
+      return;
+    }
+
+    const apiBase =
+      (typeof window !== 'undefined' && (window as any).API_BASE) ||
+      'http://127.0.0.1:8082/api/v1';
+
+    const fetchProfile = (base: string) =>
+      fetch(`${base}/auth/session/profile`, {
         headers: { Authorization: 'Bearer ' + sid }
       })
-      .then(r => r.json().then(d => ({ ok: r.ok, data: d })))
-      .then(res => {
-        if (res.ok && res.data && (res.data.username || res.data.name)) {
-          const displayName = (res.data.username || '') + (res.data.name ? '（' + res.data.name + '）' : '');
-          setNick(displayName);
-        } else {
-          // Fallback to local storage
-          const name = localStorage.getItem('UC_NICK') || localStorage.getItem('ACCOUNT_NICK') || sessionStorage.getItem('UC_NICK') || '';
-          setNick(name || '用户');
-        }
-      })
-      .catch(() => {
-        const name = localStorage.getItem('UC_NICK') || localStorage.getItem('ACCOUNT_NICK') || sessionStorage.getItem('UC_NICK') || '';
+        .then(r => r.json().then(d => ({ ok: r.ok, data: d })))
+        .catch(() => ({ ok: false, data: null }));
+
+    const load = async () => {
+      const primary = await fetchProfile(apiBase);
+      const result = primary;
+      if (result.ok && result.data && (result.data.username || result.data.name)) {
+        const displayName =
+          (result.data.username || '') +
+          (result.data.name ? '（' + result.data.name + '）' : '');
+        setNick(displayName);
+        try {
+          const storedNick = displayName;
+          localStorage.setItem('UC_NICK', storedNick);
+          sessionStorage.setItem('UC_NICK', storedNick);
+        } catch (e) {}
+      } else {
+        const name =
+          localStorage.getItem('UC_NICK') ||
+          localStorage.getItem('ACCOUNT_NICK') ||
+          sessionStorage.getItem('UC_NICK') ||
+          '';
         setNick(name || '用户');
-      });
-    } else {
-      setNick('');
-    }
+      }
+    };
+
+    load();
   }, []);
 
   const computedMyHref = myHref || ((typeof window !== 'undefined' && window.location && window.location.origin)

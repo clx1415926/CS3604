@@ -31,9 +31,12 @@ if not exist "%DIR%" (
     goto :eof
 )
 
-if not exist "%DIR%\node_modules" (
-    echo [%NAME%] Error: node_modules not found in %DIR%. Please run install-all.cmd.
-    goto :eof
+rem Only enforce node_modules if package.json exists (some services are pure Node without deps)
+if exist "%DIR%\package.json" (
+    if not exist "%DIR%\node_modules" (
+        echo [%NAME%] Error: node_modules not found in %DIR%. Please run install-all.cmd.
+        goto :eof
+    )
 )
 
 echo [%NAME%] starting...
