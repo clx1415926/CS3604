@@ -473,24 +473,22 @@ app.post(`${base}/registration/sessions/:session_id/complete`, async (req, res) 
       traveler_type: session.account.traveler_type,
     });
 
-    // Trigger User Center to auto-create self passenger
-    // Fire-and-forget call to internal API
-    const reqSync = http.request({
+    if (process.env.NODE_ENV !== 'test') {
+      const reqSync = http.request({
         hostname: 'localhost',
         port: 8083,
         path: `/api/v1/internal/users/${user_id}/init-self-passenger`,
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
-            'x-internal-secret': '12306-internal-secret'
+          'Content-Type': 'application/json',
+          'x-internal-secret': '12306-internal-secret'
         }
-    }, (resSync) => {
-        // console.log('Sync self passenger status:', resSync.statusCode);
-    });
-    reqSync.on('error', (e) => {
+      }, () => {});
+      reqSync.on('error', (e) => {
         console.warn('Failed to trigger self passenger sync (User Center might be down):', e.message);
-    });
-    reqSync.end();
+      });
+      reqSync.end();
+    }
 
   } catch (e) {
     console.warn('DB createUser failed:', e && e.message);

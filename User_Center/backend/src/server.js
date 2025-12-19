@@ -69,90 +69,91 @@ function getUserId(req) {
   return token;
 }
 
-const server = http.createServer(async (req, res) => {
-  const u = new URL(req.url, `http://localhost:${PORT}`);
-  if (req.method === 'OPTIONS') return send(res, 200, {});
+function createServer() {
+  return http.createServer(async (req, res) => {
+    const u = new URL(req.url, `http://localhost:${PORT}`);
+    if (req.method === 'OPTIONS') return send(res, 200, {});
 
-  // Rate Limiting
-  if (!checkRateLimit(req)) {
+    if (!checkRateLimit(req)) {
       return send(res, 429, { error: 'TOO_MANY_REQUESTS', message: '请求过于频繁，请稍后再试' });
-  }
-
-  const userId = getUserId(req);
-  const reqInfo = { req, userId };
-
-  try {
-    // User Profile Routes
-    if (req.method === 'GET' && u.pathname === '/api/v1/user/profile') {
-      const r = await routes.getUserProfile();
-      return send(res, r.status, r.body, reqInfo);
-    }
-    if (req.method === 'PATCH' && u.pathname === '/api/v1/user/profile/traveler-type') {
-      const payload = await parseBody(req);
-      const r = await routes.patchTravelerType(payload);
-      return send(res, r.status, r.body || {}, reqInfo);
-    }
-    if (req.method === 'GET' && u.pathname === '/api/v1/user/security/phone/context') {
-      const r = await routes.getPhoneVerificationContext();
-      return send(res, r.status, r.body || {}, reqInfo);
-    }
-    if (req.method === 'POST' && u.pathname === '/api/v1/user/security/phone/change') {
-      const payload = await parseBody(req);
-      const r = await routes.postPhoneChange(payload);
-      const data = r.body || {};
-      return send(res, r.status, data, reqInfo);
     }
 
-    // Internal Routes
-    if (req.method === 'POST' && u.pathname.match(/^\/api\/v1\/internal\/users\/[^\/]+\/init-self-passenger$/)) {
-      if (req.headers['x-internal-secret'] !== '12306-internal-secret') {
-          return send(res, 403, { error: 'FORBIDDEN' });
-      }
-      const parts = u.pathname.split('/');
-      const targetUserId = parts[parts.length - 2]; 
-      
-      // Trigger getPassengers which does the lazy sync
-      await passengerRoutes.getPassengers(targetUserId, {});
-      return send(res, 200, { ok: true });
-    }
+    const userId = getUserId(req);
+    const reqInfo = { req, userId };
 
-    // Passenger Routes
-    if (u.pathname === '/api/v1/passengers') {
-      if (req.method === 'GET') {
-        const r = await passengerRoutes.getPassengers(userId, Object.fromEntries(u.searchParams));
+    try {
+      if (req.method === 'GET' && u.pathname === '/api/v1/user/profile') {
+        const r = await routes.getUserProfile();
         return send(res, r.status, r.body, reqInfo);
       }
-      if (req.method === 'POST') {
+      if (req.method === 'PATCH' && u.pathname === '/api/v1/user/profile/traveler-type') {
         const payload = await parseBody(req);
-        const r = await passengerRoutes.addPassenger(userId, payload);
-        return send(res, r.status, r.body, reqInfo);
+        const r = await routes.patchTravelerType(payload);
+        return send(res, r.status, r.body || {}, reqInfo);
       }
-    }
-    if (u.pathname.match(/^\/api\/v1\/passengers\/\d+$/)) {
+      if (req.method === 'GET' && u.pathname === '/api/v1/user/security/phone/context') {
+        const r = await routes.getPhoneVerificationContext();
+        return send(res, r.status, r.body || {}, reqInfo);
+      }
+      if (req.method === 'POST' && u.pathname === '/api/v1/user/security/phone/change') {
+        const payload = await parseBody(req);
+        const r = await routes.postPhoneChange(payload);
+        const data = r.body || {};
+        return send(res, r.status, data, reqInfo);
+      }
+
+      if (req.method === 'POST' && u.pathname.match(/^\/api\/v1\/internal\/users\/[^\/]+\/init-self-passenger$/)) {
+        if (req.headers['x-internal-secret'] !== '12306-internal-secret') {
+          return send(res, 403, { error: 'FORBIDDEN' });
+        }
+        const parts = u.pathname.split('/');
+        const targetUserId = parts[parts.length - 2];
+
+        await passengerRoutes.getPassengers(targetUserId, {});
+        return send(res, 200, { ok: true });
+      }
+
+      if (u.pathname === '/api/v1/passengers') {
+        if (req.method === 'GET') {
+          const r = await passengerRoutes.getPassengers(userId, Object.fromEntries(u.searchParams));
+          return send(res, r.status, r.body, reqInfo);
+        }
+        if (req.method === 'POST') {
+          const payload = await parseBody(req);
+          const r = await passengerRoutes.addPassenger(userId, payload);
+          return send(res, r.status, r.body, reqInfo);
+        }
+      }
+      if (u.pathname.match(/^\/api\/v1\/passengers\/\d+$/)) {
         const id = u.pathname.split('/').pop();
         if (req.method === 'DELETE') {
-            const r = await passengerRoutes.deletePassenger(userId, id);
-            return send(res, r.status, r.body, reqInfo);
+          const r = await passengerRoutes.deletePassenger(userId, id);
+          return send(res, r.status, r.body, reqInfo);
         }
         if (req.method === 'PUT' || req.method === 'PATCH') {
-            const payload = await parseBody(req);
-            const r = await passengerRoutes.updatePassenger(userId, id, payload);
-            return send(res, r.status, r.body, reqInfo);
+          const payload = await parseBody(req);
+          const r = await passengerRoutes.updatePassenger(userId, id, payload);
+          return send(res, r.status, r.body, reqInfo);
         }
         if (req.method === 'GET') {
-            const r = await passengerRoutes.getPassengerById(userId, id);
-            return send(res, r.status, r.body, reqInfo);
+          const r = await passengerRoutes.getPassengerById(userId, id);
+          return send(res, r.status, r.body, reqInfo);
         }
+      }
+
+      send(res, 404, { error: 'Not Found' }, reqInfo);
+    } catch (err) {
+      console.error('Server Error:', err);
+      send(res, 500, { error: 'Internal Server Error' }, reqInfo);
     }
+  });
+}
 
-    send(res, 404, { error: 'Not Found' }, reqInfo);
-  } catch (err) {
-    console.error('Server Error:', err);
-    send(res, 500, { error: 'Internal Server Error' }, reqInfo);
-  }
-});
+module.exports = { createServer };
 
-
-server.listen(PORT, () => {
-  console.log(`[User_Center] server listening on http://localhost:${PORT}`);
-});
+if (require.main === module) {
+  const server = createServer();
+  server.listen(PORT, () => {
+    console.log(`[User_Center] server listening on http://localhost:${PORT}`);
+  });
+}

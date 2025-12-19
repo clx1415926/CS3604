@@ -90,4 +90,8 @@ module.exports = {
     const n = await accounts.update({ user_id }, { $set: { traveler_type, updated_at: Date.now() } }, { multi: false });
     return n > 0;
   }
+  ,async __resetForTests() {
+    if (process.env.NODE_ENV !== 'test') throw new Error('__resetForTests can only run in test env');
+    await accounts.remove({}, { multi: true });
+  }
 };

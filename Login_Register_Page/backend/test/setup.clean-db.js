@@ -1,14 +1,17 @@
-const fs = require('fs');
-const path = require('path');
+// 测试环境配置
+process.env.NODE_ENV = 'test';
+process.env.OTP_DEV_LOG = '0';
 
-// 清理测试数据库，避免状态残留影响用例
-const dbPath = path.resolve(__dirname, '../data/accounts.db');
-try {
-  if (fs.existsSync(dbPath)) {
-    fs.unlinkSync(dbPath);
-    // 确保数据目录存在，nedb 会自动创建文件
-    fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+const db = require('../src/db');
+
+// 确保每个测试用例都从干净的数据库状态开始
+beforeEach(async () => {
+  if (typeof db.__resetForTests === 'function') {
+    await db.__resetForTests();
   }
-} catch (e) {
-  // 允许忽略异常，确保不影响测试流程
-}
+});
+
+// 还原每个用例中设置的 spy/mock，避免相互污染
+afterEach(() => {
+  jest.restoreAllMocks();
+});

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中国铁路12306 - 车票查询</title>
+    <link rel="stylesheet" href="/assets/iconfont.css">
+    
+    
+  <script type="module" crossorigin src="/assets/index-8e7fef15.js"></script>
+  <link rel="stylesheet" href="/assets/index-8c3da431.css">
+</head>
+<body role="main">
+    <!-- 头部 -->
+    <div class="header" role="banner">
+      <div class="wrapper">
+        <div class="header-con">
+          <h1 class="logo">
+            <a href="http://localhost:8080/">中国铁路12306
+              <span class="sub">12306 CHINA RAILWAY</span>
+            </a>
+          </h1>
+          <div class="header-right">
+            <!-- 搜索条 -->
+            <div class="header-search">
+              <div class="search-bd">
+                <input type="text" class="search-input" id="search-input" placeholder="搜索车票、餐饮、常旅客、相关规章" aria-label="搜索车票、餐饮、常旅客、相关规章">
+              </div>
+              <a class="search-btn" href="javascript:;" aria-label="点击搜索">
+                <i class="icon icon-search"></i>
+              </a>
+            </div>
+            <!-- 右侧菜单 -->
+            <ul class="header-menu" role="menubar">
+              <li class="menu-item">
+                <a href="javascript:;" class="menu-nav-hd">无障碍</a>
+              </li>
+              <li class="menu-item menu-line">|</li>
+              <li class="menu-item">
+                <a href="javascript:;" class="menu-nav-hd">敬老版</a>
+              </li>
+              <li class="menu-item menu-line">|</li>
+              <li class="menu-item menu-nav" role="menuitem">
+                <a href="javascript:;" class="menu-nav-hd item">English <i class="caret"></i></a>
+              </li>
+              <li class="menu-item menu-line">|</li>
+              <li class="menu-item menu-nav" role="menuitem">
+                <a href="http://localhost:5176/index.html" class="menu-nav-hd item" id="my12306">我的12306 <i class="caret"></i></a>
+                <ul class="menu-nav-bd" role="menu" aria-hidden="true" id="megamenu-2">
+                  <li><a name="g_href" data-type="2" data-href="view/train_order.html" data-redirect="Y" href="javascript:;">火车票订单</a></li>
+                  <li><a name="g_href" data-type="2" data-href="view/lineUp_order.html" data-redirect="Y" href="javascript:;">候补订单</a></li>
+                  <li><a name="g_href" data-type="2" data-href="view/commutation_order.html" data-redirect="Y" href="javascript:;">计次•定期票订单</a></li>
+                  <li><a name="g_href" data-type="2" data-href="view/commutation_ticket_order.html" data-redirect="Y" href="javascript:;">约号订单</a></li>
+                  <li><a name="g_href" data-type="2" data-href="view/invoice_index.html" data-redirect="Y" href="javascript:;">电子发票</a></li>
+                  <li><a name="g_href" data-type="2" data-href="view/personal_travel.html" data-redirect="Y" href="javascript:;">本人车票</a></li>
+                  <li class="nav-line"></li>
+                  <li><a name="g_href" data-type="10" data-href="queryMyOrder.html" data-redirect="Y" href="javascript:;">我的餐饮•特产</a></li>
+                  <li><a name="g_href" data-type="2" data-href="view/my_insurance.html" data-redirect="Y" href="javascript:;">我的保险</a></li>
+                  <li><a name="g_href" data-type="3" data-href="welcome.html" data-redirect="Y" href="javascript:;">我的会员</a></li>
+                  <li class="nav-line"></li>
+                  <li><a name="g_href" data-type="2" data-href="view/information.html" data-redirect="Y" href="javascript:;">查看个人信息</a></li>
+                  <li><a name="g_href" data-type="2" data-href="view/userSecurity.html" data-redirect="Y" href="javascript:;">账户安全</a></li>
+                  <li class="nav-line"></li>
+                  <li><a name="g_href" data-type="2" data-href="view/passengers.html" data-redirect="Y" href="javascript:;">乘车人</a></li>
+                  <li><a name="g_href" data-type="2" data-href="view/address_init.html" data-redirect="Y" href="javascript:;">地址管理</a></li>
+                  <li class="nav-line"></li>
+                  <li><a name="g_href" data-type="2" data-href="view/icentre_serviceQuery.html" data-redirect="Y" href="javascript:;">温馨服务查询</a></li>
+                </ul>
+              </li>
+              <li class="menu-item menu-line">|</li>
+              <li id="J-header-login" class="menu-item menu-login" role="menuitem">
+                <a id="J-btn-login" href="http://localhost:8082/login.html" class="menu-nav-hd">登录</a>
+                <a href="http://localhost:8082/register.html" class="ml">注册</a>
+              </li>
+              <li id="J-header-logout" style="display: none" class="menu-item menu-nav menu-login" role="menuitem">
+                您好，<a href="javascript:;" class="txt-primary menu-nav-my-hd" id="welcome-user"></a>&nbsp;|&nbsp;<a id="regist_out" class="logout" href="javascript:;">退出</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <!-- 导航 -->
+      <div class="nav-box" role="navigation">
+        <div class="wrapper">
+          <ul class="nav" role="menubar">
+            <li role="menuitem" class="nav-item nav-item-w1 active">
+              <a href="http://localhost:8080/" class="nav-hd">首页</a>
+            </li>
+            <li role="menuitem" class="nav-item nav-item-w1">
+              <a href="javascript:void(0)" class="nav-hd item">车票 <i class="icon icon-down"></i></a>
+            </li>
+            <li role="menuitem" class="nav-item">
+              <a href="javascript:void(0)" class="nav-hd item">团购服务 <i class="icon icon-down"></i></a>
+            </li>
+            <li role="menuitem" class="nav-item">
+              <a href="javascript:void(0)" class="nav-hd item">会员服务 <i class="icon icon-down"></i></a>
+            </li>
+            <li role="menuitem" class="nav-item">
+              <a href="javascript:void(0)" class="nav-hd item">站车服务 <i class="icon icon-down"></i></a>
+            </li>
+            <li role="menuitem" class="nav-item">
+              <a href="javascript:void(0)" class="nav-hd item">商旅服务 <i class="icon icon-down"></i></a>
+            </li>
+            <li role="menuitem" class="nav-item">
+              <a href="javascript:void(0)" class="nav-hd item">出行指南 <i class="icon icon-down"></i></a>
+            </li>
+            <li role="menuitem" class="nav-item last">
+              <a href="javascript:void(0)" class="nav-hd item">信息查询 <i class="icon icon-down"></i></a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- React应用挂载点 -->
+    <div id="root"></div>
+
+    
+    
+    <!-- 头部登录状态处理脚本 -->
+    <script>
+      (function(){
+        try {
+          var params = new URLSearchParams(window.location.search || '');
+          var sid = params.get('sid');
+          if (sid) {
+            try { localStorage.setItem('SESSION_ID', sid); } catch(e) {}
+            try { params.delete('sid'); } catch(e) {}
+            var q = params.toString() ? ('?' + params.toString()) : '';
+            var cleanUrl = window.location.origin + window.location.pathname + q + (window.location.hash || '');
+            window.history.replaceState({}, document.title, cleanUrl);
+          }
+          var storedSid = sid || (function(){ try { return localStorage.getItem('SESSION_ID'); } catch(e) { return null; } })();
+          if (storedSid) {
+            fetch('http://localhost:8082/api/v1/auth/session/profile', { headers: { Authorization: 'Bearer ' + storedSid } })
+              .then(function(r){ return r.json().then(function(d){ return { ok: r.ok, data: d }; }); })
+              .then(function(res){
+                if (res.ok && res.data && (res.data.username || res.data.name)) {
+                  var welcomeEl = document.getElementById('welcome-user');
+                  var loginEl = document.getElementById('J-header-login');
+                  var logoutEl = document.getElementById('J-header-logout');
+                  if (welcomeEl) {
+                    welcomeEl.textContent = (res.data.username || '') + (res.data.name ? '（' + res.data.name + '）' : '');
+                  }
+                  if (loginEl) loginEl.style.display = 'none';
+                  if (logoutEl) logoutEl.style.display = '';
+                }
+              })
+              .catch(function(){});
+          }
+          
+          // 退出登录
+          var regist_out = document.getElementById('regist_out');
+          if (regist_out) {
+            regist_out.addEventListener('click', function(e){
+              e.preventDefault();
+              try { localStorage.removeItem('SESSION_ID'); } catch(err) {}
+              var loginEl = document.getElementById('J-header-login');
+              var logoutEl = document.getElementById('J-header-logout');
+              if (loginEl) loginEl.style.display = '';
+              if (logoutEl) logoutEl.style.display = 'none';
+            });
+          }
+          
+          // 清除伪元素背景
+          var headerEl = document.querySelector('.header');
+          if (headerEl) {
+            var beforeStyle = window.getComputedStyle(headerEl, '::before');
+            var beforeContent = beforeStyle && beforeStyle.getPropertyValue('content');
+            if (beforeContent && beforeContent !== 'none' && beforeContent !== 'normal' && beforeContent !== '""') {
+              var st = document.createElement('style');
+              st.textContent = '.header::before{content:none !important;display:none !important;background:transparent !important;}';
+              document.head.appendChild(st);
+            }
+          }
+
+          var navTicketAnchor = (function(){
+            var list = document.querySelectorAll('.nav .nav-item .nav-hd.item');
+            for (var i = 0; i < list.length; i++) {
+              var txt = (list[i].textContent || '').replace(/\s+/g, '');
+              if (txt.indexOf('车票') !== -1) return list[i];
+            }
+            return null;
+          })();
+          if (navTicketAnchor) {
+            navTicketAnchor.addEventListener('click', function(ev){
+              try { ev.preventDefault(); } catch(e) {}
+              var sidForNav = (function(){ try { return localStorage.getItem('SESSION_ID'); } catch(e){ return null; } })();
+              var base = 'http://localhost:5173/index.html';
+              var url = sidForNav ? base + '?sid=' + encodeURIComponent(sidForNav) : base;
+              var before = window.location.href;
+              window.location.href = url;
+              setTimeout(function(){}, 0);
+              setTimeout(function(){ if (window.location.href === before) { try { window.location.assign(url); } catch(e) {} } }, 60);
+              setTimeout(function(){ if (!/\b5173\/index\.html\b/.test(window.location.href)) { try { window.location.replace(url); } catch(e) {} } }, 200);
+            });
+          }
+
+          (function(){
+            var trigger = document.getElementById('my12306');
+            if (!trigger) return;
+            var navItem = trigger.closest('.menu-item.menu-nav');
+            if (!navItem) return;
+            var dropdown = document.getElementById('megamenu-2') || navItem.querySelector('.menu-nav-bd');
+            var header = document.querySelector('.header');
+            var hideTimer = null;
+            var openMenu = function(){ if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; } navItem.classList.add('open'); if (header) header.classList.add('menu-open'); };
+            var scheduleClose = function(){ if (hideTimer) clearTimeout(hideTimer); hideTimer = setTimeout(function(){ navItem.classList.remove('open'); if (header) header.classList.remove('menu-open'); }, 220); };
+            ['mouseenter','focusin'].forEach(function(evt){ trigger.addEventListener(evt, openMenu); });
+            ['mouseleave','focusout'].forEach(function(evt){ trigger.addEventListener(evt, scheduleClose); });
+            if (dropdown) {
+              ['mouseenter','focusin'].forEach(function(evt){ dropdown.addEventListener(evt, openMenu); });
+              ['mouseleave','focusout'].forEach(function(evt){ dropdown.addEventListener(evt, scheduleClose); });
+            }
+          })();
+          function bindMy12306Jump(selector, viewPath) {
+            var el = document.querySelector(selector);
+            if (!el) return;
+            el.addEventListener('click', function(e){
+              e.preventDefault();
+              var anchor = document.getElementById('my12306');
+              if (!anchor) return;
+              try {
+                var u = new URL(anchor.href);
+                var sid = u.searchParams.get('sid') || (function(){ try { return localStorage.getItem('SESSION_ID'); } catch(e){ return null; } })();
+                if (sid && !u.searchParams.get('sid')) { u.searchParams.set('sid', sid); }
+                u.hash = '#/otn/' + viewPath;
+                window.location.href = u.toString();
+              } catch(err) {}
+            });
+          }
+          bindMy12306Jump('a[name="g_href"][data-href="view/train_order.html"]', 'view/train_order.html');
+          bindMy12306Jump('a[name="g_href"][data-href="view/passengers.html"]', 'view/passengers.html');
+          bindMy12306Jump('a[name="g_href"][data-href="view/information.html"]', 'view/information.html');
+        } catch (e) {}
+      })();
+    </script>
+</body>
+</html>

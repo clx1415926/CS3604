@@ -26,7 +26,8 @@
   "jest": {
     "testEnvironment": "node",
     "roots": [
-      "<rootDir>/test"
+      "<rootDir>/test",
+      "<rootDir>/../frontend/test"
     ],
     "verbose": true,
     "setupFilesAfterEnv": [

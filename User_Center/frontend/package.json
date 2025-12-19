@@ -6,13 +6,18 @@
   "scripts": {
     "dev": "vite --port 5176",
     "build": "vite build",
-    "serve": "vite preview --port 5177"
+    "serve": "vite preview --port 5177",
+    "test": "vitest --run",
+    "test:coverage": "vitest --run --coverage"
   },
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.4.2",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "@vitejs/plugin-react": "^4.7.0",
     "jsdom": "^27.2.0",
     "typescript": "^5.0.4",
