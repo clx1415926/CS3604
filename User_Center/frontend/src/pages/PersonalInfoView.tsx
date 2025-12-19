@@ -20,7 +20,18 @@ export default function PersonalInfoView() {
   const [newTravelerType, setNewTravelerType] = useState<string>('成人');
   const [additionalMessage, setAdditionalMessage] = useState<string>('');
   useEffect(() => {
-    const getApiBase = () => (window as any).API_BASE || 'http://127.0.0.1:8082/api/v1';
+    let keepAliveTimer: any = null;
+
+    const uniqueBases = (bases: string[]) => Array.from(new Set(bases.filter(Boolean)));
+
+    const getAuthBases = () =>
+      uniqueBases([
+        (window as any).API_BASE,
+        localStorage.getItem('UC_AUTH_BASE') || '',
+        'http://localhost:8080/api/v1',
+        'http://127.0.0.1:8082/api/v1',
+      ]);
+
     const getSid = () => {
       const fromHash = (() => {
         const h = window.location.hash || '';
@@ -35,12 +46,16 @@ export default function PersonalInfoView() {
       const fromSession = sessionStorage.getItem('session_id') || '';
       const fromLocal = localStorage.getItem('SESSION_ID') || '';
       const sid = fromHash || fromSearch || fromSession || fromLocal;
-      if (sid) { try { localStorage.setItem('SESSION_ID', sid); } catch (e) {} }
+      if (sid) {
+        try {
+          localStorage.setItem('SESSION_ID', sid);
+          sessionStorage.setItem('session_id', sid);
+        } catch (e) {}
+      }
       return sid;
     };
     const sid = getSid();
     setSid(sid);
-    const base = getApiBase();
     const tryFetch = async (url: string) => {
       try {
         const r = await fetch(url, { headers: sid ? { Authorization: `Bearer ${sid}` } : {} });
@@ -63,9 +78,48 @@ export default function PersonalInfoView() {
       return false;
     };
     (async () => {
-      const ok = await tryFetch(`${base}/auth/session/account`);
-      setSidValid(ok);
+      if (!sid) {
+        setSidValid(false);
+        try {
+          window.dispatchEvent(new CustomEvent('uc:auth-changed', { detail: { sid: '', logged_in: false } }));
+        } catch (e) {}
+        return;
+      }
+
+      const bases = getAuthBases();
+      for (const base of bases) {
+        const ok = await tryFetch(`${base}/auth/session/account`);
+        if (ok) {
+          setSidValid(true);
+          try {
+            localStorage.setItem('UC_AUTH_BASE', base);
+            window.dispatchEvent(new CustomEvent('uc:auth-changed', { detail: { sid, logged_in: true, base } }));
+          } catch (e) {}
+
+          if (keepAliveTimer) clearInterval(keepAliveTimer);
+          keepAliveTimer = setInterval(async () => {
+            try {
+              const r = await fetch(`${base}/auth/session`, { headers: { Authorization: `Bearer ${sid}` } });
+              if (r.status === 401) {
+                setSidValid(false);
+                window.dispatchEvent(new CustomEvent('uc:auth-changed', { detail: { sid: '', logged_in: false } }));
+              }
+            } catch (e) {}
+          }, 5 * 60 * 1000);
+
+          return;
+        }
+      }
+
+      setSidValid(false);
+      try {
+        window.dispatchEvent(new CustomEvent('uc:auth-changed', { detail: { sid: '', logged_in: false } }));
+      } catch (e) {}
     })();
+
+    return () => {
+      if (keepAliveTimer) clearInterval(keepAliveTimer);
+    };
   }, []);
   useEffect(() => {
     const t = sessionStorage.getItem('UC_ERROR_TEXT') || '';

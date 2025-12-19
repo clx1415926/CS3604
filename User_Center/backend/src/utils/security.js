@@ -103,8 +103,7 @@ function validatePhone(code, number) {
     return cnRegex.test(number);
   }
   if (code === '+852') {
-    // 香港手机号: 5/6/8/9开头的8位数字
-    return /^[5689]\d{7}$/.test(number);
+    return /^\d{8}$/.test(String(number));
   }
   if (code === '+853') {
     // 澳门手机号: 6开头的8位数字

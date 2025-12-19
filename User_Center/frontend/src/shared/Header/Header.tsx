@@ -27,6 +27,8 @@ const SharedHeader: React.FC<Props> = ({
   const [logged, setLogged] = useState(false);
 
   useEffect(() => {
+    const uniqueBases = (bases: string[]) => Array.from(new Set(bases.filter(Boolean)));
+
     const getSid = () => {
       const fromHash = (() => {
         const h = window.location.hash || '';
@@ -44,54 +46,87 @@ const SharedHeader: React.FC<Props> = ({
       if (sid) {
         try {
           localStorage.setItem('SESSION_ID', sid);
+          sessionStorage.setItem('session_id', sid);
         } catch (e) {}
       }
       return sid;
     };
+    const getAuthBases = () =>
+      uniqueBases([
+        (typeof window !== 'undefined' && (window as any).API_BASE) || '',
+        localStorage.getItem('UC_AUTH_BASE') || '',
+        'http://localhost:8080/api/v1',
+        'http://127.0.0.1:8082/api/v1',
+      ]);
 
-    const sid = getSid();
-    setLogged(!!sid);
-
-    if (!sid) {
-      setNick('');
-      return;
-    }
-
-    const apiBase =
-      (typeof window !== 'undefined' && (window as any).API_BASE) ||
-      'http://127.0.0.1:8082/api/v1';
-
-    const fetchProfile = (base: string) =>
-      fetch(`${base}/auth/session/profile`, {
-        headers: { Authorization: 'Bearer ' + sid }
-      })
-        .then(r => r.json().then(d => ({ ok: r.ok, data: d })))
-        .catch(() => ({ ok: false, data: null }));
-
-    const load = async () => {
-      const primary = await fetchProfile(apiBase);
-      const result = primary;
-      if (result.ok && result.data && (result.data.username || result.data.name)) {
-        const displayName =
-          (result.data.username || '') +
-          (result.data.name ? '（' + result.data.name + '）' : '');
-        setNick(displayName);
-        try {
-          const storedNick = displayName;
-          localStorage.setItem('UC_NICK', storedNick);
-          sessionStorage.setItem('UC_NICK', storedNick);
-        } catch (e) {}
-      } else {
-        const name =
-          localStorage.getItem('UC_NICK') ||
-          localStorage.getItem('ACCOUNT_NICK') ||
-          sessionStorage.getItem('UC_NICK') ||
-          '';
-        setNick(name || '用户');
+    const loadNick = async (sid: string) => {
+      if (!sid) {
+        setLogged(false);
+        setNick('');
+        return;
       }
+
+      setLogged(true);
+
+      const fetchProfile = async (base: string) => {
+        try {
+          const r = await fetch(`${base}/auth/session/profile`, {
+            headers: { Authorization: 'Bearer ' + sid },
+          });
+          const d = await r.json().catch(() => null);
+          return { ok: r.ok, data: d };
+        } catch (e) {
+          return { ok: false, data: null };
+        }
+      };
+
+      const bases = getAuthBases();
+      for (const base of bases) {
+        const result = await fetchProfile(base);
+        if (result.ok && result.data && (result.data.username || result.data.name)) {
+          const displayName =
+            (result.data.username || '') +
+            (result.data.name ? '（' + result.data.name + '）' : '');
+          setNick(displayName);
+          try {
+            localStorage.setItem('UC_NICK', displayName);
+            sessionStorage.setItem('UC_NICK', displayName);
+            localStorage.setItem('UC_AUTH_BASE', base);
+          } catch (e) {}
+          return;
+        }
+      }
+
+      const name =
+        localStorage.getItem('UC_NICK') ||
+        localStorage.getItem('ACCOUNT_NICK') ||
+        sessionStorage.getItem('UC_NICK') ||
+        '';
+      setNick(name || '用户');
     };
 
-    load();
+    const sync = () => {
+      const sid = getSid();
+      loadNick(sid);
+    };
+
+    const onStorage = (e: StorageEvent) => {
+      if (!e || (e.key !== 'SESSION_ID' && e.key !== 'UC_NICK' && e.key !== 'UC_AUTH_BASE')) return;
+      sync();
+    };
+
+    const onAuthChanged = () => {
+      sync();
+    };
+
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('uc:auth-changed' as any, onAuthChanged);
+    sync();
+
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('uc:auth-changed' as any, onAuthChanged);
+    };
   }, []);
 
   const computedMyHref = myHref || ((typeof window !== 'undefined' && window.location && window.location.origin)
@@ -105,9 +140,13 @@ const SharedHeader: React.FC<Props> = ({
       sessionStorage.removeItem('session_id');
       localStorage.removeItem('UC_NICK');
       sessionStorage.removeItem('UC_NICK');
+      localStorage.removeItem('UC_AUTH_BASE');
     } catch (e) {}
     setLogged(false);
     setNick('');
+    try {
+      window.dispatchEvent(new CustomEvent('uc:auth-changed', { detail: { sid: '', logged_in: false } }));
+    } catch (e) {}
   };
 
   const styleVars: React.CSSProperties = {

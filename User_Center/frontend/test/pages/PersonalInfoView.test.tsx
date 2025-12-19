@@ -80,3 +80,13 @@ describe('Feature: Personal information view', () => {
     );
   });
 });
+
+test('should show not-logged state when sid is missing', async () => {
+  localStorage.removeItem('SESSION_ID');
+  sessionStorage.removeItem('session_id');
+  render(<PersonalInfoView />);
+  expect(screen.getAllByText('未登录').length).toBeGreaterThan(0);
+  await waitFor(() => {
+    expect((global.fetch as any)).not.toHaveBeenCalled();
+  });
+});

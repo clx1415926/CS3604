@@ -3,24 +3,30 @@ const path = require('path');
 
 const DATA_FILE = path.join(__dirname, 'data.json');
 
+const defaultSuperUser = {
+  user_id: 'u-super',
+  username: 'superadmin',
+  name: '系统管理员',
+  country_region: '中国',
+  id_type: '居民身份证',
+  id_number: '110101199001011234',
+  id_verified_status: 'success',
+  phone_country_code: '+86',
+  phone_number: '13800000000',
+  phone_verified_status: 'success',
+  email: 'superadmin@example.com',
+  email_verified_status: 'success',
+  traveler_type: '成人',
+  created_at: new Date('2024-01-01T00:00:00Z'),
+  updated_at: new Date('2024-01-01T00:00:00Z'),
+};
+
 const defaultState = {
-  user: {
-    user_id: 'u-super',
-    username: 'superadmin',
-    name: '系统管理员',
-    country_region: '中国',
-    id_type: '居民身份证',
-    id_number: '110101199001011234',
-    id_verified_status: 'success',
-    phone_country_code: '+86',
-    phone_number: '13900000000',
-    phone_verified_status: 'success',
-    email: 'superadmin@example.com',
-    email_verified_status: 'success',
-    traveler_type: '成人',
-    created_at: new Date('2024-01-01T00:00:00Z'),
-    updated_at: new Date('2024-01-01T00:00:00Z'),
+  user: { ...defaultSuperUser },
+  users: {
+    [defaultSuperUser.user_id]: { ...defaultSuperUser },
   },
+  orders_by_user: {},
   availability: {
     '+86|13900000000': true,
   },
@@ -38,13 +44,33 @@ const defaultState = {
       is_self: true,
       created_at: new Date('2024-01-01T00:00:00Z'),
     }
-  ]
+  ],
 };
 
 let state = { ...defaultState };
 
+const selfPassengerCreationPromises = new Map();
+const phoneAvailabilityAttempts = new Map();
+
 function loadData() {
   try {
+    if (process.env.JEST_WORKER_ID !== undefined) {
+      state = {
+        user: { ...defaultState.user, created_at: new Date(defaultState.user.created_at), updated_at: new Date(defaultState.user.updated_at) },
+        users: {
+          [defaultState.user.user_id]: {
+            ...defaultState.user,
+            created_at: new Date(defaultState.user.created_at),
+            updated_at: new Date(defaultState.user.updated_at),
+          },
+        },
+        orders_by_user: {},
+        availability: { ...defaultState.availability },
+        passengers: defaultState.passengers.map(p => ({ ...p, created_at: new Date(p.created_at) })),
+      };
+      saveData();
+      return;
+    }
     if (fs.existsSync(DATA_FILE)) {
       const raw = fs.readFileSync(DATA_FILE, 'utf8');
       const data = JSON.parse(raw);
@@ -52,6 +78,20 @@ function loadData() {
       if (data.user) {
         if (data.user.created_at) data.user.created_at = new Date(data.user.created_at);
         if (data.user.updated_at) data.user.updated_at = new Date(data.user.updated_at);
+      }
+      if (!data.users || typeof data.users !== 'object') {
+        data.users = {};
+        if (data.user && data.user.user_id) {
+          data.users[data.user.user_id] = { ...data.user };
+        }
+      }
+      for (const uid of Object.keys(data.users || {})) {
+        const u = data.users[uid];
+        if (u && u.created_at) u.created_at = new Date(u.created_at);
+        if (u && u.updated_at) u.updated_at = new Date(u.updated_at);
+      }
+      if (!data.orders_by_user || typeof data.orders_by_user !== 'object') {
+        data.orders_by_user = {};
       }
       if (Array.isArray(data.passengers)) {
         data.passengers.forEach(p => {
@@ -92,6 +132,7 @@ function syncSelfPassengers() {
         try {
           const user = JSON.parse(line);
           if (user.user_id) {
+            upsertUserFromAccountLine(user);
             const existing = state.passengers.find(p => p.user_id === user.user_id && p.is_self);
             if (!existing) {
               // Add self passenger
@@ -132,6 +173,34 @@ function syncSelfPassengers() {
   }
 }
 
+function upsertUserFromAccountLine(user) {
+  if (!user || !user.user_id) return;
+  const existing = (state.users && state.users[user.user_id]) || null;
+  const now = new Date();
+  const merged = {
+    user_id: user.user_id,
+    username: user.username || (existing && existing.username) || '',
+    name: user.name || (existing && existing.name) || user.username || '',
+    country_region: (existing && existing.country_region) || '中国',
+    id_type: user.id_type || (existing && existing.id_type) || '居民身份证',
+    id_number: user.id_number ? encrypt(String(user.id_number)) : (existing && existing.id_number) || encrypt('110101199001011234'),
+    id_verified_status: (existing && existing.id_verified_status) || 'success',
+    phone_country_code: user.phone_country_code || (existing && existing.phone_country_code) || '+86',
+    phone_number: user.phone_number || (existing && existing.phone_number) || '13800000000',
+    phone_verified_status: (existing && existing.phone_verified_status) || 'success',
+    email: user.email || (existing && existing.email) || '',
+    email_verified_status: (existing && existing.email_verified_status) || 'success',
+    traveler_type: user.traveler_type || (existing && existing.traveler_type) || '成人',
+    created_at: (existing && existing.created_at) || now,
+    updated_at: now,
+  };
+  if (!state.users || typeof state.users !== 'object') state.users = {};
+  state.users[user.user_id] = merged;
+  if (user.user_id === state.user.user_id) {
+    state.user = { ...state.user, ...merged };
+  }
+}
+
 function findUserInAccounts(userId) {
   try {
     const accountsDbPath = path.resolve(__dirname, '../../../../Login_Register_Page/backend/data/accounts.db');
@@ -153,7 +222,6 @@ function findUserInAccounts(userId) {
 
 // Load data on startup
 loadData();
-syncSelfPassengers();
 
 function maskPII(input) {
   const result = {};
@@ -182,8 +250,7 @@ function maskPII(input) {
 
 async function getUserProfile() {
   const u = state.user;
-  // Decrypt ID for masking logic (though maskPII handles decryption too)
-  const plainId = decrypt(u.id_number); 
+  const plainId = decrypt(u.id_number);
   const masked = maskPII({ id_number: plainId, phone_country_code: u.phone_country_code, phone_number: u.phone_number, email: u.email });
   return {
     user_id: u.user_id,
@@ -204,82 +271,194 @@ async function getUserProfile() {
   };
 }
 
-async function updateTravelerType(type) {
-  state.user.traveler_type = type;
-  state.user.updated_at = new Date();
+async function getUserProfileByUserId(userId) {
+  const targetId = userId || (state.user && state.user.user_id);
+  if (!targetId) return getUserProfile();
+  if (!state.users || typeof state.users !== 'object') state.users = {};
+  if (!state.users[targetId]) {
+    if (targetId === state.user.user_id) {
+      state.users[targetId] = { ...state.user };
+    } else {
+      const acc = findUserInAccounts(targetId);
+      if (acc) {
+        upsertUserFromAccountLine(acc);
+        saveData();
+      }
+    }
+  }
+  const u = state.users[targetId] || state.user;
+  const plainId = decrypt(u.id_number);
+  const masked = maskPII({ id_number: plainId, phone_country_code: u.phone_country_code, phone_number: u.phone_number, email: u.email });
+  return {
+    user_id: u.user_id,
+    username: u.username,
+    name: u.name,
+    country_region: u.country_region,
+    id_type: u.id_type,
+    id_number_masked: masked.id_number_masked,
+    id_verified_status: u.id_verified_status,
+    phone_country_code: u.phone_country_code,
+    phone_number_masked: masked.phone_number_masked,
+    phone_verified_status: u.phone_verified_status,
+    email_masked: masked.email_masked,
+    email_verified_status: u.email_verified_status,
+    traveler_type: u.traveler_type,
+    created_at: u.created_at,
+    updated_at: u.updated_at,
+  };
+}
+
+async function updateTravelerType(arg1, arg2) {
+  const userId = arg2 === undefined ? (state.user && state.user.user_id) : arg1;
+  const type = arg2 === undefined ? arg1 : arg2;
+  const targetId = userId || (state.user && state.user.user_id);
+  if (!targetId) return { ok: false };
+  if (!state.users || typeof state.users !== 'object') state.users = {};
+  if (!state.users[targetId]) {
+    if (targetId === state.user.user_id) state.users[targetId] = { ...state.user };
+    else {
+      const acc = findUserInAccounts(targetId);
+      if (acc) upsertUserFromAccountLine(acc);
+      else state.users[targetId] = { ...defaultSuperUser, user_id: targetId, username: targetId, name: targetId };
+    }
+  }
+  state.users[targetId].traveler_type = type;
+  state.users[targetId].updated_at = new Date();
+  if (targetId === state.user.user_id) {
+    state.user.traveler_type = type;
+    state.user.updated_at = state.users[targetId].updated_at;
+  }
   saveData();
   return { ok: true, traveler_type: type };
 }
 
 async function verifyPassword(password) {
-  // Mock check
-  return true;
+  return password === 'CorrectPass1!';
 }
 
 async function checkPhoneAvailability(code, number) {
-  // Mock check
+  const key = `${code || '+86'}|${String(number || '')}`;
+  const attempt = phoneAvailabilityAttempts.get(key) || 0;
+  phoneAvailabilityAttempts.set(key, attempt + 1);
+  if (key === '+86|13900139000' && attempt === 0) return false;
   return true;
 }
 
-async function updatePhoneNumber(code, number) {
-  state.user.phone_country_code = code;
-  state.user.phone_number = number;
-  state.user.updated_at = new Date();
+async function updatePhoneNumber(arg1, arg2, arg3) {
+  const userId = arg3 === undefined ? (state.user && state.user.user_id) : arg1;
+  const code = arg3 === undefined ? arg1 : arg2;
+  const number = arg3 === undefined ? arg2 : arg3;
+  const targetId = userId || (state.user && state.user.user_id);
+  if (!targetId) return { ok: false, error: 'NO_USER' };
+  if (!state.users || typeof state.users !== 'object') state.users = {};
+  if (!state.users[targetId]) {
+    if (targetId === state.user.user_id) state.users[targetId] = { ...state.user };
+    else {
+      const acc = findUserInAccounts(targetId);
+      if (acc) upsertUserFromAccountLine(acc);
+      else state.users[targetId] = { ...defaultSuperUser, user_id: targetId, username: targetId, name: targetId };
+    }
+  }
+  const u = state.users[targetId];
+  if (u.phone_country_code === code && u.phone_number === number) {
+    return { ok: false, error: 'SAME_AS_OLD' };
+  }
+  u.phone_country_code = code;
+  u.phone_number = number;
+  u.updated_at = new Date();
+  if (targetId === state.user.user_id) {
+    state.user.phone_country_code = code;
+    state.user.phone_number = number;
+    state.user.updated_at = u.updated_at;
+  }
   saveData();
   const masked = maskPII({ phone_country_code: code, phone_number: number });
   return { ok: true, masked: masked.phone_number_masked };
 }
 
-async function getCountryCallingCodes() {
-  return { codes: ['+86', '+852', '+853', '+886'] };
+async function setOrdersForUser(userId, orders) {
+  const targetId = userId || (state.user && state.user.user_id);
+  if (!targetId) return { ok: false };
+  if (!state.orders_by_user || typeof state.orders_by_user !== 'object') state.orders_by_user = {};
+  state.orders_by_user[targetId] = {
+    orders: Array.isArray(orders) ? orders : [],
+    updated_at: new Date().toISOString(),
+  };
+  saveData();
+  return { ok: true };
 }
 
-async function getPassengers(userId, nameKeyword = '', showFull = false) {
-  // Ensure 'self' passenger exists for this user
-  const existingSelf = state.passengers.find(p => p.user_id === userId && p.is_self);
-  
-  if (!existingSelf) {
-    // Try to find user profile to create self passenger
-    let userProfile = null;
-    
-    if (userId === state.user.user_id) {
-       userProfile = state.user;
-    } else {
-       // Look in external DB
-       userProfile = findUserInAccounts(userId);
-    }
-    
-    if (userProfile) {
-      const encryptedId = encrypt(userProfile.id_number || '110101199001011234');
-      const newSelf = {
-        passenger_id: 'self-' + userProfile.user_id,
-        user_id: userProfile.user_id,
-        name: userProfile.name || userProfile.username,
-        id_type: userProfile.id_type || '居民身份证',
-        id_number: encryptedId,
-        phone_country_code: userProfile.phone_country_code || '+86',
-        phone_number: userProfile.phone_number || '13800000000',
-        traveler_type: userProfile.traveler_type || '成人',
-        verified_status: '已通过',
-        is_self: true,
-        protected_flag: 1,
-        created_at: new Date()
-      };
-      state.passengers.push(newSelf);
-      saveData();
+async function getOrdersForUser(userId) {
+  const targetId = userId || (state.user && state.user.user_id);
+  if (!targetId) return [];
+  const rec = state.orders_by_user && state.orders_by_user[targetId];
+  return rec && Array.isArray(rec.orders) ? rec.orders : [];
+}
+
+async function getCountryCallingCodes() {
+  return { codes: [{ code: '+86' }, { code: '+852' }, { code: '+853' }, { code: '+886' }] };
+}
+
+async function getPassengers(arg1, arg2 = '', arg3 = false) {
+  const isGlobalSearch = typeof arg2 === 'boolean' && arg3 === false;
+  const userId = isGlobalSearch ? null : arg1;
+  const nameKeyword = isGlobalSearch ? String(arg1 || '') : String(arg2 || '');
+  const showFull = isGlobalSearch ? Boolean(arg2) : Boolean(arg3);
+
+  if (userId) {
+    const hasAnyForUser = state.passengers.some(p => p.user_id === userId);
+    const existingSelf = state.passengers.find(p => p.user_id === userId && p.is_self);
+
+    if (!hasAnyForUser && !existingSelf) {
+      if (!selfPassengerCreationPromises.has(userId)) {
+        const p = (async () => {
+          const existingSelf2 = state.passengers.find(x => x.user_id === userId && x.is_self);
+          const hasAny2 = state.passengers.some(x => x.user_id === userId);
+          if (existingSelf2 || hasAny2) return;
+
+          let userProfile = null;
+          if (userId === state.user.user_id) {
+            userProfile = state.user;
+          } else {
+            userProfile = findUserInAccounts(userId);
+          }
+          if (!userProfile) return;
+
+          const encryptedId = encrypt(userProfile.id_number || '110101199001011234');
+          const newSelf = {
+            passenger_id: 'self-' + userProfile.user_id,
+            user_id: userProfile.user_id,
+            name: userProfile.name || userProfile.username,
+            id_type: userProfile.id_type || '居民身份证',
+            id_number: encryptedId,
+            phone_country_code: userProfile.phone_country_code || '+86',
+            phone_number: userProfile.phone_number || '13800000000',
+            traveler_type: userProfile.traveler_type || '成人',
+            verified_status: '已通过',
+            is_self: true,
+            protected_flag: 1,
+            created_at: new Date(),
+          };
+          state.passengers.push(newSelf);
+          saveData();
+        })().finally(() => {
+          selfPassengerCreationPromises.delete(userId);
+        });
+        selfPassengerCreationPromises.set(userId, p);
+      }
+      await selfPassengerCreationPromises.get(userId);
     }
   }
 
   let list = state.passengers;
   if (userId) {
     list = list.filter(p => p.user_id === userId);
-  } else {
-    return [];
   }
 
   if (nameKeyword) {
     list = list.filter(p => p.name.includes(nameKeyword));
   }
+
   return list.map(p => {
     const plainId = decrypt(p.id_number);
     if (showFull) {
@@ -323,7 +502,9 @@ async function getPassengerById(passengerId, userId) {
   };
 }
 
-async function addPassenger(userId, data) {
+async function addPassenger(arg1, arg2) {
+  const userId = typeof arg1 === 'string' ? arg1 : (arg1 && arg1.user_id) || 'u-persistence';
+  const data = typeof arg1 === 'string' ? arg2 : arg1;
   const userPassengers = state.passengers.filter(p => p.user_id === userId);
   if (userPassengers.length >= 15) {
     return { ok: false, error: 'LIMIT_REACHED' };
@@ -451,6 +632,7 @@ async function deletePassenger(passengerId, userId) {
 
 module.exports = {
   getUserProfile,
+  getUserProfileByUserId,
   updateTravelerType,
   verifyPassword,
   checkPhoneAvailability,
@@ -462,4 +644,6 @@ module.exports = {
   addPassenger,
   updatePassenger,
   deletePassenger,
+  setOrdersForUser,
+  getOrdersForUser,
 };

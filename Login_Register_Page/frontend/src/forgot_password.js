@@ -18,7 +18,16 @@ function switchTab(tab) {
   [tabPhone, tabEmail, tabFace].forEach(t => t.classList.remove('active'));
   if (tab === 'phone') { tabPhoneBtn.classList.add('active'); tabPhone.classList.add('active'); }
   if (tab === 'email') { tabEmailBtn.classList.add('active'); tabEmail.classList.add('active'); }
-  if (tab === 'face') { tabFaceBtn.classList.add('active'); tabFace.classList.add('active'); }
+  if (tab === 'face') {
+    tabFaceBtn.classList.add('active');
+    tabFace.classList.add('active');
+    startFace();
+  } else {
+    if (pollTimer) {
+      clearInterval(pollTimer);
+      pollTimer = null;
+    }
+  }
 }
 
 tabPhoneBtn.addEventListener('click', () => switchTab('phone'));
@@ -209,8 +218,7 @@ async function pollFaceStatus() {
   } catch (e) { /* ignore transient errors */ }
 }
 
-// 开始时加载一次二维码
-startFace();
+
 
 mockScan.addEventListener('click', async () => {
   if (!faceQrId) return;

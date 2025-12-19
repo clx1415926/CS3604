@@ -28,10 +28,12 @@ export default function OrderCenter() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [sid, setSid] = useState('');
   const [highlightId, setHighlightId] = useState('');
   const [cancelTarget, setCancelTarget] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const orderRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const renewTimerRef = useRef<number | null>(null);
   const [activeTab, setActiveTab] = useState<'unfinished' | 'upcoming' | 'history'>('unfinished');
   const today = formatDate(new Date());
   const [startDate, setStartDate] = useState(today);
@@ -57,6 +59,52 @@ export default function OrderCenter() {
     return sid;
   };
 
+  const markExpired = (reason: string) => {
+    const text = '登录已过期，请重新登录';
+    console.info({ ts: new Date().toISOString(), event: 'UC_SESSION_EXPIRED', reason });
+    setError(text);
+    try { sessionStorage.setItem('UC_ERROR_TEXT', text); } catch (e) {}
+    try { window.dispatchEvent(new CustomEvent('uc:auth-changed', { detail: { sid: '', logged_in: false } })); } catch (e) {}
+  };
+
+  const renewSession = async (reason: string) => {
+    const sidNow = getSid();
+    setSid(sidNow);
+    if (!sidNow) {
+      markExpired('missing_sid');
+      return false;
+    }
+
+    const bases = ['http://localhost:8080/api/v1', 'http://localhost:8081/api/v1', 'http://127.0.0.1:8082/api/v1'];
+    let sawUnauthorized = false;
+    for (const base of bases) {
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 2500);
+      try {
+        const r = await fetch(`${base}/auth/session`, {
+          headers: { Authorization: `Bearer ${sidNow}` },
+          signal: controller.signal,
+        });
+        if (r.status === 401) {
+          sawUnauthorized = true;
+          continue;
+        }
+        if (r.ok) {
+          console.info({ ts: new Date().toISOString(), event: 'UC_SESSION_RENEW_OK', base, reason });
+          try { localStorage.setItem('UC_AUTH_BASE', base); } catch (e) {}
+          try { window.dispatchEvent(new CustomEvent('uc:auth-changed', { detail: { sid: sidNow, logged_in: true, base } })); } catch (e) {}
+          return true;
+        }
+      } catch (e) {
+      } finally {
+        clearTimeout(timeout);
+      }
+    }
+
+    if (sawUnauthorized) markExpired('renew_unauthorized');
+    return false;
+  };
+
   useEffect(() => {
     // Extract orderId from hash query params
     const hash = window.location.hash;
@@ -66,9 +114,21 @@ export default function OrderCenter() {
     }
 
     // Ensure SID is captured from hash/search and persisted locally
-    getSid();
+    const sidNow = getSid();
+    setSid(sidNow);
+
+    renewSession('mount');
+    if (renewTimerRef.current) window.clearInterval(renewTimerRef.current);
+    renewTimerRef.current = window.setInterval(() => {
+      renewSession('interval');
+    }, 5 * 60 * 1000);
 
     fetchOrders();
+
+    return () => {
+      if (renewTimerRef.current) window.clearInterval(renewTimerRef.current);
+      renewTimerRef.current = null;
+    };
   }, []);
 
   useEffect(() => {
@@ -90,26 +150,28 @@ export default function OrderCenter() {
     try {
       // Get session ID
       const sid = getSid();
+      setSid(sid);
       if (!sid) {
         setError('请先登录');
         setLoading(false);
         return;
       }
 
-      const res = await fetch('http://localhost:3001/api/v1/orders', {
+      await renewSession('fetch_orders');
+
+      const res = await fetch('http://localhost:8083/api/v1/orders', {
         headers: {
           'Authorization': `Bearer ${sid}`
         }
       });
 
       if (!res.ok) {
-        if (res.status === 401) setError('登录已过期');
+        if (res.status === 401) markExpired('orders_401');
         else setError('获取订单失败');
       } else {
         const data = await res.json();
         const list = data.orders || [];
-        // Debug: 查看订单数据
-        console.log('📦 订单数据:', JSON.stringify(list, null, 2));
+        console.info({ ts: new Date().toISOString(), event: 'UC_ORDERS_LOADED', count: Array.isArray(list) ? list.length : 0 });
         // Sort by booked_at desc
         const sorted = list.sort((a: Order, b: Order) => 
           new Date(b.booked_at).getTime() - new Date(a.booked_at).getTime()
@@ -125,13 +187,24 @@ export default function OrderCenter() {
 
   async function doCancel(id: string) {
     const sid = getSid();
+    setSid(sid);
+    if (!sid) {
+      markExpired('cancel_missing_sid');
+      return;
+    }
+    await renewSession('cancel');
     const r = await fetch(`http://localhost:3001/api/v1/orders/${id}/cancel`, { method: 'POST', headers: sid ? { Authorization: 'Bearer ' + sid } : {} });
     if (r.ok) {
       setCancelTarget(null);
       setShowSuccess(true);
       await fetchOrders();
     } else {
-      alert('取消失败');
+      if (r.status === 401) {
+        setCancelTarget(null);
+        markExpired('cancel_401');
+      } else {
+        alert('取消失败');
+      }
     }
   }
 
@@ -173,7 +246,21 @@ export default function OrderCenter() {
     .filter(o => matchQuery(o));
 
   if (loading) return <div style={{ padding: 20 }}>加载中...</div>;
-  if (error) return <div style={{ padding: 20, color: 'red' }}>{error}</div>;
+  if (error) {
+    const toLogin = () => {
+      try { sessionStorage.setItem('UC_RETURN_URL', window.location.href); } catch (e) {}
+      window.location.href = 'http://localhost:8080/login.html';
+    };
+    return (
+      <div style={{ padding: 20, color: 'red' }}>
+        <div style={{ marginBottom: 10 }}>{error}</div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button style={{ padding: '6px 10px', border: '1px solid #dcdfe6', borderRadius: 4, cursor: 'pointer' }} onClick={() => { setError(''); fetchOrders(); }}>重试</button>
+          <button style={{ padding: '6px 10px', background: '#ff8a00', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }} onClick={toLogin}>去登录</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="order-center">
@@ -270,7 +357,7 @@ export default function OrderCenter() {
                         取消订单
                       </button>
                       <a 
-                        href={`http://localhost:5174/#payment?order_id=${order.order_id}`} 
+                        href={sid ? `http://localhost:5174/#payment?order_id=${order.order_id}&sid=${encodeURIComponent(sid)}` : `http://localhost:5174/#payment?order_id=${order.order_id}`} 
                         style={{ padding: '5px 9px', background: '#ff8a00', border: 'none', borderRadius: 4, cursor: 'pointer', color: '#fff', textDecoration: 'none', fontSize: '13px', display: 'inline-block' }}
                       >
                         去支付

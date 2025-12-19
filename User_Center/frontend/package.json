@@ -5,6 +5,7 @@
   "main": "src/index.tsx",
   "scripts": {
     "dev": "vite --port 5176",
+    "test": "vitest --run",
     "build": "vite build",
     "serve": "vite preview --port 5177",
     "test": "vitest --run",

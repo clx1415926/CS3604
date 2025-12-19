@@ -11,6 +11,44 @@ if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 const dbPath = path.join(dataDir, 'accounts.db');
 const useMemory = process.env.NODE_ENV === 'test';
 
+function isLineJson(str) {
+  try {
+    JSON.parse(str);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function ensureValidNedbFile(filePath) {
+  try {
+    if (!fs.existsSync(filePath)) return;
+    const content = fs.readFileSync(filePath, 'utf8');
+    const lines = content.split(/\r?\n/).filter(l => l.trim().length > 0);
+    if (lines.length === 0) return;
+    for (const line of lines) {
+      if (!isLineJson(line)) {
+        const ts = new Date().toISOString().replace(/[:.]/g, '-');
+        const bak = `${filePath}.corrupt-${ts}`;
+        try { fs.renameSync(filePath, bak); } catch (e) { try { fs.copyFileSync(filePath, bak); } catch (_) {} }
+        fs.writeFileSync(filePath, '', 'utf8');
+        return;
+      }
+    }
+  } catch (e) {
+    try {
+      const ts = new Date().toISOString().replace(/[:.]/g, '-');
+      const bak = `${filePath}.corrupt-${ts}`;
+      if (fs.existsSync(filePath)) {
+        try { fs.renameSync(filePath, bak); } catch (e2) { try { fs.copyFileSync(filePath, bak); } catch (_) {} }
+      }
+      fs.writeFileSync(filePath, '', 'utf8');
+    } catch (_) {}
+  }
+}
+
+if (!useMemory) ensureValidNedbFile(dbPath);
+
 const accounts = useMemory
   ? Datastore.create({ inMemoryOnly: true })
   : Datastore.create({ filename: dbPath, autoload: true });

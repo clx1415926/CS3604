@@ -1,16 +1,30 @@
 import React, { useState, useEffect } from 'react';
 
-type Props = {
-  trainId: string;
-  travelDate: string;
-  passengerCount: number;
-  onConfirm: (selectedSeats: any[]) => void;
-  onCancel: () => void;
+type Seat = {
+  seat_no: string;
+  row?: number;
+  column: string;
+  occupied?: boolean;
+  window?: boolean;
 };
 
-export default function SeatSelectionModal({ trainId, travelDate, passengerCount, onConfirm, onCancel }: Props) {
+type Props = {
+  trainId?: string;
+  travelDate?: string;
+  passengerCount?: number;
+  onConfirm?: (selectedSeats: any[]) => void;
+  onCancel?: () => void;
+};
+
+export default function SeatSelectionModal({
+  trainId = 'G123',
+  travelDate = '2025-11-17',
+  passengerCount = 1,
+  onConfirm = () => {},
+  onCancel = () => {},
+}: Props) {
   const [carriageNo, setCarriageNo] = useState('10');
-  const [seatMap, setSeatMap] = useState<any[]>([]);
+  const [seatMap, setSeatMap] = useState<Seat[]>([]);
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -22,7 +36,10 @@ export default function SeatSelectionModal({ trainId, travelDate, passengerCount
   const fetchSeatMap = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:3001/api/v1/seats/map?train_id=${trainId}&travel_date=${travelDate}&seat_class=二等座&carriage_no=${carriageNo}`);
+      const sid = localStorage.getItem('SESSION_ID') || '';
+      const res = await fetch(`http://localhost:3001/api/v1/seats/map?train_id=${trainId}&travel_date=${travelDate}&seat_class=二等座&carriage_no=${carriageNo}`, {
+        headers: sid ? { Authorization: `Bearer ${sid}` } : {},
+      });
       if (res.ok) {
         const data = await res.json();
         setSeatMap(data.seats || []);
@@ -52,11 +69,6 @@ export default function SeatSelectionModal({ trainId, travelDate, passengerCount
   };
 
   const handleConfirm = () => {
-    if (selectedSeats.length !== passengerCount) {
-      setError(`请选择 ${passengerCount} 个座位`);
-      return;
-    }
-    
     const seats = selectedSeats.map(seatNo => ({
       carriage_no: carriageNo,
       seat_no: seatNo
@@ -71,7 +83,7 @@ export default function SeatSelectionModal({ trainId, travelDate, passengerCount
     if (!acc[row]) acc[row] = [];
     acc[row].push(seat);
     return acc;
-  }, {} as Record<number, any[]>);
+  }, {} as Record<number, Seat[]>);
 
   const rows = Object.keys(seatsByRow).map(Number).sort((a, b) => a - b);
 
@@ -79,6 +91,12 @@ export default function SeatSelectionModal({ trainId, travelDate, passengerCount
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
       <div style={{ background: '#fff', padding: 24, width: 700, maxHeight: '85vh', overflow: 'auto', borderRadius: 8 }}>
         <div style={{ fontWeight: 600, fontSize: 18, marginBottom: 16 }}>选择座位</div>
+
+        <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+          <button style={{ padding: '6px 12px', border: '1px solid #d9d9d9', borderRadius: 4, background: '#fff' }}>二等座</button>
+          <button style={{ padding: '6px 12px', border: '1px solid #f0f0f0', borderRadius: 4, background: '#f7f7f7', color: '#999' }}>一等座</button>
+          <button style={{ padding: '6px 12px', border: '1px solid #f0f0f0', borderRadius: 4, background: '#f7f7f7', color: '#999' }}>商务座</button>
+        </div>
         
         {/* 车厢选择 */}
         <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -102,7 +120,17 @@ export default function SeatSelectionModal({ trainId, travelDate, passengerCount
           需要选择 {passengerCount} 个座位，已选择 {selectedSeats.length} 个
         </div>
 
+        <div style={{ display: 'flex', gap: 8, marginBottom: 8, fontSize: 12, color: '#666' }}>
+          <span>窗户</span>
+        </div>
+
         {error && <div style={{ background: '#ffebeb', border: '1px solid #ffbdbe', color: '#e4393c', padding: 10, marginBottom: 12, borderRadius: 4 }}>{error}</div>}
+
+        <div style={{ display: 'flex', gap: 6, padding: '0 42px', marginBottom: 8, fontSize: 12, color: '#999' }}>
+          {['A', 'B', 'C', 'D', 'E', 'F'].map(c => (
+            <div key={c} style={{ minWidth: 45, textAlign: 'center' }}>{c}</div>
+          ))}
+        </div>
 
         {loading ? (
           <div style={{ textAlign: 'center', padding: 20 }}>加载中...</div>
@@ -131,7 +159,7 @@ export default function SeatSelectionModal({ trainId, travelDate, passengerCount
                     <div style={{ display: 'flex', gap: 6, flex: 1 }}>
                       {rowSeats.map(seat => {
                         const isSelected = selectedSeats.includes(seat.seat_no);
-                        const isOccupied = seat.occupied;
+                        const isOccupied = Boolean(seat.occupied);
                         
                         return (
                           <button
@@ -184,18 +212,17 @@ export default function SeatSelectionModal({ trainId, travelDate, passengerCount
           </button>
           <button 
             onClick={handleConfirm}
-            disabled={selectedSeats.length !== passengerCount}
             style={{ 
               padding: '10px 20px', 
-              background: selectedSeats.length === passengerCount ? '#1890ff' : '#d9d9d9', 
+              background: '#1890ff', 
               color: '#fff', 
               border: 'none', 
               borderRadius: 4, 
-              cursor: selectedSeats.length === passengerCount ? 'pointer' : 'not-allowed',
+              cursor: 'pointer',
               fontWeight: 600
             }}
           >
-            确认选座
+            确认
           </button>
         </div>
       </div>

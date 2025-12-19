@@ -5,12 +5,17 @@
   "main": "src/app.js",
   "scripts": {
     "start": "node src/server.js",
-    "test": "jest"
+    "test": "jest",
+    "db:init": "node src/db/cli.js init",
+    "db:migrate": "node src/db/cli.js migrate",
+    "db:reset": "node src/db/cli.js reset",
+    "db:backup": "node src/db/cli.js backup"
   },
   "dependencies": {
     "express": "^4.18.2",
     "cors": "^2.8.5",
     "jest": "^30.2.0",
+    "sqlite3": "^5.1.7",
     "supertest": "^7.1.4"
   }
 }

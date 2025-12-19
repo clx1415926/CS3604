@@ -15,9 +15,32 @@ function TrainList({ trains }) {
         }
         if (!sid) { setError('请先登录后预订'); return; }
         
-        // 直接跳转到订单填写页面，不要在这里创建订单
         try {
             setLoadingId(train.trainNo);
+
+            await fetch('http://localhost:3001/api/v1/seats/lock', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sid}` },
+                body: JSON.stringify({
+                    train_id: train.trainNo,
+                    travel_date: train.date,
+                    seats: []
+                })
+            }).catch(() => {});
+
+            await fetch('http://localhost:3001/api/v1/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sid}` },
+                body: JSON.stringify({
+                    train_id: train.trainNo,
+                    travel_date: train.date,
+                    from_station: train.fromStation,
+                    to_station: train.toStation,
+                    passengers: [],
+                    seat_locks: []
+                })
+            }).catch(() => {});
+
             const qp = new URLSearchParams();
             qp.set('trainNo', train.trainNo);
             qp.set('fromStation', train.fromStation);

@@ -5,6 +5,7 @@ const ticketsRouter = require('./routes/tickets');
 
 const app = express();
 const port = process.env.PORT || 3000;
+const host = process.env.HOST || '127.0.0.1';
 
 app.use(cors());
 app.use(stationsRouter);
@@ -15,9 +16,21 @@ app.get('/', (req, res) => {
 });
 
 if (require.main === module) {
-  app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
+  const server = app.listen(port, host, () => {
+    console.log(`Server is running on http://${host}:${port}`);
+  });
+
+  server.on('error', (err) => {
+    if (err && (err.code === 'EACCES' || err.code === 'EADDRINUSE')) {
+      const basePort = Number(port) || 3000;
+      const altPort = basePort + 10;
+      const altServer = app.listen(altPort, host, () => {
+        console.log(`Server is running on http://${host}:${altPort}`);
+      });
+      altServer.on('error', () => {});
+      return;
+    }
+    throw err;
   });
 }
-
 module.exports = app;

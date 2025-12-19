@@ -35,6 +35,26 @@
 (function() {
     const USER_CENTER_API = 'http://localhost:8083/api/v1/passengers?showFull=true';
 
+    function getSid() {
+        var fromHash = (function(){
+            var h = window.location.hash || '';
+            var m = h.match(/sid=([^&]+)/);
+            return m ? decodeURIComponent(m[1]) : '';
+        })();
+        var fromSearch = (function(){
+            var s = window.location.search || '';
+            var m = s.match(/sid=([^&]+)/);
+            return m ? decodeURIComponent(m[1]) : '';
+        })();
+        var fromLocal = '';
+        try { fromLocal = localStorage.getItem('SESSION_ID') || ''; } catch(e) { fromLocal = ''; }
+        var sid = fromHash || fromSearch || fromLocal;
+        if (sid) {
+            try { localStorage.setItem('SESSION_ID', sid); } catch(e) {}
+        }
+        return sid;
+    }
+
     // Map User_Center types to 12306 codes/names
     const ID_TYPE_MAP = {
         '居民身份证': { code: '1', name: '二代身份证' },
@@ -57,12 +77,18 @@
     async function fetchPassengers() {
         try {
             console.log('Fetching passengers from User Center...');
-            const response = await fetch(USER_CENTER_API);
+            const sid = getSid();
+            const response = await fetch(USER_CENTER_API, sid ? { headers: { Authorization: 'Bearer ' + sid } } : {});
             if (response.ok) {
                 const data = await response.json();
                 console.log('Passengers fetched:', data.passengers);
                 renderPassengerList(data.passengers);
             } else {
+                if (response.status === 401 || response.status === 403) {
+                    try { alert('登录已过期，请重新登录'); } catch(e) {}
+                    try { window.location.href = 'http://localhost:8082/login.html'; } catch(e) {}
+                    return;
+                }
                 console.error('Failed to fetch passengers:', await response.text());
             }
         } catch (e) {
