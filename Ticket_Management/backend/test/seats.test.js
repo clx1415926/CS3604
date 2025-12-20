@@ -6,8 +6,13 @@
 
 const request = require('supertest');
 const { app } = require('../src/app');
+const { getDb, get, resetDb } = require('../src/db');
 
 describe('Feature: Seats API', () => {
+  beforeEach(async () => {
+    await resetDb();
+  });
+
   it('should return seat map with stable structure', async () => {
     // 场景：获取座位图（座位占用是随机的，但结构/数量应稳定）
     const res = await request(app)
@@ -63,8 +68,10 @@ describe('Feature: Seats API', () => {
     expect(res.body.locks).toHaveLength(2);
 
     const [l1, l2] = res.body.locks;
-    expect(l1.lock_token).toMatch(/^lk-\d{3}$/);
-    expect(l2.lock_token).toMatch(/^lk-\d{3}$/);
+    expect(typeof l1.lock_token).toBe('string');
+    expect(l1.lock_token.length).toBeGreaterThan(0);
+    expect(typeof l2.lock_token).toBe('string');
+    expect(l2.lock_token.length).toBeGreaterThan(0);
     expect(l1).toMatchObject({ carriage_no: '10', seat_no: '1A' });
     expect(l2).toMatchObject({ carriage_no: '10', seat_no: '1B' });
     expect(typeof l1.expires_at).toBe('string');
@@ -87,5 +94,95 @@ describe('Feature: Seats API', () => {
       seat_no: '16A',
     });
   });
-});
 
+  it('should persist seat lock in database and reflect in seat map', async () => {
+    const authHeader = { Authorization: 'Bearer sid-u-seat1' };
+
+    const lockRes = await request(app)
+      .post('/api/v1/seats/lock')
+      .set(authHeader)
+      .send({
+        train_id: 'G123',
+        travel_date: '2025-11-17',
+        seats: [{ carriage_no: '10', seat_no: '1A' }],
+      })
+      .expect(200);
+
+    const token = lockRes.body.locks[0].lock_token;
+
+    const db = await getDb();
+    const row = await get(
+      db,
+      `SELECT lock_token FROM seat_locks WHERE train_code = ? AND travel_date = ? AND carriage_no = ? AND seat_no = ?`,
+      ['G123', '2025-11-17', '10', '1A']
+    );
+    expect(row).toBeTruthy();
+    expect(String(row.lock_token)).toBe(String(token));
+
+    const mapRes = await request(app)
+      .get('/api/v1/seats/map')
+      .query({ train_id: 'G123', travel_date: '2025-11-17', seat_class: '二等座', carriage_no: '10' })
+      .expect(200);
+    const seat = mapRes.body.seats.find((s) => s.seat_no === '1A');
+    expect(seat).toBeTruthy();
+    expect(seat.occupied).toBe(true);
+    expect(seat.status).toBe('locked');
+  });
+
+  it('should make locked seat immediately unavailable to other users', async () => {
+    const user1 = { Authorization: 'Bearer sid-u-seat2' };
+    const user2 = { Authorization: 'Bearer sid-u-seat3' };
+
+    await request(app)
+      .post('/api/v1/seats/lock')
+      .set(user1)
+      .send({ train_id: 'G123', travel_date: '2025-11-17', seats: [{ carriage_no: '10', seat_no: '1B' }] })
+      .expect(200);
+
+    await request(app)
+      .post('/api/v1/seats/lock')
+      .set(user2)
+      .send({ train_id: 'G123', travel_date: '2025-11-17', seats: [{ carriage_no: '10', seat_no: '1B' }] })
+      .expect(409);
+  });
+
+  it('should keep seat map status consistent across refreshes', async () => {
+    const authHeader = { Authorization: 'Bearer sid-u-seat4' };
+    await request(app)
+      .post('/api/v1/seats/lock')
+      .set(authHeader)
+      .send({ train_id: 'G123', travel_date: '2025-11-17', seats: [{ carriage_no: '10', seat_no: '1C' }] })
+      .expect(200);
+
+    const map1 = await request(app)
+      .get('/api/v1/seats/map')
+      .query({ train_id: 'G123', travel_date: '2025-11-17', seat_class: '二等座', carriage_no: '10' })
+      .expect(200);
+    const map2 = await request(app)
+      .get('/api/v1/seats/map')
+      .query({ train_id: 'G123', travel_date: '2025-11-17', seat_class: '二等座', carriage_no: '10' })
+      .expect(200);
+
+    const s1 = map1.body.seats.find((s) => s.seat_no === '1C');
+    const s2 = map2.body.seats.find((s) => s.seat_no === '1C');
+    expect(s1.occupied).toBe(true);
+    expect(s2.occupied).toBe(true);
+    expect(s1.status).toBe('locked');
+    expect(s2.status).toBe('locked');
+  });
+
+  it('should handle concurrent lock requests consistently', async () => {
+    const r1 = request(app)
+      .post('/api/v1/seats/lock')
+      .set({ Authorization: 'Bearer sid-u-seat5' })
+      .send({ train_id: 'G123', travel_date: '2025-11-17', seats: [{ carriage_no: '10', seat_no: '2A' }] });
+    const r2 = request(app)
+      .post('/api/v1/seats/lock')
+      .set({ Authorization: 'Bearer sid-u-seat6' })
+      .send({ train_id: 'G123', travel_date: '2025-11-17', seats: [{ carriage_no: '10', seat_no: '2A' }] });
+
+    const settled = await Promise.allSettled([r1, r2]);
+    const codes = settled.map((s) => (s.status === 'fulfilled' ? s.value.status : 0)).sort();
+    expect(codes).toEqual([200, 409]);
+  });
+});

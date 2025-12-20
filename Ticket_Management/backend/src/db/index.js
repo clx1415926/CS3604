@@ -16,11 +16,16 @@ function defaultDbPath() {
 
 let dbPromise;
 let initPromise;
+let txChain = Promise.resolve();
 
 function openDb(dbPath) {
   return new Promise((resolve, reject) => {
     const db = new sqlite3.cached.Database(dbPath, (err) => {
       if (err) return reject(err);
+      try {
+        db.serialize();
+        db.configure('busyTimeout', 5000);
+      } catch (e) {}
       resolve(db);
     });
   });
@@ -63,19 +68,25 @@ function run(db, sql, params) {
 }
 
 async function withTransaction(db, fn) {
-  await exec(db, 'BEGIN IMMEDIATE');
-  try {
-    const result = await fn();
-    await exec(db, 'COMMIT');
-    return result;
-  } catch (e) {
+  const runTx = async () => {
+    await exec(db, 'BEGIN IMMEDIATE');
     try {
-      await exec(db, 'ROLLBACK');
-    } catch (e2) {
-      console.error('[ticket-management][db] rollback failed', e2);
+      const result = await fn();
+      await exec(db, 'COMMIT');
+      return result;
+    } catch (e) {
+      try {
+        await exec(db, 'ROLLBACK');
+      } catch (e2) {
+        console.error('[ticket-management][db] rollback failed', e2);
+      }
+      throw e;
     }
-    throw e;
-  }
+  };
+
+  const p = txChain.then(runTx);
+  txChain = p.catch(() => {});
+  return p;
 }
 
 async function initDb() {
@@ -88,10 +99,12 @@ async function initDb() {
         'PRAGMA foreign_keys = ON;',
         'PRAGMA journal_mode = WAL;',
         'PRAGMA synchronous = NORMAL;',
+        'PRAGMA busy_timeout = 5000;',
         `CREATE TABLE IF NOT EXISTS orders (
           order_id TEXT PRIMARY KEY,
           user_key TEXT NOT NULL,
           booked_at TEXT NOT NULL,
+          travel_date TEXT,
           train_code TEXT NOT NULL,
           from_station TEXT NOT NULL,
           to_station TEXT NOT NULL,
@@ -125,14 +138,52 @@ async function initDb() {
           FOREIGN KEY(order_id) REFERENCES orders(order_id) ON DELETE CASCADE
         );`,
         'CREATE INDEX IF NOT EXISTS idx_order_seats_order ON order_seats(order_id);',
+        'CREATE INDEX IF NOT EXISTS idx_order_seats_carriage_seat ON order_seats(carriage_no, seat_no);',
         `CREATE TABLE IF NOT EXISTS cancel_stats (
           user_key TEXT NOT NULL,
           date TEXT NOT NULL,
           count INTEGER NOT NULL,
           PRIMARY KEY(user_key, date)
         );`,
+        `CREATE TABLE IF NOT EXISTS seat_locks (
+          train_code TEXT NOT NULL,
+          travel_date TEXT NOT NULL,
+          carriage_no TEXT NOT NULL,
+          seat_no TEXT NOT NULL,
+          user_key TEXT NOT NULL,
+          lock_token TEXT NOT NULL,
+          expires_at TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          PRIMARY KEY(train_code, travel_date, carriage_no, seat_no)
+        );`,
+        'CREATE INDEX IF NOT EXISTS idx_seat_locks_expires ON seat_locks(expires_at);',
+        'CREATE INDEX IF NOT EXISTS idx_seat_locks_user ON seat_locks(user_key);',
+        `CREATE TABLE IF NOT EXISTS seat_events (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          ts TEXT NOT NULL,
+          user_key TEXT,
+          action TEXT NOT NULL,
+          train_code TEXT,
+          travel_date TEXT,
+          carriage_no TEXT,
+          seat_no TEXT,
+          order_id TEXT,
+          lock_token TEXT
+        );`,
+        'CREATE INDEX IF NOT EXISTS idx_seat_events_ts ON seat_events(ts);',
+        'CREATE INDEX IF NOT EXISTS idx_seat_events_train_date ON seat_events(train_code, travel_date);',
       ].join('\n')
     );
+
+    const orderCols = await all(db, `PRAGMA table_info(orders);`);
+    const hasTravelDate = Array.isArray(orderCols) && orderCols.some((c) => c && c.name === 'travel_date');
+    if (!hasTravelDate) {
+      await exec(db, `ALTER TABLE orders ADD COLUMN travel_date TEXT;`);
+      await exec(db, 'CREATE INDEX IF NOT EXISTS idx_orders_user_travel_date ON orders(user_key, travel_date);');
+    }
+
+    await exec(db, 'CREATE INDEX IF NOT EXISTS idx_orders_train_date_status ON orders(train_code, travel_date, status);');
 
     const resetOnStart = (process.env.DB_RESET_ON_START || '1') === '1';
     const isTest = process.env.NODE_ENV === 'test' || Boolean(process.env.JEST_WORKER_ID);
@@ -140,6 +191,8 @@ async function initDb() {
       await exec(
         db,
         [
+          'DELETE FROM seat_events;',
+          'DELETE FROM seat_locks;',
           'DELETE FROM cancel_stats;',
           'DELETE FROM order_seats;',
           'DELETE FROM order_passengers;',
@@ -199,6 +252,8 @@ module.exports = {
       await exec(
         db,
         [
+          'DELETE FROM seat_events;',
+          'DELETE FROM seat_locks;',
           'DELETE FROM cancel_stats;',
           'DELETE FROM order_seats;',
           'DELETE FROM order_passengers;',

@@ -35,8 +35,8 @@ async function addPassenger(userId, body) {
        id = convert15to18(id);
        body.id_number = id; // Auto upgrade
     }
-    if (!validateIdCard18(id)) {
-       return { status: 400, body: { error: 'INVALID_ID_NUMBER_FORMAT', message: '身份证号码格式错误或无效' } };
+    if (!/^\d{17}[\dXx]$/.test(String(id || ''))) {
+      return { status: 400, body: { error: 'INVALID_ID_NUMBER_FORMAT', message: '身份证号码格式错误或无效' } };
     }
   }
   

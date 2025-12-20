@@ -33,6 +33,16 @@ export default function PersonalInfoView() {
       ]);
 
     const getSid = () => {
+      const loggedOutSid = (() => {
+        try {
+          return sessionStorage.getItem('UC_LOGOUT_SID') || '';
+        } catch (e) {
+          return '';
+        }
+      })();
+
+      const fromLocal = localStorage.getItem('SESSION_ID') || localStorage.getItem('session_id') || '';
+      const fromSession = sessionStorage.getItem('session_id') || sessionStorage.getItem('SESSION_ID') || '';
       const fromHash = (() => {
         const h = window.location.hash || '';
         const m = h.match(/sid=([^&]+)/);
@@ -43,22 +53,40 @@ export default function PersonalInfoView() {
         const m = s.match(/sid=([^&]+)/);
         return m ? decodeURIComponent(m[1]) : '';
       })();
-      const fromSession = sessionStorage.getItem('session_id') || '';
-      const fromLocal = localStorage.getItem('SESSION_ID') || '';
-      const sid = fromHash || fromSearch || fromSession || fromLocal;
-      if (sid) {
+      const incoming = fromHash || fromSearch;
+
+      const candidate = fromLocal || fromSession || incoming;
+      if (loggedOutSid && candidate && candidate === loggedOutSid) {
         try {
-          localStorage.setItem('SESSION_ID', sid);
-          sessionStorage.setItem('session_id', sid);
+          localStorage.removeItem('SESSION_ID');
+          localStorage.removeItem('session_id');
+          sessionStorage.removeItem('session_id');
+          sessionStorage.removeItem('SESSION_ID');
+        } catch (e) {}
+        return '';
+      }
+
+      if (loggedOutSid && candidate && candidate !== loggedOutSid) {
+        try {
+          sessionStorage.removeItem('UC_LOGOUT_SID');
         } catch (e) {}
       }
-      return sid;
+
+      if (incoming) {
+        try {
+          localStorage.setItem('SESSION_ID', incoming);
+          sessionStorage.setItem('session_id', incoming);
+        } catch (e) {}
+      }
+      if (fromLocal) return fromLocal;
+      if (fromSession) return fromSession;
+      return incoming;
     };
     const sid = getSid();
     setSid(sid);
-    const tryFetch = async (url: string) => {
+    const tryFetch = async (url: string, sidNow: string) => {
       try {
-        const r = await fetch(url, { headers: sid ? { Authorization: `Bearer ${sid}` } : {} });
+        const r = await fetch(url, { headers: { Authorization: `Bearer ${sidNow}` } });
         if (r.ok) {
           const data = await r.json();
           if (data && data.username) setUsername(String(data.username));
@@ -88,7 +116,7 @@ export default function PersonalInfoView() {
 
       const bases = getAuthBases();
       for (const base of bases) {
-        const ok = await tryFetch(`${base}/auth/session/account`);
+        const ok = await tryFetch(`${base}/auth/session/account`, sid);
         if (ok) {
           setSidValid(true);
           try {

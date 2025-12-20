@@ -94,12 +94,13 @@ const loginDb = (() => {
 
 async function postPhoneChange(payload) {
   const { phone_country_code, phone_number, login_password, session_id } = payload || {};
-  const passOk = await db.verifyPassword(login_password || '');
-  if (!passOk) return err(401, { error: 'INVALID_PASSWORD', message: '密码错误，请重新输入' });
 
   if (!isValidPhone(phone_country_code, phone_number)) {
     return err(400, { error: 'PHONE_INVALID', message: '手机号格式错误，请检查' });
   }
+
+  const passOk = await db.verifyPassword(login_password || '');
+  if (!passOk) return err(401, { error: 'INVALID_PASSWORD', message: '密码错误，请重新输入' });
 
   const available = await db.checkPhoneAvailability(phone_country_code, phone_number);
   if (!available) {

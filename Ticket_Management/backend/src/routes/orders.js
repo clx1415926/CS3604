@@ -41,6 +41,7 @@ function orderRowToApi(orderRow, passengers, seats) {
   return {
     order_id: orderRow.order_id,
     booked_at: orderRow.booked_at,
+    travel_date: orderRow.travel_date,
     train: {
       code: orderRow.train_code,
       from: orderRow.from_station,
@@ -123,14 +124,71 @@ router.post('/', requireAuth, (req, res) => {
 
     const db = await getDb();
     await withTransaction(db, async () => {
+      const ts = nowIso();
+      const enforceLock = seat_locks.every((l) => l && l.lock_token && l.carriage_no && l.seat_no);
+      if (enforceLock) {
+        for (const l of seat_locks) {
+          const ok = await get(
+            db,
+            `SELECT 1
+             FROM seat_locks
+             WHERE train_code = ?
+               AND travel_date = ?
+               AND carriage_no = ?
+               AND seat_no = ?
+               AND user_key = ?
+               AND lock_token = ?
+               AND expires_at > ?
+             LIMIT 1`,
+            [
+              String(train_id),
+              String(travel_date),
+              String(l.carriage_no),
+              String(l.seat_no),
+              user_key,
+              String(l.lock_token),
+              ts,
+            ]
+          );
+          if (!ok) {
+            const err = new Error('LOCK_INVALID');
+            err.code = 'LOCK_INVALID';
+            err.seat = { carriage_no: String(l.carriage_no), seat_no: String(l.seat_no) };
+            throw err;
+          }
+        }
+      }
+
+      for (const s of seats) {
+        const hit = await get(
+          db,
+          `SELECT 1
+           FROM order_seats os
+           JOIN orders o ON o.order_id = os.order_id
+           WHERE o.train_code = ?
+             AND o.travel_date = ?
+             AND os.carriage_no = ?
+             AND os.seat_no = ?
+             AND o.status IN ('unpaid', 'paid', 'completed')
+           LIMIT 1`,
+          [String(train_id), String(travel_date), String(s.carriage_no || ''), String(s.seat_no || '')]
+        );
+        if (hit) {
+          const err = new Error('SEAT_NOT_AVAILABLE');
+          err.code = 'SEAT_NOT_AVAILABLE';
+          err.seat = { carriage_no: String(s.carriage_no || ''), seat_no: String(s.seat_no || '') };
+          throw err;
+        }
+      }
       await run(
         db,
-        `INSERT INTO orders(order_id, user_key, booked_at, train_code, from_station, to_station, depart_time, arrive_time, price_total, status)
-         VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, 'unpaid')`,
+        `INSERT INTO orders(order_id, user_key, booked_at, travel_date, train_code, from_station, to_station, depart_time, arrive_time, price_total, status)
+         VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unpaid')`,
         [
           order_id,
           user_key,
-          nowIso(),
+          ts,
+          String(travel_date),
           String(train_id),
           String(from_station),
           String(to_station),
@@ -163,10 +221,37 @@ router.post('/', requireAuth, (req, res) => {
           [order_id, String(s.seat_class), String(s.carriage_no || ''), String(s.seat_no || '')]
         );
       }
+
+      if (enforceLock) {
+        for (const l of seat_locks) {
+          await run(
+            db,
+            `DELETE FROM seat_locks
+             WHERE train_code = ? AND travel_date = ? AND carriage_no = ? AND seat_no = ? AND lock_token = ?`,
+            [String(train_id), String(travel_date), String(l.carriage_no), String(l.seat_no), String(l.lock_token)]
+          );
+        }
+      }
+
+      for (const s of seats) {
+        await run(
+          db,
+          `INSERT INTO seat_events(ts, user_key, action, train_code, travel_date, carriage_no, seat_no, order_id)
+           VALUES(?, ?, ?, ?, ?, ?, ?, ?)`,
+          [ts, user_key, 'order_created', String(train_id), String(travel_date), String(s.carriage_no || ''), String(s.seat_no || ''), order_id]
+        );
+      }
     });
 
     res.status(201).json({ order_id, status: 'unpaid', price_total });
   })().catch((e) => {
+    if (e && (e.code === 'SEAT_NOT_AVAILABLE' || e.code === 'LOCK_INVALID')) {
+      return res.status(409).json({
+        error: 'NO_SEATS_AVAILABLE',
+        message: '座位不足或不可用',
+        seat: e.seat,
+      });
+    }
     console.error('[ticket-management][orders] db error', e);
     res.status(500).json({ error: 'DB_ERROR' });
   });
@@ -255,6 +340,7 @@ router.get('/', async (req, res) => {
   const sample = {
     order_id: 'o-001',
     booked_at: new Date().toISOString(),
+    travel_date: new Date().toISOString().slice(0, 10),
     train: { code: 'G123', from: '北京南', to: '上海虹桥', depart_time: '08:00', arrive_time: '13:36' },
     passengers: [{ name: '张三' }],
     seats: [{ seat_class: '二等座', carriage_no: '10', seat_no: '16A' }],
@@ -299,6 +385,7 @@ router.get('/:order_id', async (req, res) => {
   const order = {
     order_id,
     booked_at: new Date().toISOString(),
+    travel_date: new Date().toISOString().slice(0, 10),
     train: { code: 'G123', from: '北京南', to: '上海虹桥', depart_time: '08:00', arrive_time: '13:36' },
     passengers: [{ name: '张三', id_type: '居民身份证', masked_id_number: '110101********1234' }],
     seats: [{ seat_class: '二等座', carriage_no: '10', seat_no: '16A' }],
@@ -321,13 +408,14 @@ router.post('/:order_id/cancel', (req, res) => {
 
     const db = await getDb();
     const result = await withTransaction(db, async () => {
+      const ts = nowIso();
       const statRow = await get(db, `SELECT count FROM cancel_stats WHERE user_key = ? AND date = ?`, [user_key, today]);
       const currentCount = statRow ? Number(statRow.count) : 0;
       if (currentCount >= 3) {
         return { kind: 'limit' };
       }
 
-      const order = await get(db, `SELECT status FROM orders WHERE user_key = ? AND order_id = ?`, [user_key, order_id]);
+      const order = await get(db, `SELECT status, train_code, travel_date FROM orders WHERE user_key = ? AND order_id = ?`, [user_key, order_id]);
       if (!order) return { kind: 'not_found' };
       if (String(order.status) !== 'unpaid') return { kind: 'invalid_state' };
 
@@ -338,6 +426,29 @@ router.post('/:order_id/cancel', (req, res) => {
          ON CONFLICT(user_key, date) DO UPDATE SET count = count + 1`,
         [user_key, today]
       );
+
+      const seats = await all(
+        db,
+        `SELECT carriage_no, seat_no FROM order_seats WHERE order_id = ? ORDER BY id ASC`,
+        [order_id]
+      );
+      for (const s of seats || []) {
+        await run(
+          db,
+          `INSERT INTO seat_events(ts, user_key, action, train_code, travel_date, carriage_no, seat_no, order_id)
+           VALUES(?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            ts,
+            user_key,
+            'release',
+            String(order.train_code || ''),
+            String(order.travel_date || ''),
+            String(s.carriage_no || ''),
+            String(s.seat_no || ''),
+            order_id,
+          ]
+        );
+      }
       return { kind: 'ok' };
     });
 
@@ -364,13 +475,38 @@ router.post('/:order_id/pay', requireAuth, (req, res) => {
     const user_key = identityKeyFromToken(token);
     const db = await getDb();
     const paidAt = nowIso();
-    const r = await run(
-      db,
-      `UPDATE orders SET status = 'paid', paid_at = ?
-       WHERE user_key = ? AND order_id = ?`,
-      [paidAt, user_key, order_id]
-    );
-    if (!r.changes) {
+    const result = await withTransaction(db, async () => {
+      const r = await run(
+        db,
+        `UPDATE orders SET status = 'paid', paid_at = ?
+         WHERE user_key = ? AND order_id = ?`,
+        [paidAt, user_key, order_id]
+      );
+      if (!r.changes) return { kind: 'not_found' };
+
+      const order = await get(db, `SELECT train_code, travel_date FROM orders WHERE user_key = ? AND order_id = ?`, [user_key, order_id]);
+      const seats = await all(db, `SELECT carriage_no, seat_no FROM order_seats WHERE order_id = ? ORDER BY id ASC`, [order_id]);
+      for (const s of seats || []) {
+        await run(
+          db,
+          `INSERT INTO seat_events(ts, user_key, action, train_code, travel_date, carriage_no, seat_no, order_id)
+           VALUES(?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            paidAt,
+            user_key,
+            'sold',
+            String(order?.train_code || ''),
+            String(order?.travel_date || ''),
+            String(s.carriage_no || ''),
+            String(s.seat_no || ''),
+            order_id,
+          ]
+        );
+      }
+      return { kind: 'ok' };
+    });
+
+    if (result.kind === 'not_found') {
       if (order_id === 'o-001') return res.json({ success: true, status: 'paid', paid_at: paidAt });
       return res.status(404).json({ error: 'ORDER_NOT_FOUND' });
     }

@@ -54,23 +54,6 @@ const phoneAvailabilityAttempts = new Map();
 
 function loadData() {
   try {
-    if (process.env.JEST_WORKER_ID !== undefined) {
-      state = {
-        user: { ...defaultState.user, created_at: new Date(defaultState.user.created_at), updated_at: new Date(defaultState.user.updated_at) },
-        users: {
-          [defaultState.user.user_id]: {
-            ...defaultState.user,
-            created_at: new Date(defaultState.user.created_at),
-            updated_at: new Date(defaultState.user.updated_at),
-          },
-        },
-        orders_by_user: {},
-        availability: { ...defaultState.availability },
-        passengers: defaultState.passengers.map(p => ({ ...p, created_at: new Date(p.created_at) })),
-      };
-      saveData();
-      return;
-    }
     if (fs.existsSync(DATA_FILE)) {
       const raw = fs.readFileSync(DATA_FILE, 'utf8');
       const data = JSON.parse(raw);

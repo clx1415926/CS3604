@@ -4,6 +4,7 @@ import './OrderCenter.css';
 interface Order {
   order_id: string;
   booked_at: string;
+  travel_date?: string | null;
   train: {
     code: string;
     from: string;
@@ -40,8 +41,21 @@ export default function OrderCenter() {
   const [endDate, setEndDate] = useState(today);
   const [query, setQuery] = useState('');
 
+  const getOrderDisplayDate = (order: Order) => {
+    if (order.travel_date) return String(order.travel_date).slice(0, 10);
+    return String(order.booked_at || '').slice(0, 10);
+  };
+
   // Unified SID reader: hash (?sid=...), search (?sid=...), session/local storage
   const getSid = () => {
+    const loggedOutSid = (() => {
+      try {
+        return sessionStorage.getItem('UC_LOGOUT_SID') || '';
+      } catch (e) {
+        return '';
+      }
+    })();
+
     const fromHash = (() => {
       const h = window.location.hash || '';
       const m = h.match(/sid=([^&]+)/);
@@ -55,7 +69,29 @@ export default function OrderCenter() {
     const fromSession = sessionStorage.getItem('session_id') || '';
     const fromLocal = localStorage.getItem('SESSION_ID') || '';
     const sid = fromHash || fromSearch || fromSession || fromLocal;
-    if (sid) { try { localStorage.setItem('SESSION_ID', sid); } catch (e) {} }
+
+    if (loggedOutSid && sid && sid === loggedOutSid) {
+      try {
+        localStorage.removeItem('SESSION_ID');
+        localStorage.removeItem('session_id');
+        sessionStorage.removeItem('session_id');
+        sessionStorage.removeItem('SESSION_ID');
+      } catch (e) {}
+      return '';
+    }
+
+    if (loggedOutSid && sid && sid !== loggedOutSid) {
+      try {
+        sessionStorage.removeItem('UC_LOGOUT_SID');
+      } catch (e) {}
+    }
+
+    if (sid) {
+      try {
+        localStorage.setItem('SESSION_ID', sid);
+        sessionStorage.setItem('session_id', sid);
+      } catch (e) {}
+    }
     return sid;
   };
 
@@ -208,9 +244,10 @@ export default function OrderCenter() {
     }
   }
 
-  function inDateRange(booked_at: string) {
+  function inDateRange(order: Order) {
     try {
-      const t = new Date(booked_at).getTime();
+      const base = order.travel_date || order.booked_at;
+      const t = new Date(String(base).includes('T') ? String(base) : `${String(base)}T00:00:00`).getTime();
       if (startDate) {
         const s = new Date(startDate);
         s.setHours(0, 0, 0, 0);
@@ -242,7 +279,7 @@ export default function OrderCenter() {
       if (activeTab === 'upcoming') return o.status === 'paid';
       return o.status === 'canceled';
     })
-    .filter(o => inDateRange(o.booked_at))
+    .filter(o => inDateRange(o))
     .filter(o => matchQuery(o));
 
   if (loading) return <div style={{ padding: 20 }}>加载中...</div>;
@@ -271,7 +308,7 @@ export default function OrderCenter() {
       </div>
 
       <div className="order-filter-row">
-        <span className="order-filter-label">按订单日期查询</span>
+        <span className="order-filter-label">按出行日期查询</span>
         <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="order-filter-date" />
         <span className="order-filter-sep">—</span>
         <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="order-filter-date" />
@@ -311,7 +348,7 @@ export default function OrderCenter() {
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, borderBottom: '1px solid #eee', paddingBottom: 8 }}>
                 <div>
-                  <span style={{ fontWeight: 'bold', marginRight: 12 }}>{order.booked_at.split('T')[0]}</span>
+                  <span style={{ fontWeight: 'bold', marginRight: 12 }}>{getOrderDisplayDate(order)}</span>
                   <span style={{ color: '#666' }}>订单号：{order.order_id}</span>
                 </div>
                 <div>

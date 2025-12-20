@@ -6,12 +6,22 @@
 
 const request = require('supertest');
 const { app } = require('../src/app');
+const { resetDb } = require('../src/db');
 
 describe('Feature: Orders API', () => {
   const authHeader = { Authorization: 'Bearer sid-u1' };
   const originalNodeEnv = process.env.NODE_ENV;
   let logSpy;
   let errorSpy;
+
+  const lockSeat = async ({ train_id, travel_date, carriage_no, seat_no }) => {
+    const r = await request(app)
+      .post('/api/v1/seats/lock')
+      .set(authHeader)
+      .send({ train_id, travel_date, seats: [{ carriage_no, seat_no }] })
+      .expect(200);
+    return r.body.locks[0].lock_token;
+  };
 
   beforeAll(() => {
     // 说明：路由在 NODE_ENV=test 时会把未支付订单立即视为超时取消，这会让列表查询出现不稳定。
@@ -22,6 +32,10 @@ describe('Feature: Orders API', () => {
   beforeEach(() => {
     logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
     errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  beforeEach(async () => {
+    await resetDb();
   });
 
   afterEach(() => {
@@ -73,6 +87,7 @@ describe('Feature: Orders API', () => {
 
   it('should create order and allow fetching detail', async () => {
     // 场景：创建订单成功后，可通过订单详情接口查询到对应信息
+    const lockToken = await lockSeat({ train_id: 'G123', travel_date: '2025-11-17', carriage_no: '10', seat_no: '1A' });
     const createRes = await request(app)
       .post('/api/v1/orders')
       .set(authHeader)
@@ -90,7 +105,7 @@ describe('Feature: Orders API', () => {
             phone_number: '13800138000',
           },
         ],
-        seat_locks: [{ lock_token: 'lk-001', seat_no: '1A', carriage_no: '10' }],
+        seat_locks: [{ lock_token: lockToken, seat_no: '1A', carriage_no: '10' }],
       })
       .expect(201);
 
@@ -115,6 +130,7 @@ describe('Feature: Orders API', () => {
 
   it('should pay order and be queryable as upcoming', async () => {
     // 场景：支付订单后状态变为 paid，并能在 upcoming 列表中出现
+    const lockToken = await lockSeat({ train_id: 'G888', travel_date: '2025-11-17', carriage_no: '10', seat_no: '2A' });
     const createRes = await request(app)
       .post('/api/v1/orders')
       .set(authHeader)
@@ -124,7 +140,7 @@ describe('Feature: Orders API', () => {
         from_station: '北京南',
         to_station: '上海虹桥',
         passengers: [{ passenger_id: 'p-002', name: '李四' }],
-        seat_locks: [{ lock_token: 'lk-001', seat_no: '2A', carriage_no: '10' }],
+        seat_locks: [{ lock_token: lockToken, seat_no: '2A', carriage_no: '10' }],
       })
       .expect(201);
 
@@ -144,11 +160,56 @@ describe('Feature: Orders API', () => {
 
     expect(Array.isArray(upcomingRes.body.orders)).toBe(true);
     expect(upcomingRes.body.orders.some((o) => o.order_id === orderId && o.status === 'paid')).toBe(true);
+
+    const mapRes = await request(app)
+      .get('/api/v1/seats/map')
+      .query({ train_id: 'G888', travel_date: '2025-11-17', seat_class: '二等座', carriage_no: '10' })
+      .expect(200);
+    const seat = mapRes.body.seats.find((s) => s.seat_no === '2A');
+    expect(seat.occupied).toBe(true);
+    expect(seat.status).toBe('sold');
+  });
+
+  it('should release seat back to available after canceling unpaid order', async () => {
+    const lockToken = await lockSeat({ train_id: 'G777', travel_date: '2025-11-17', carriage_no: '10', seat_no: '4A' });
+    const createRes = await request(app)
+      .post('/api/v1/orders')
+      .set(authHeader)
+      .send({
+        train_id: 'G777',
+        travel_date: '2025-11-17',
+        from_station: '北京南',
+        to_station: '上海虹桥',
+        passengers: [{ passenger_id: 'p-777', name: '王五' }],
+        seat_locks: [{ lock_token: lockToken, seat_no: '4A', carriage_no: '10' }],
+      })
+      .expect(201);
+
+    const orderId = createRes.body.order_id;
+
+    const map1 = await request(app)
+      .get('/api/v1/seats/map')
+      .query({ train_id: 'G777', travel_date: '2025-11-17', seat_class: '二等座', carriage_no: '10' })
+      .expect(200);
+    const before = map1.body.seats.find((s) => s.seat_no === '4A');
+    expect(before.occupied).toBe(true);
+    expect(before.status).toBe('unpaid');
+
+    await request(app).post(`/api/v1/orders/${orderId}/cancel`).set(authHeader).expect(200);
+
+    const map2 = await request(app)
+      .get('/api/v1/seats/map')
+      .query({ train_id: 'G777', travel_date: '2025-11-17', seat_class: '二等座', carriage_no: '10' })
+      .expect(200);
+    const after = map2.body.seats.find((s) => s.seat_no === '4A');
+    expect(after.occupied).toBe(false);
+    expect(after.status).toBe('available');
   });
 
   it('should cancel unpaid order and enforce cancel rate limit', async () => {
     // 场景：取消未支付订单成功；同一用户当天取消超过 3 次返回 429
     const createOrder = async (suffix) => {
+      const lockToken = await lockSeat({ train_id: `G${suffix}`, travel_date: '2025-11-17', carriage_no: '10', seat_no: '3A' });
       const r = await request(app)
         .post('/api/v1/orders')
         .set(authHeader)
@@ -158,7 +219,7 @@ describe('Feature: Orders API', () => {
           from_station: '北京南',
           to_station: '上海虹桥',
           passengers: [{ passenger_id: `p-${suffix}`, name: '乘客' }],
-          seat_locks: [{ lock_token: 'lk-001', seat_no: '3A', carriage_no: '10' }],
+          seat_locks: [{ lock_token: lockToken, seat_no: '3A', carriage_no: '10' }],
         })
         .expect(201);
       return r.body.order_id;

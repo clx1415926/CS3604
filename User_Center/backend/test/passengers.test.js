@@ -184,7 +184,7 @@ describe('Feature: Passenger management', () => {
     seedData(3);
     const api = newApi();
     const r = await api
-      .get('/api/v1/passengers?name=李1')
+      .get(`/api/v1/passengers?name=${encodeURIComponent('李1')}`)
       .set('Authorization', 'Bearer sess-super-12306')
       .set('x-test-rate-limit-bypass', '1')
       .expect(200);
@@ -204,4 +204,3 @@ describe('Feature: Passenger management', () => {
     expect(r.body.error).toBe('CANNOT_DELETE_SELF');
   });
 });
-

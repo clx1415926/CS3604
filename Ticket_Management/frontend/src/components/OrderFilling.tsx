@@ -13,6 +13,7 @@ export default function OrderFilling() {
   const [showWarmTip, setShowWarmTip] = useState<boolean>(false);
   const [syncError, setSyncError] = useState<string>('');
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   const paramsSearch = new URLSearchParams(window.location.search || '');
   const hash = window.location.hash || '';
@@ -45,6 +46,17 @@ export default function OrderFilling() {
     if (id.length > 10) return id.slice(0, 6) + '********' + id.slice(-4);
     return id;
   };
+
+  const fallbackContacts = [
+    {
+      passenger_id: 'p-001',
+      name: '张三',
+      id_type: '居民身份证',
+      id_number: '110101199001011234',
+      masked_id_number: '110101********1234',
+      verified: true,
+    },
+  ];
 
   const normalizePassengers = (data: any) => {
     const list = Array.isArray(data?.passengers) ? data.passengers : [];
@@ -174,6 +186,8 @@ export default function OrderFilling() {
           return;
         }
 
+        setContacts(fallbackContacts);
+        setPassengers(prev => prev.filter(p => fallbackContacts.some((m: any) => m.passenger_id === p.passenger_id)));
         if (status === 401 || status === 403) setSyncError('登录已过期，请重新登录');
         else setSyncError('获取联系人失败，请检查网络或稍后重试');
       } finally {
@@ -205,20 +219,19 @@ export default function OrderFilling() {
     }
   };
 
-  const ensurePassengersSelected = () => {
-    if (passengers.length > 0) return;
-    const first = contacts && contacts.length > 0 ? contacts[0] : null;
-    if (first) setPassengers([first]);
-  };
-
   const openSeatSelection = () => {
     setMessage('');
-    ensurePassengersSelected();
+    if (passengers.length === 0) {
+      setMessage('请选择乘车人');
+      return;
+    }
+    if (isSubmitting) return;
     setShowSeat(true);
   };
 
   const handleSeatConfirm = async (selectedSeats: any[]) => {
-    ensurePassengersSelected();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setSeatLocks([{ lock_token: 'pending' }]);
     try {
       const sid = localStorage.getItem('SESSION_ID') || 'sess-super-12306';
@@ -234,8 +247,10 @@ export default function OrderFilling() {
       
       if (res.ok) {
         const data = await res.json();
-        setSeatLocks(data.locks || []);
+        const locks = data.locks || [];
+        setSeatLocks(locks);
         setShowSeat(false);
+        await submitOrder(locks);
       } else {
         setMessage('锁座失败，余票不足');
         setShowSeat(false);
@@ -243,6 +258,8 @@ export default function OrderFilling() {
     } catch (e) {
       setMessage('网络错误');
       setShowSeat(false);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -251,8 +268,6 @@ export default function OrderFilling() {
     try {
       const sid = localStorage.getItem('SESSION_ID') || 'sess-super-12306';
       const locksToUse = locks || seatLocks;
-      const fallbackOrderId = 'o-001';
-      window.location.hash = `#payment?order_id=${fallbackOrderId}&sid=${encodeURIComponent(sid)}`;
       
       const orderData = {
         train_id: trainId,
@@ -279,7 +294,11 @@ export default function OrderFilling() {
       const data = await res.json().catch(() => ({}));
       
       if (res.status === 201) {
-        const orderId = data.order_id || fallbackOrderId;
+        const orderId = String(data.order_id || '').trim();
+        if (!orderId) {
+          setMessage('提交订单失败');
+          return;
+        }
         window.location.hash = `#payment?order_id=${orderId}&sid=${encodeURIComponent(sid)}`;
       } else {
         setMessage('提交订单失败');
@@ -293,9 +312,18 @@ export default function OrderFilling() {
     setPassengers(prev => {
       const exists = prev.some(x => x.passenger_id === p.passenger_id);
       const next = exists ? prev.filter(x => x.passenger_id !== p.passenger_id) : [...prev, p];
-      setShowWarmTip(true);
       return next;
     });
+  };
+
+  const startSubmit = () => {
+    setMessage('');
+    if (passengers.length === 0) {
+      setMessage('请选择乘车人');
+      return;
+    }
+    if (isSubmitting) return;
+    setShowWarmTip(true);
   };
 
   return (
@@ -305,9 +333,9 @@ export default function OrderFilling() {
       </div>
       
       <div className="train-info">
-        <h3>{trainId}</h3>
+        <h3>{trainId}次列车</h3>
         <p>{fromStation}→{toStation}</p>
-        <div>出发时间</div>
+        <div>{travelDate}</div>
       </div>
 
       <div className="passenger-selection">
@@ -334,9 +362,8 @@ export default function OrderFilling() {
                 onChange={() => togglePassenger(c)}
                 aria-label={c.passenger_id === (contacts[0]?.passenger_id) ? '选择乘车人' : undefined}
               />
-              <span>{c.name}</span>
+              <span>{`${c.name} (${c.masked_id_number || ''})`}</span>
               <span>{c.id_type}</span>
-              <span>({c.masked_id_number})</span>
             </label>
           ))}
         </div>
@@ -345,13 +372,16 @@ export default function OrderFilling() {
       {message && <div className="msg-box">{message}</div>}
 
       <div className="actions">
-        <button className="btn-secondary" onClick={openSeatSelection}>选择座位</button>
-        <button className="btn-primary" disabled={passengers.length === 0 || seatLocks.length === 0} onClick={() => submitOrder()}>提交订单</button>
+        <button className="btn-secondary" onClick={openSeatSelection} disabled={isSubmitting}>选择座位</button>
+        <button className="btn-primary" onClick={startSubmit} disabled={isSubmitting}>提交订单</button>
       </div>
 
       {showWarmTip && (
         <WarmTipModal 
-          onConfirm={() => setShowWarmTip(false)} 
+          onConfirm={() => {
+            setShowWarmTip(false);
+            setShowSeat(true);
+          }} 
           onCancel={() => setShowWarmTip(false)} 
         />
       )}

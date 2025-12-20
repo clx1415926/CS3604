@@ -6,13 +6,15 @@ type Seat = {
   column: string;
   occupied?: boolean;
   window?: boolean;
+  status?: 'available' | 'locked' | 'unpaid' | 'sold' | string;
+  lock_expires_at?: string | null;
 };
 
 type Props = {
   trainId?: string;
   travelDate?: string;
   passengerCount?: number;
-  onConfirm?: (selectedSeats: any[]) => void;
+  onConfirm?: (selectedSeats: any[]) => void | Promise<void>;
   onCancel?: () => void;
 };
 
@@ -28,10 +30,15 @@ export default function SeatSelectionModal({
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
     fetchSeatMap();
-  }, [carriageNo]);
+    const t = setInterval(() => {
+      fetchSeatMap();
+    }, 2000);
+    return () => clearInterval(t);
+  }, [carriageNo, trainId, travelDate]);
 
   const fetchSeatMap = async () => {
     setLoading(true);
@@ -42,7 +49,13 @@ export default function SeatSelectionModal({
       });
       if (res.ok) {
         const data = await res.json();
-        setSeatMap(data.seats || []);
+        const next = (data.seats || []) as Seat[];
+        setSeatMap(next);
+        const occupiedSet = new Set(next.filter(s => Boolean(s.occupied)).map(s => String(s.seat_no)));
+        if (selectedSeats.some(s => occupiedSet.has(s))) {
+          setSelectedSeats(prev => prev.filter(s => !occupiedSet.has(s)));
+          setError('所选座位已被占用，请重新选择');
+        }
       } else {
         setError('获取座位信息失败');
       }
@@ -68,13 +81,19 @@ export default function SeatSelectionModal({
     }
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
+    if (confirming) return;
+    if (selectedSeats.length !== passengerCount) return;
+    setConfirming(true);
     const seats = selectedSeats.map(seatNo => ({
       carriage_no: carriageNo,
       seat_no: seatNo
     }));
-    
-    onConfirm(seats);
+    try {
+      await Promise.resolve(onConfirm(seats));
+    } finally {
+      setConfirming(false);
+    }
   };
 
   // 按排分组座位
@@ -212,17 +231,18 @@ export default function SeatSelectionModal({
           </button>
           <button 
             onClick={handleConfirm}
+            disabled={confirming || selectedSeats.length !== passengerCount}
             style={{ 
               padding: '10px 20px', 
-              background: '#1890ff', 
+              background: confirming || selectedSeats.length !== passengerCount ? '#ccc' : '#1890ff', 
               color: '#fff', 
               border: 'none', 
               borderRadius: 4, 
-              cursor: 'pointer',
+              cursor: confirming || selectedSeats.length !== passengerCount ? 'not-allowed' : 'pointer',
               fontWeight: 600
             }}
           >
-            确认
+            确认选座
           </button>
         </div>
       </div>

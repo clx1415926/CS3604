@@ -53,7 +53,7 @@ export default function OrderManagement() {
 
   const filtered = orders.filter(o => {
     const byTrain = filterTrain ? String(o.train?.code || '').includes(filterTrain) : true;
-    const byDate = filterDate ? String(o.booked_at || '').slice(0, 10) === filterDate : true;
+    const byDate = filterDate ? String(o.travel_date || o.booked_at || '').slice(0, 10) === filterDate : true;
     return byTrain && byDate;
   });
 
@@ -135,7 +135,7 @@ export default function OrderManagement() {
         {filtered.map((o: any) => (
           <div className="order-card" key={o.order_id} style={{ marginBottom: 12 }}>
             <div><span>订单号</span><span>：{o.order_id}</span></div>
-            <div><span>订票日期</span><span>：{new Date(o.booked_at).toLocaleString()}</span></div>
+            <div><span>乘车日期</span><span>：{String(o.travel_date || o.booked_at || '').slice(0, 10) || '-'}</span></div>
             <div><span>车次号</span><span>：{o.train?.code}</span></div>
             <div><span>乘客姓名</span><span>：{(o.passengers || []).map((p: any) => p.name).join('、')}</span></div>
             <div><span>席别</span><span>：{(o.seats || []).map((s: any) => s.seat_class).join('、')}</span></div>

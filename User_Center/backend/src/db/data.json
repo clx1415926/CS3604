@@ -489,6 +489,46 @@
       "verified_status": "已通过",
       "is_self": false,
       "created_at": "2025-12-20T04:55:42.454Z"
+    },
+    {
+      "passenger_id": "self-f5c6631e-5348-43ce-8ad7-2fb9a6ab7b9e",
+      "user_id": "f5c6631e-5348-43ce-8ad7-2fb9a6ab7b9e",
+      "name": "zhangsan",
+      "id_type": "居民身份证",
+      "id_number": "5747a11d85f7fdf5701e59c3a935193a:de31bd9e4dab6add59e0d3d1ae689d4bc322c6dd830ef90f9b45fb798f8a7cb4",
+      "phone_country_code": "+86",
+      "phone_number": "13100000000",
+      "traveler_type": "成人",
+      "verified_status": "已通过",
+      "is_self": true,
+      "protected_flag": 1,
+      "created_at": "2025-12-20T10:08:55.196Z"
+    },
+    {
+      "passenger_id": "1766225726003",
+      "user_id": "8c0bf5c3-6d2f-4c21-aca5-a4e1a77b8bf7",
+      "name": "lisi",
+      "id_type": "居民身份证",
+      "id_number": "f828a1c99ac9e12832135450fb1676d6:798e5f51d87519a0b5d9b70f12b5de34ac624319fa3a3f3558bc0c84e9180e13",
+      "phone_country_code": "+86",
+      "phone_number": "13100000000",
+      "traveler_type": "学生",
+      "verified_status": "已通过",
+      "is_self": false,
+      "created_at": "2025-12-20T10:15:26.003Z"
+    },
+    {
+      "passenger_id": "1766239914541",
+      "user_id": "f5c6631e-5348-43ce-8ad7-2fb9a6ab7b9e",
+      "name": "lisi",
+      "id_type": "居民身份证",
+      "id_number": "a6ef550c51e376bbe12d28bfc08054ad:1667089f9e9290c732b737db109654cfab8fc712ffd46bb2bae5aa778e286a26",
+      "phone_country_code": "+86",
+      "phone_number": "13300000000",
+      "traveler_type": "成人",
+      "verified_status": "已通过",
+      "is_self": false,
+      "created_at": "2025-12-20T14:11:54.541Z"
     }
   ],
   "users": {
@@ -575,6 +615,232 @@
         }
       ],
       "updated_at": "2025-12-20T04:56:48.689Z"
+    },
+    "8c0bf5c3-6d2f-4c21-aca5-a4e1a77b8bf7": {
+      "orders": [
+        {
+          "order_id": "o-01KCXKY1DKF298F3DV8VBAVAJE",
+          "booked_at": "2025-12-20T10:12:24.641Z",
+          "train": {
+            "code": "D313",
+            "from": "北京南站",
+            "to": "上海虹桥站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "self-8c0bf5c3-6d2f-4c21-aca5-a4e1a77b8bf7",
+              "name": "zhangsan",
+              "id_type": "居民身份证",
+              "id_number": "310110200001011113",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "二等座",
+              "carriage_no": "6",
+              "seat_no": "1B"
+            }
+          ],
+          "price_total": 576,
+          "status": "paid"
+        }
+      ],
+      "updated_at": "2025-12-20T10:14:34.236Z"
+    },
+    "f5c6631e-5348-43ce-8ad7-2fb9a6ab7b9e": {
+      "orders": [
+        {
+          "order_id": "o-01KCY6BB58Z19GXQZ2QAZ843QZ",
+          "booked_at": "2025-12-20T15:34:14.954Z",
+          "travel_date": "2025-12-15",
+          "train": {
+            "code": "G101",
+            "from": "北京南站",
+            "to": "上海虹桥站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "1766239914541",
+              "name": "lisi",
+              "id_type": "居民身份证",
+              "id_number": "310110200101011110",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "二等座",
+              "carriage_no": "10",
+              "seat_no": "1D"
+            }
+          ],
+          "price_total": 576,
+          "status": "paid"
+        },
+        {
+          "order_id": "o-01KCY2Y2CSBV2TT9Q7860KVGEZ",
+          "booked_at": "2025-12-20T14:34:34.266Z",
+          "travel_date": "2025-12-15",
+          "train": {
+            "code": "G101",
+            "from": "北京南站",
+            "to": "上海虹桥站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "1766239914541",
+              "name": "lisi",
+              "id_type": "居民身份证",
+              "id_number": "310110200101011110",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "二等座",
+              "carriage_no": "10",
+              "seat_no": "1A"
+            }
+          ],
+          "price_total": 576,
+          "status": "paid"
+        },
+        {
+          "order_id": "o-01KCY2RPSS4057NTQF32AYTXH6",
+          "booked_at": "2025-12-20T14:31:38.554Z",
+          "travel_date": "2025-12-15",
+          "train": {
+            "code": "G101",
+            "from": "北京南站",
+            "to": "上海虹桥站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "1766239914541",
+              "name": "lisi",
+              "id_type": "居民身份证",
+              "id_number": "310110200101011110",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "二等座",
+              "carriage_no": "10",
+              "seat_no": "1C"
+            }
+          ],
+          "price_total": 576,
+          "status": "paid"
+        },
+        {
+          "order_id": "o-01KCY1Z27DGDVAHG7C5XBHRJ91",
+          "booked_at": "2025-12-20T14:17:38.286Z",
+          "travel_date": "2025-12-15",
+          "train": {
+            "code": "G101",
+            "from": "北京南站",
+            "to": "上海虹桥站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "1766239914541",
+              "name": "lisi",
+              "id_type": "居民身份证",
+              "id_number": "310110200101011110",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "二等座",
+              "carriage_no": "10",
+              "seat_no": "1C"
+            }
+          ],
+          "price_total": 576,
+          "status": "paid"
+        },
+        {
+          "order_id": "o-01KCY1N6VDGC78M4KB31KCNCS2",
+          "booked_at": "2025-12-20T14:12:15.344Z",
+          "travel_date": "2025-12-15",
+          "train": {
+            "code": "G101",
+            "from": "北京南站",
+            "to": "上海虹桥站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "1766239914541",
+              "name": "lisi",
+              "id_type": "居民身份证",
+              "id_number": "310110200101011110",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "二等座",
+              "carriage_no": "10",
+              "seat_no": "1B"
+            }
+          ],
+          "price_total": 576,
+          "status": "paid"
+        },
+        {
+          "order_id": "o-01KCXM5C3HPVMYFVCQ0A0Q24HK",
+          "booked_at": "2025-12-20T10:16:24.946Z",
+          "travel_date": null,
+          "train": {
+            "code": "G101",
+            "from": "北京南站",
+            "to": "上海虹桥站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "1766225401778",
+              "name": "lisi",
+              "id_type": "居民身份证",
+              "id_number": "310110200101011110",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "二等座",
+              "carriage_no": "10",
+              "seat_no": "2B"
+            }
+          ],
+          "price_total": 576,
+          "status": "canceled"
+        }
+      ],
+      "updated_at": "2025-12-20T16:14:11.150Z"
     }
   }
 }

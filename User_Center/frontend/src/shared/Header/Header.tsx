@@ -30,6 +30,14 @@ const SharedHeader: React.FC<Props> = ({
     const uniqueBases = (bases: string[]) => Array.from(new Set(bases.filter(Boolean)));
 
     const getSid = () => {
+      const loggedOutSid = (() => {
+        try {
+          return sessionStorage.getItem('UC_LOGOUT_SID') || '';
+        } catch (e) {
+          return '';
+        }
+      })();
+
       const fromHash = (() => {
         const h = window.location.hash || '';
         const m = h.match(/sid=([^&]+)/);
@@ -43,6 +51,23 @@ const SharedHeader: React.FC<Props> = ({
       const fromSession = sessionStorage.getItem('session_id') || '';
       const fromLocal = localStorage.getItem('SESSION_ID') || '';
       const sid = fromHash || fromSearch || fromSession || fromLocal;
+
+      if (loggedOutSid && sid && sid === loggedOutSid) {
+        try {
+          localStorage.removeItem('SESSION_ID');
+          localStorage.removeItem('session_id');
+          sessionStorage.removeItem('session_id');
+          sessionStorage.removeItem('SESSION_ID');
+        } catch (e) {}
+        return '';
+      }
+
+      if (loggedOutSid && sid && sid !== loggedOutSid) {
+        try {
+          sessionStorage.removeItem('UC_LOGOUT_SID');
+        } catch (e) {}
+      }
+
       if (sid) {
         try {
           localStorage.setItem('SESSION_ID', sid);
@@ -135,12 +160,55 @@ const SharedHeader: React.FC<Props> = ({
 
   const onLogout = (e: React.MouseEvent) => {
     e.preventDefault();
+
+    try {
+      const sidNow =
+        sessionStorage.getItem('session_id') ||
+        localStorage.getItem('SESSION_ID') ||
+        (() => {
+          const h = window.location.hash || '';
+          const m = h.match(/sid=([^&]+)/);
+          return m ? decodeURIComponent(m[1]) : '';
+        })() ||
+        (() => {
+          const s = window.location.search || '';
+          const m = s.match(/sid=([^&]+)/);
+          return m ? decodeURIComponent(m[1]) : '';
+        })();
+
+      if (sidNow) {
+        sessionStorage.setItem('UC_LOGOUT_SID', sidNow);
+      }
+    } catch (e) {}
+
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('sid');
+
+      const stripSidFromHash = (hash: string) => {
+        let h = hash || '';
+        h = h.replace(/^#sid=[^&]*/i, '#');
+        h = h.replace(/^#&/i, '#');
+        h = h.replace(/([?&])sid=[^&]*/gi, '$1');
+        h = h.replace(/\?&/g, '?');
+        h = h.replace(/&&/g, '&');
+        h = h.replace(/[?&]$/g, '');
+        return h;
+      };
+
+      url.hash = stripSidFromHash(url.hash);
+
+      window.history.replaceState(null, '', url.toString());
+    } catch (e) {}
+
     try {
       localStorage.removeItem('SESSION_ID');
       sessionStorage.removeItem('session_id');
       localStorage.removeItem('UC_NICK');
       sessionStorage.removeItem('UC_NICK');
       localStorage.removeItem('UC_AUTH_BASE');
+      localStorage.removeItem('session_id');
+      sessionStorage.removeItem('SESSION_ID');
     } catch (e) {}
     setLogged(false);
     setNick('');
