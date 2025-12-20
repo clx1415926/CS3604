@@ -1,0 +1,5 @@
+{"user_id":"u-super","username":"superadmin","phone_country_code":"+86","phone_number":"13900000000","phone_key":"+86:13900000000","password_hash":"95b2cf26ac9bf59a94c31fbfee08b28e5b22071794cf33977f8b69b2b44a6534","password_salt":"b8a3afac-07ee-441f-81ed-621f5fe976a0","name":"系统管理员","id_type":"居民身份证","id_number":"110101199001011234","traveler_type":"成人","created_at":1766202742740,"email":"superadmin@example.com","_id":"ScXE9xZvVq7I61Wi"}
+{"user_id":"e7d238ab-7759-47d8-984a-ba7bc94e6fec","username":"FIreFly151","phone_country_code":"+86","phone_number":"13300000000","phone_key":"+86:13300000000","password_hash":"fe1d6049e0fa121d4864d44a503a6e78eb17247afaf1a00530f7945267fad390","password_salt":"cd12b14416b856456d8529cbef933b36","name":"嘿嘿","id_type":"居民身份证","id_number":"620000196402091674","traveler_type":"成人","created_at":1766202891628,"email":"ovo@fdu.cn","_id":"vib0qmg7NuIr15zo"}
+{"$$indexCreated":{"fieldName":"username","unique":true,"sparse":false}}
+{"$$indexCreated":{"fieldName":"email","unique":true,"sparse":true}}
+{"$$indexCreated":{"fieldName":"phone_key","unique":true,"sparse":false}}

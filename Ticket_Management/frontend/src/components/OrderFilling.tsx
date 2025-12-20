@@ -5,9 +5,9 @@ import '../index.css';
 
 export default function OrderFilling() {
   const [profile, setProfile] = useState<{ username: string; name: string; user_id?: string } | null>(null);
-  const [contacts, setContacts] = useState<any[]>([{ passenger_id: 'p-001', name: '张三', id_type: '居民身份证', masked_id_number: '110101********1234', verified: true }]);
+  const [contacts, setContacts] = useState<any[]>([]);
   const [seatLocks, setSeatLocks] = useState<any[]>([]);
-  const [passengers, setPassengers] = useState<any[]>([{ passenger_id: 'p-001', name: '张三', id_type: '居民身份证', masked_id_number: '110101********1234', verified: true }]);
+  const [passengers, setPassengers] = useState<any[]>([]);
   const [message, setMessage] = useState<string>('');
   const [showSeat, setShowSeat] = useState<boolean>(false);
   const [showWarmTip, setShowWarmTip] = useState<boolean>(false);
@@ -141,10 +141,6 @@ export default function OrderFilling() {
             }
             const data = await rc.json();
             const mapped = normalizePassengers(data);
-            if (mapped.length === 0) {
-              const error = new Error('SYNC_EMPTY_OR_INVALID');
-              throw error;
-            }
             try {
               localStorage.setItem(cacheKey, JSON.stringify({ saved_at: Date.now(), contacts: mapped }));
             } catch (e) {}
@@ -180,7 +176,6 @@ export default function OrderFilling() {
 
         if (status === 401 || status === 403) setSyncError('登录已过期，请重新登录');
         else setSyncError('获取联系人失败，请检查网络或稍后重试');
-        setContacts(prev => prev.length > 0 ? prev : [{ passenger_id: 'p-001', name: '张三', id_type: '居民身份证', masked_id_number: '110101********1234', verified: true }]);
       } finally {
         setIsSyncing(false);
       }
@@ -330,6 +325,7 @@ export default function OrderFilling() {
           <div>证件号</div>
         </div>
         <div className="contacts-list">
+          {contacts.length === 0 && <div style={{padding: '10px', color: '#666'}}>暂无常用联系人，请到个人中心添加</div>}
           {contacts.map(c => (
             <label key={c.passenger_id} className="contact-item">
               <input 

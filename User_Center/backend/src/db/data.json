@@ -435,6 +435,53 @@
       "verified_status": "已通过",
       "is_self": false,
       "created_at": "2025-12-17T12:48:02.142Z"
+    },
+    {
+      "passenger_id": "self-e7d238ab-7759-47d8-984a-ba7bc94e6fec",
+      "user_id": "e7d238ab-7759-47d8-984a-ba7bc94e6fec",
+      "name": "嘿嘿",
+      "id_type": "居民身份证",
+      "id_number": "7d0b906b52d50a7531d409bf8abb9d27:adc26c1845195547cd249f882978daa15dc8c37932be291bc30cfe2e69d6e684",
+      "phone_country_code": "+86",
+      "phone_number": "13300000000",
+      "traveler_type": "成人",
+      "verified_status": "已通过",
+      "is_self": true,
+      "protected_flag": 1,
+      "created_at": "2025-12-20T03:54:51.658Z"
+    },
+    {
+      "passenger_id": "1766202919710",
+      "user_id": "e7d238ab-7759-47d8-984a-ba7bc94e6fec",
+      "name": "呜呜",
+      "id_type": "居民身份证",
+      "id_number": "e21684ab9bac3ce52f3d0c58cb9e7584:6de2ccb260aa2154b79f8322c776e4702c07b056791f922b4a52cf063f577318",
+      "phone_country_code": "+86",
+      "phone_number": "13311111111",
+      "traveler_type": "成人",
+      "verified_status": "已通过",
+      "is_self": false,
+      "created_at": "2025-12-20T03:55:19.710Z"
     }
-  ]
+  ],
+  "users": {
+    "u-super": {
+      "user_id": "u-super",
+      "username": "superadmin",
+      "name": "系统管理员",
+      "country_region": "中国",
+      "id_type": "居民身份证",
+      "id_number": "110101199001011234",
+      "id_verified_status": "success",
+      "phone_country_code": "+86",
+      "phone_number": "13900139000",
+      "phone_verified_status": "success",
+      "email": "superadmin@example.com",
+      "email_verified_status": "success",
+      "traveler_type": "成人",
+      "created_at": "2024-01-01T00:00:00.000Z",
+      "updated_at": "2025-12-11T12:33:05.539Z"
+    }
+  },
+  "orders_by_user": {}
 }

@@ -5,16 +5,16 @@ call :install_if_present "Home_Page\backend" "Home_Page Backend"
 call :ensure_runtime "Home_Page\backend" "express"
 
 call :install_if_present "Login_Register_Page\backend" "Login_Register Backend"
-call :ensure_runtime "Login_Register_Page\backend" "express cors nedb-promises"
+call :ensure_runtime "Login_Register_Page\backend" "express cors nedb-promises superagent"
 
 call :install_if_present "Ticket_Selection\backend" "Ticket_Selection Backend"
-call :ensure_runtime "Ticket_Selection\backend" "express cors"
+call :ensure_runtime "Ticket_Selection\backend" "express cors sqlite3"
 
 call :install_if_present "Ticket_Selection\frontend" "Ticket_Selection Frontend"
 call :ensure_frontend_dev "Ticket_Selection\frontend" "vite @vitejs/plugin-react"
 
 call :install_if_present "Ticket_Management\backend" "Ticket_Management Backend"
-call :ensure_runtime "Ticket_Management\backend" "express cors"
+call :ensure_runtime "Ticket_Management\backend" "express cors sqlite3"
 
 call :install_if_present "Ticket_Management\frontend" "Ticket_Management Frontend"
 call :ensure_frontend_dev "Ticket_Management\frontend" "vite @vitejs/plugin-react"
@@ -41,10 +41,17 @@ if not exist "%DIR%\package.json" (
   goto :eof
 )
 pushd "%DIR%"
-if exist package-lock.json (
-  call npm ci
-) else (
+if exist node_modules (
+  echo [%NAME%] node_modules exists. Running incremental install...
   call npm install
+) else (
+  if exist package-lock.json (
+    echo [%NAME%] Installing dependencies (clean install)...
+    call npm ci
+  ) else (
+    echo [%NAME%] Installing dependencies...
+    call npm install
+  )
 )
 if %errorlevel% neq 0 echo [%NAME%] install failed!
 popd
