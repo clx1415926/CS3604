@@ -13,15 +13,15 @@
     "fp:email:request": "node src/cli/forgotPassword.js --flow email --action request"
   },
   "dependencies": {
-    "express": "^4.19.2",
     "cors": "^2.8.5",
+    "express": "^4.22.1",
     "nedb-promises": "^6.2.3",
     "superagent": "^8.1.2"
   },
   "devDependencies": {
     "jest": "^29.7.0",
-    "supertest": "^6.3.3",
-    "puppeteer": "^23.7.1"
+    "puppeteer": "^23.7.1",
+    "supertest": "^6.3.3"
   },
   "jest": {
     "testEnvironment": "node",

@@ -3,3 +3,4 @@
 {"$$indexCreated":{"fieldName":"username","unique":true,"sparse":false}}
 {"$$indexCreated":{"fieldName":"email","unique":true,"sparse":true}}
 {"$$indexCreated":{"fieldName":"phone_key","unique":true,"sparse":false}}
+{"user_id":"fb39eff6-24c2-4882-bb8a-52bb82d0e7ec","username":"bladewaltz","phone_country_code":"+86","phone_number":"13300000001","phone_key":"+86:13300000001","password_hash":"fe755a9bb8dbf133da0a35bad983fbe3a25feab3777a99ba17db036966188a3e","password_salt":"b170d818185fa6e1cde4288ce88f9fc3","name":"哈哈！","id_type":"居民身份证","id_number":"620000196402091674","traveler_type":"成人","created_at":1766206399585,"email":"qwq@fdu.cn","_id":"sC3V0vOmzNWchU8a"}
