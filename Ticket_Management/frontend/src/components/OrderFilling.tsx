@@ -7,6 +7,7 @@ export default function OrderFilling() {
   const [profile, setProfile] = useState<{ username: string; name: string; user_id?: string } | null>(null);
   const [contacts, setContacts] = useState<any[]>([]);
   const [seatLocks, setSeatLocks] = useState<any[]>([]);
+  const [selectedSeats, setSelectedSeats] = useState<any[]>([]);
   const [passengers, setPassengers] = useState<any[]>([]);
   const [message, setMessage] = useState<string>('');
   const [showSeat, setShowSeat] = useState<boolean>(false);
@@ -28,6 +29,8 @@ export default function OrderFilling() {
   const fromStation = getParam('fromStation') || '北京南';
   const toStation = getParam('toStation') || '上海虹桥';
   const travelDate = getParam('date') || '2025-11-17';
+
+  const seatsCacheKeyBase = (sid: string) => `TM_SELECTED_SEATS:${sid || 'anonymous'}:${trainId}:${travelDate}`;
 
   const getContactsCacheKey = (sid: string) => `TM_CONTACTS_CACHE:${sid || 'anonymous'}`;
   const contactsCacheTtlMs = 2 * 60 * 1000;
@@ -210,6 +213,13 @@ export default function OrderFilling() {
       }
       
       await fetchContacts();
+      try {
+        const raw = localStorage.getItem(seatsCacheKeyBase(sid));
+        if (raw) {
+          const data = JSON.parse(raw);
+          if (Array.isArray(data)) setSelectedSeats(data);
+        }
+      } catch (e) {}
     })();
   }, []);
 
@@ -229,38 +239,15 @@ export default function OrderFilling() {
     setShowSeat(true);
   };
 
-  const handleSeatConfirm = async (selectedSeats: any[]) => {
+  const handleSeatConfirm = async (seats: any[]) => {
     if (isSubmitting) return;
-    setIsSubmitting(true);
-    setSeatLocks([{ lock_token: 'pending' }]);
+    setSelectedSeats(seats);
     try {
       const sid = localStorage.getItem('SESSION_ID') || 'sess-super-12306';
-      const res = await fetch('http://localhost:3001/api/v1/seats/lock', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sid}` },
-        body: JSON.stringify({
-          train_id: trainId,
-          travel_date: travelDate,
-          seats: selectedSeats
-        })
-      });
-      
-      if (res.ok) {
-        const data = await res.json();
-        const locks = data.locks || [];
-        setSeatLocks(locks);
-        setShowSeat(false);
-        await submitOrder(locks);
-      } else {
-        setMessage('锁座失败，余票不足');
-        setShowSeat(false);
-      }
-    } catch (e) {
-      setMessage('网络错误');
-      setShowSeat(false);
-    } finally {
-      setIsSubmitting(false);
-    }
+      localStorage.setItem(seatsCacheKeyBase(sid), JSON.stringify(seats));
+    } catch (e) {}
+    setShowSeat(false);
+    setMessage(`已选择座位：${seats.map(s => `${s.carriage_no}车${s.seat_no}`).join('、')}`);
   };
 
   const submitOrder = async (locks?: any[]) => {
@@ -299,6 +286,12 @@ export default function OrderFilling() {
           setMessage('提交订单失败');
           return;
         }
+        try {
+          const sid = localStorage.getItem('SESSION_ID') || 'sess-super-12306';
+          localStorage.removeItem(seatsCacheKeyBase(sid));
+        } catch (e) {}
+        setSelectedSeats([]);
+        setSeatLocks([]);
         window.location.hash = `#payment?order_id=${orderId}&sid=${encodeURIComponent(sid)}`;
       } else {
         setMessage('提交订单失败');
@@ -322,8 +315,37 @@ export default function OrderFilling() {
       setMessage('请选择乘车人');
       return;
     }
+    if (!selectedSeats || selectedSeats.length === 0 || selectedSeats.length !== passengers.length) {
+      setMessage('请先选择座位');
+      return;
+    }
     if (isSubmitting) return;
     setShowWarmTip(true);
+  };
+
+  const proceedSubmit = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const sid = localStorage.getItem('SESSION_ID') || 'sess-super-12306';
+      const res = await fetch('http://localhost:3001/api/v1/seats/lock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sid}` },
+        body: JSON.stringify({ train_id: trainId, travel_date: travelDate, seats: selectedSeats })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const locks = data.locks || [];
+        setSeatLocks(locks);
+        await submitOrder(locks);
+      } else {
+        setMessage('锁座失败，座位可能已被占用，请重新选择');
+      }
+    } catch (e) {
+      setMessage('网络错误');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -372,15 +394,35 @@ export default function OrderFilling() {
       {message && <div className="msg-box">{message}</div>}
 
       <div className="actions">
-        <button className="btn-secondary" onClick={openSeatSelection} disabled={isSubmitting}>选择座位</button>
+        <button className="btn-secondary" onClick={openSeatSelection} disabled={isSubmitting}>{selectedSeats.length > 0 ? '修改座位' : '选择座位'}</button>
         <button className="btn-primary" onClick={startSubmit} disabled={isSubmitting}>提交订单</button>
       </div>
+
+      {selectedSeats.length > 0 && (
+        <div style={{ marginTop: 12, padding: 10, background: '#f0f9ff', borderRadius: 4, border: '1px solid #91d5ff' }}>
+          <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4, color: '#1890ff' }}>已选座位：</div>
+          <div style={{ fontSize: 13, color: '#333' }}>{selectedSeats.map((s: any) => `${s.carriage_no}车${s.seat_no}`).join('、')}</div>
+          <div style={{ marginTop: 8 }}>
+            <button 
+              onClick={() => {
+                setSelectedSeats([]);
+                setSeatLocks([]);
+                try {
+                  const sid = localStorage.getItem('SESSION_ID') || 'sess-super-12306';
+                  localStorage.removeItem(seatsCacheKeyBase(sid));
+                } catch (e) {}
+              }}
+              className="btn-secondary"
+            >清空选座</button>
+          </div>
+        </div>
+      )}
 
       {showWarmTip && (
         <WarmTipModal 
           onConfirm={() => {
             setShowWarmTip(false);
-            setShowSeat(true);
+            proceedSubmit();
           }} 
           onCancel={() => setShowWarmTip(false)} 
         />

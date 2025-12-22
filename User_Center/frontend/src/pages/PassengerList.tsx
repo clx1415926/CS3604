@@ -25,14 +25,6 @@ export default function PassengerList() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const getSid = () => {
-    const loggedOutSid = (() => {
-      try {
-        return sessionStorage.getItem('UC_LOGOUT_SID') || '';
-      } catch (e) {
-        return '';
-      }
-    })();
-
     const fromLocal = localStorage.getItem('SESSION_ID') || localStorage.getItem('session_id') || '';
     const fromSession = sessionStorage.getItem('session_id') || sessionStorage.getItem('SESSION_ID') || '';
     const fromHash = (() => {
@@ -46,24 +38,6 @@ export default function PassengerList() {
       return m ? decodeURIComponent(m[1]) : '';
     })();
     const incoming = fromHash || fromSearch;
-
-    const candidate = fromLocal || fromSession || incoming;
-    if (loggedOutSid && candidate && candidate === loggedOutSid) {
-      try {
-        localStorage.removeItem('SESSION_ID');
-        localStorage.removeItem('session_id');
-        sessionStorage.removeItem('session_id');
-        sessionStorage.removeItem('SESSION_ID');
-      } catch (e) {}
-      return '';
-    }
-
-    if (loggedOutSid && candidate && candidate !== loggedOutSid) {
-      try {
-        sessionStorage.removeItem('UC_LOGOUT_SID');
-      } catch (e) {}
-    }
-
     if (incoming) {
       try {
         localStorage.setItem('SESSION_ID', incoming);

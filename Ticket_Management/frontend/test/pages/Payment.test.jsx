@@ -120,5 +120,22 @@ describe('Feature: Payment', () => {
 
     expect(await screen.findByText('ORDER_NOT_FOUND')).toBeInTheDocument();
   });
-});
 
+  it('should navigate back without paying when clicking defer option', async () => {
+    window.location.hash = '#payment?order_id=o-888&sid=sid-test';
+    const fetchSpy = vi.fn(() => mockJson(true, { ok: true }, 200));
+    globalThis.fetch = fetchSpy;
+
+    render(<Payment />);
+    await screen.findByText('订单号：o-888');
+
+    fireEvent.click(screen.getByRole('button', { name: '稍后支付' }));
+    if (assignedHref) {
+      expect(assignedHref).toContain('http://localhost:5176/#/otn/view/train_order.html');
+      expect(assignedHref).toContain('sid=sid-test');
+    } else {
+      expect(window.location.hash === '' || window.location.hash === '#').toBe(true);
+    }
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+});

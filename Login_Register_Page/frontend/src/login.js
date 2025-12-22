@@ -144,6 +144,8 @@ loginForm.addEventListener('submit', async (e) => {
     const { session_id, redirect } = data;
     setText(loginStatus, '登录成功，正在跳转…');
     sessionStorage.setItem('session_id', session_id);
+    try { localStorage.setItem('SESSION_ID', session_id); } catch (e) {}
+    try { window.dispatchEvent(new CustomEvent('uc:auth-changed', { detail: { sid: session_id, logged_in: true } })); } catch (e) {}
     setTimeout(() => {
       const home = (window && window.HOME_URL) || 'http://localhost:8080/';
       const base = redirect || home;
@@ -254,6 +256,8 @@ smsVerifyBtn && smsVerifyBtn.addEventListener('click', async (e) => {
     closeSmsModal();
     setText(loginStatus, '登录成功，正在跳转…');
     sessionStorage.setItem('session_id', session_id);
+    try { localStorage.setItem('SESSION_ID', session_id); } catch (e) {}
+    try { window.dispatchEvent(new CustomEvent('uc:auth-changed', { detail: { sid: session_id, logged_in: true } })); } catch (e) {}
     setTimeout(() => {
       const home = (window && window.HOME_URL) || 'http://localhost:8080/';
       const base = redirect || home;
@@ -288,6 +292,8 @@ async function pollQr() {
     setText(qrStatus, data.status === 'unscanned' ? '请使用铁路12306APP扫码登录' : data.status === 'scanned' ? '已扫码，请在手机确认' : data.status === 'confirmed' ? '已确认，正在登录…' : '二维码已过期');
     if (data.status === 'confirmed' && data.session_id) {
       sessionStorage.setItem('session_id', data.session_id);
+      try { localStorage.setItem('SESSION_ID', data.session_id); } catch (e) {}
+      try { window.dispatchEvent(new CustomEvent('uc:auth-changed', { detail: { sid: data.session_id, logged_in: true } })); } catch (e) {}
       setTimeout(() => window.location.href = '/profile', 500);
       clearInterval(pollTimer); pollTimer = null;
     }

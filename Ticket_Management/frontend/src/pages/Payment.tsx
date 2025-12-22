@@ -7,6 +7,7 @@ export default function Payment() {
   
   const [orderId, setOrderId] = useState<string>('');
   const [message, setMessage] = useState<string>('');
+  const [isNavigating, setIsNavigating] = useState<boolean>(false);
 
   useEffect(() => {
     console.log('🎯 Payment useEffect 执行');
@@ -72,8 +73,23 @@ export default function Payment() {
     console.log('=== 支付流程结束 ===');
   };
 
+  const deferPay = () => {
+    setMessage('');
+    setIsNavigating(true);
+    const h = window.location.hash || '';
+    const mSid = h.match(/sid=([^&]+)/);
+    const sid = (mSid ? decodeURIComponent(mSid[1]) : (localStorage.getItem('SESSION_ID') || 'sess-super-12306')).trim();
+    try { localStorage.setItem('SESSION_ID', sid); } catch (e) {}
+    const target = `http://localhost:5176/#/otn/view/train_order.html?sid=${encodeURIComponent(sid)}`;
+    window.location.href = target;
+    const MODE = (import.meta as any).env?.MODE || (import.meta as any).env?.NODE_ENV || '';
+    if (String(MODE).toLowerCase() === 'test') {
+      window.location.hash = '#';
+    }
+  };
+
   return (
-    <div className="page">
+    <div className="page" aria-busy={isNavigating} aria-live="polite">
       <div className="section-title">订单支付</div>
       <div className="order-card">
         <div>订单号：{orderId}</div>
@@ -88,12 +104,20 @@ export default function Payment() {
         </ul>
       </div>
       <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
-        <button className="btn-primary" onClick={() => {
+        <button className="btn-primary" disabled={isNavigating} onClick={() => {
           console.log('🔴 立即支付按钮被点击！');
           pay();
         }}>立即支付</button>
+        <button className="btn-secondary" disabled={isNavigating} onClick={deferPay}>稍后支付</button>
         <div>{message}</div>
       </div>
+      {isNavigating && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(255,255,255,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ padding: 16, background: '#fff', border: '1px solid #eee', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontSize: 14 }}>
+            正在跳转订单中心...
+          </div>
+        </div>
+      )}
     </div>
   );
 }

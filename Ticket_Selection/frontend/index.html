@@ -127,6 +127,7 @@
             var q = params.toString() ? ('?' + params.toString()) : '';
             var cleanUrl = window.location.origin + window.location.pathname + q + (window.location.hash || '');
             window.history.replaceState({}, document.title, cleanUrl);
+            try { window.dispatchEvent(new CustomEvent('uc:auth-changed', { detail: { sid: sid, logged_in: true } })); } catch(e) {}
           }
           var storedSid = sid || (function(){ try { return localStorage.getItem('SESSION_ID'); } catch(e) { return null; } })();
           if (storedSid) {
@@ -140,23 +141,96 @@
                   if (welcomeEl) {
                     welcomeEl.textContent = (res.data.username || '') + (res.data.name ? '（' + res.data.name + '）' : '');
                   }
+                  try { localStorage.setItem('UC_NICK', (res.data.username || '') + (res.data.name ? '（' + res.data.name + '）' : '')); localStorage.setItem('UC_AUTH_BASE', 'http://localhost:8082/api/v1'); } catch(e) {}
                   if (loginEl) loginEl.style.display = 'none';
                   if (logoutEl) logoutEl.style.display = '';
                 }
               })
               .catch(function(){});
           }
+          function __refreshAuthUi(){
+            var sidA = (function(){ try { return localStorage.getItem('SESSION_ID'); } catch(e){ return null; } })();
+            var loginEl = document.getElementById('J-header-login');
+            var logoutEl = document.getElementById('J-header-logout');
+            var welcomeEl = document.getElementById('welcome-user');
+            var my12306El = document.getElementById('my12306');
+            var nick = (function(){ try { return localStorage.getItem('UC_NICK'); } catch(e){ return ''; } })() || '';
+            if (sidA) {
+              if (welcomeEl && nick) welcomeEl.textContent = nick;
+              if (loginEl) loginEl.style.display = 'none';
+              if (logoutEl) logoutEl.style.display = '';
+              if (my12306El) my12306El.href = 'http://localhost:5176/index.html' + (sidA ? ('?sid=' + encodeURIComponent(sidA)) : '');
+            } else {
+              if (welcomeEl) welcomeEl.textContent = '';
+              if (loginEl) loginEl.style.display = '';
+              if (logoutEl) logoutEl.style.display = 'none';
+              if (my12306El) my12306El.href = 'http://localhost:5176/index.html';
+            }
+          }
+          window.addEventListener('storage', function(e){ if (!e || !('key' in e) || e.key === 'SESSION_ID' || e.key === 'UC_NICK' || e.key === 'UC_AUTH_BASE') __refreshAuthUi(); });
+          window.addEventListener('uc:auth-changed', function(){ __refreshAuthUi(); });
+          var __authPoll = function(){
+            var sidP = (function(){ try { return localStorage.getItem('SESSION_ID'); } catch(e){ return null; } })();
+            if (!sidP) return;
+            fetch('http://localhost:8082/api/v1/auth/session/profile', { headers: { Authorization: 'Bearer ' + sidP } })
+              .then(function(r){ return r.json().then(function(d){ return { ok: r.ok, data: d }; }); })
+              .then(function(res){
+                if (!res.ok || !(res.data && (res.data.username || res.data.name))) {
+                  try { localStorage.removeItem('SESSION_ID'); } catch(e) {}
+                  __refreshAuthUi();
+                  try { window.dispatchEvent(new CustomEvent('uc:auth-changed', { detail: { sid: '', logged_in: false } })); } catch(e) {}
+                }
+              })
+              .catch(function(){});
+          };
+          try { window.__AUTH_POLL_TIMER__ = setInterval(__authPoll, 2000); } catch(e) {}
+          window.addEventListener('focus', function(){ try { __authPoll(); } catch(e) {} });
+          var __hubOrigin = 'http://localhost:8080';
+          var __hubUrl = __hubOrigin + '/auth-sync.html';
+          var __hubIframe = document.createElement('iframe');
+          __hubIframe.setAttribute('aria-hidden','true');
+          __hubIframe.style.display = 'none';
+          __hubIframe.src = __hubUrl;
+          document.body.appendChild(__hubIframe);
+          var __sendHub = function(payload){
+            try { var w = __hubIframe && __hubIframe.contentWindow; if (w) w.postMessage(payload, __hubOrigin); } catch(e) {}
+          };
+          window.addEventListener('uc:auth-changed', function(ev){
+            var sid0 = (ev && ev.detail && ev.detail.sid) || (function(){ try { return localStorage.getItem('SESSION_ID'); } catch(e){ return null; } })();
+            __sendHub({ type: 'uc-auth', sid: sid0 || '', logged_in: !!(ev && ev.detail && ev.detail.logged_in), from: window.location.origin });
+          });
+          window.addEventListener('message', function(e){
+            var d = e && e.data; if (!d || d.type !== 'uc-auth' || !d.forwarded) return;
+            if (d.logged_in) { try { localStorage.setItem('SESSION_ID', d.sid || ''); } catch(err) {} } else { try { localStorage.removeItem('SESSION_ID'); } catch(err) {} }
+            __refreshAuthUi();
+          });
+          __refreshAuthUi();
           
           // 退出登录
           var regist_out = document.getElementById('regist_out');
           if (regist_out) {
             regist_out.addEventListener('click', function(e){
               e.preventDefault();
-              try { localStorage.removeItem('SESSION_ID'); } catch(err) {}
-              var loginEl = document.getElementById('J-header-login');
-              var logoutEl = document.getElementById('J-header-logout');
-              if (loginEl) loginEl.style.display = '';
-              if (logoutEl) logoutEl.style.display = 'none';
+              var sidL = (function(){ try { return localStorage.getItem('SESSION_ID'); } catch(e){ return null; } })();
+              var done = function(){
+                try { localStorage.removeItem('SESSION_ID'); } catch(err) {}
+                var loginEl = document.getElementById('J-header-login');
+                var logoutEl = document.getElementById('J-header-logout');
+                if (loginEl) loginEl.style.display = '';
+                if (logoutEl) logoutEl.style.display = 'none';
+                try { window.dispatchEvent(new CustomEvent('uc:auth-changed', { detail: { sid: '', logged_in: false } })); } catch(e) {}
+              };
+              if (sidL) {
+                fetch('http://localhost:8080/api/v1/auth/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + sidL } })
+                  .then(function(){ done(); })
+                  .catch(function(){
+                    fetch('http://127.0.0.1:8082/api/v1/auth/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + sidL } })
+                      .then(function(){ done(); })
+                      .catch(function(){ done(); });
+                  });
+              } else {
+                done();
+              }
             });
           }
           

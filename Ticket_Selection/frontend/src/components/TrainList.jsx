@@ -17,30 +17,6 @@ function TrainList({ trains }) {
         
         try {
             setLoadingId(train.trainNo);
-
-            await fetch('http://localhost:3001/api/v1/seats/lock', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sid}` },
-                body: JSON.stringify({
-                    train_id: train.trainNo,
-                    travel_date: train.date,
-                    seats: []
-                })
-            }).catch(() => {});
-
-            await fetch('http://localhost:3001/api/v1/orders', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sid}` },
-                body: JSON.stringify({
-                    train_id: train.trainNo,
-                    travel_date: train.date,
-                    from_station: train.fromStation,
-                    to_station: train.toStation,
-                    passengers: [],
-                    seat_locks: []
-                })
-            }).catch(() => {});
-
             const qp = new URLSearchParams();
             qp.set('trainNo', train.trainNo);
             qp.set('fromStation', train.fromStation);
@@ -48,7 +24,6 @@ function TrainList({ trains }) {
             qp.set('date', train.date);
             qp.set('sid', sid);
             
-            // 跳转到订单填写页面（端口 5174）
             const url = `http://localhost:5174/#order-filling?${qp.toString()}`;
             if (process.env.NODE_ENV === 'test') {
                 try { const u = new URL(url); window.location.hash = u.hash; } catch (_) { window.location.hash = `order-filling?${qp.toString()}`; }

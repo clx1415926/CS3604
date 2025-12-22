@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>auth-sync</title>
+</head>
+<body>
+<script>
+(function(){
+  var id = String(Math.random());
+  var channel;
+  try { channel = new BroadcastChannel('UC_AUTH_SYNC'); } catch (e) {}
+  var isObj = function(o){ return o && typeof o === 'object'; };
+  window.addEventListener('message', function(e){
+    var d = e && e.data;
+    if (!isObj(d)) return;
+    if (d.type !== 'uc-auth') return;
+    if (d.forwarded) return;
+    if (channel) {
+      try { channel.postMessage({ type: 'uc-auth', sid: d.sid || '', logged_in: !!d.logged_in, forwarded: true, from: d.from || '', id: id, ts: Date.now() }); } catch (err) {}
+    }
+  });
+  if (channel) {
+    channel.onmessage = function(ev){
+      var d = ev && ev.data;
+      if (!isObj(d)) return;
+      if (d.type !== 'uc-auth') return;
+      try { parent && parent.postMessage(d, '*'); } catch (err) {}
+    };
+  }
+})();
+</script>
+</body>
+</html>

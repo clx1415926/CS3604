@@ -529,6 +529,33 @@
       "verified_status": "已通过",
       "is_self": false,
       "created_at": "2025-12-20T14:11:54.541Z"
+    },
+    {
+      "passenger_id": "self-1a2967f7-bcbc-4b3c-9d6a-ad039c767291",
+      "user_id": "1a2967f7-bcbc-4b3c-9d6a-ad039c767291",
+      "name": "lisi",
+      "id_type": "居民身份证",
+      "id_number": "36eb8c5387ff2dd6a388824d6128b71a:74b5575f810cbb8d82e99ea5c583567cb8e527a27a4c5eb272d6f2e1d2ed4871",
+      "phone_country_code": "+86",
+      "phone_number": "13100000000",
+      "traveler_type": "成人",
+      "verified_status": "已通过",
+      "is_self": true,
+      "protected_flag": 1,
+      "created_at": "2025-12-21T06:40:18.601Z"
+    },
+    {
+      "passenger_id": "1766300155302",
+      "user_id": "1a2967f7-bcbc-4b3c-9d6a-ad039c767291",
+      "name": "鸡大巴",
+      "id_type": "居民身份证",
+      "id_number": "914628c48e90251e2dd640bd71b8d95f:44de9c28015ca4946ffa4618f51e68e6fc2f6ddd55cf39d1145646bd4997e656",
+      "phone_country_code": "+86",
+      "phone_number": "13311111111",
+      "traveler_type": "成人",
+      "verified_status": "已通过",
+      "is_self": false,
+      "created_at": "2025-12-21T06:55:55.302Z"
     }
   ],
   "users": {
@@ -554,8 +581,146 @@
     "fb39eff6-24c2-4882-bb8a-52bb82d0e7ec": {
       "orders": [
         {
+          "order_id": "o-01KD2C1G5XCQH9DWKHS5612T9V",
+          "booked_at": "2025-12-22T06:30:41.598Z",
+          "travel_date": "2025-12-15",
+          "train": {
+            "code": "G101",
+            "from": "北京南站",
+            "to": "上海虹桥站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "1766384576029",
+              "name": "鸡小巴",
+              "id_type": "居民身份证",
+              "id_number": "310110200001011113",
+              "phone_number": null,
+              "ticket_type": null
+            },
+            {
+              "passenger_id": "1766206542454",
+              "name": "玉玉",
+              "id_type": "居民身份证",
+              "id_number": "411723196710175102",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "二等座",
+              "carriage_no": "10",
+              "seat_no": "2B"
+            },
+            {
+              "seat_class": "二等座",
+              "carriage_no": "10",
+              "seat_no": "5D"
+            }
+          ],
+          "price_total": 576,
+          "status": "unpaid"
+        },
+        {
+          "order_id": "o-01KD2BWVJXYQFSZP1EW3EPBGPA",
+          "booked_at": "2025-12-22T06:28:09.438Z",
+          "travel_date": "2025-12-15",
+          "train": {
+            "code": "K511",
+            "from": "北京西站",
+            "to": "上海站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "1766384576029",
+              "name": "鸡小巴",
+              "id_type": "居民身份证",
+              "id_number": "310110200001011113",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "二等座",
+              "carriage_no": "10",
+              "seat_no": "1B"
+            }
+          ],
+          "price_total": 576,
+          "status": "unpaid"
+        },
+        {
+          "order_id": "o-01KD2BN841GG3S4VM4A88WNN9F",
+          "booked_at": "2025-12-22T06:24:00.129Z",
+          "travel_date": "2025-12-15",
+          "train": {
+            "code": "K511",
+            "from": "北京西站",
+            "to": "上海站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "1766384576029",
+              "name": "鸡小巴",
+              "id_type": "居民身份证",
+              "id_number": "310110200001011113",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "二等座",
+              "carriage_no": "10",
+              "seat_no": "3B"
+            }
+          ],
+          "price_total": 576,
+          "status": "canceled"
+        },
+        {
+          "order_id": "o-01KD2BKVRCT8R5SZ1NEM7W8CEK",
+          "booked_at": "2025-12-22T06:23:14.700Z",
+          "travel_date": "2025-12-15",
+          "train": {
+            "code": "K511",
+            "from": "北京西站",
+            "to": "上海站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "1766384576029",
+              "name": "鸡小巴",
+              "id_type": "居民身份证",
+              "id_number": "310110200001011113",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "二等座",
+              "carriage_no": "10",
+              "seat_no": "1A"
+            }
+          ],
+          "price_total": 576,
+          "status": "canceled"
+        },
+        {
           "order_id": "o-01KCX1W11BDZGNYPBK4TNF24AB",
           "booked_at": "2025-12-20T04:56:44.332Z",
+          "travel_date": null,
           "train": {
             "code": "D315",
             "from": "北京南站",
@@ -581,11 +746,12 @@
             }
           ],
           "price_total": 576,
-          "status": "unpaid"
+          "status": "canceled"
         },
         {
           "order_id": "o-01KCX1S88MQ8Y6PE9TAJCHZ26C",
           "booked_at": "2025-12-20T04:55:13.436Z",
+          "travel_date": null,
           "train": {
             "code": "D313",
             "from": "北京南站",
@@ -611,10 +777,10 @@
             }
           ],
           "price_total": 576,
-          "status": "unpaid"
+          "status": "canceled"
         }
       ],
-      "updated_at": "2025-12-20T04:56:48.689Z"
+      "updated_at": "2025-12-22T06:32:07.154Z"
     },
     "8c0bf5c3-6d2f-4c21-aca5-a4e1a77b8bf7": {
       "orders": [
@@ -841,6 +1007,383 @@
         }
       ],
       "updated_at": "2025-12-20T16:14:11.150Z"
+    },
+    "1a2967f7-bcbc-4b3c-9d6a-ad039c767291": {
+      "orders": [
+        {
+          "order_id": "o-01KD2B83Q3EM1TF8SZJYFBAGZT",
+          "booked_at": "2025-12-22T06:16:49.636Z",
+          "travel_date": "2025-12-15",
+          "train": {
+            "code": "K511",
+            "from": "北京西站",
+            "to": "上海站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "1766300155302",
+              "name": "鸡大巴",
+              "id_type": "居民身份证",
+              "id_number": "310110200101011110",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "二等座",
+              "carriage_no": "10",
+              "seat_no": "3D"
+            }
+          ],
+          "price_total": 576,
+          "status": "unpaid"
+        },
+        {
+          "order_id": "o-01KD2AXY5ZZ934EQNNEMKJ83VV",
+          "booked_at": "2025-12-22T06:11:16.288Z",
+          "travel_date": "2025-12-16",
+          "train": {
+            "code": "D315",
+            "from": "北京南站",
+            "to": "上海虹桥站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "1766300155302",
+              "name": "鸡大巴",
+              "id_type": "居民身份证",
+              "id_number": "310110200101011110",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "二等座",
+              "carriage_no": "10",
+              "seat_no": "1B"
+            }
+          ],
+          "price_total": 576,
+          "status": "canceled"
+        },
+        {
+          "order_id": "o-01KD2A6DA26GRC57C81X2ZTEKG",
+          "booked_at": "2025-12-22T05:58:25.346Z",
+          "travel_date": "2025-12-16",
+          "train": {
+            "code": "D315",
+            "from": "北京南站",
+            "to": "上海虹桥站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "1766300155302",
+              "name": "鸡大巴",
+              "id_type": "居民身份证",
+              "id_number": "310110200101011110",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "二等座",
+              "carriage_no": "10",
+              "seat_no": "1A"
+            }
+          ],
+          "price_total": 576,
+          "status": "unpaid"
+        },
+        {
+          "order_id": "o-01KD293TYEWJNFJN8DBN00FSCN",
+          "booked_at": "2025-12-22T05:39:32.430Z",
+          "travel_date": "2025-12-16",
+          "train": {
+            "code": "D315",
+            "from": "北京南站",
+            "to": "上海虹桥站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "self-1a2967f7-bcbc-4b3c-9d6a-ad039c767291",
+              "name": "lisi",
+              "id_type": "居民身份证",
+              "id_number": "310110200001011113",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "二等座",
+              "carriage_no": "10",
+              "seat_no": "1C"
+            }
+          ],
+          "price_total": 576,
+          "status": "canceled"
+        },
+        {
+          "order_id": "o-01KD28T3ZSXTBQC96E7BP3S8ZF",
+          "booked_at": "2025-12-22T05:34:14.010Z",
+          "travel_date": "2025-12-15",
+          "train": {
+            "code": "K511",
+            "from": "北京西站",
+            "to": "上海站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "1766300155302",
+              "name": "鸡大巴",
+              "id_type": "居民身份证",
+              "id_number": "310110200101011110",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "二等座",
+              "carriage_no": "10",
+              "seat_no": "3D"
+            }
+          ],
+          "price_total": 576,
+          "status": "canceled"
+        },
+        {
+          "order_id": "o-01KD20AJPY2CTGTFCPEBJD3K0W",
+          "booked_at": "2025-12-22T03:05:56.194Z",
+          "travel_date": "2025-12-15",
+          "train": {
+            "code": "D313",
+            "from": "北京南站",
+            "to": "上海虹桥站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "1766300155302",
+              "name": "鸡大巴",
+              "id_type": "居民身份证",
+              "id_number": "310110200101011110",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "二等座",
+              "carriage_no": "10",
+              "seat_no": "2B"
+            }
+          ],
+          "price_total": 576,
+          "status": "paid"
+        },
+        {
+          "order_id": "o-01KCZV44ACYADYJZRRW83HXR9X",
+          "booked_at": "2025-12-21T06:56:33.101Z",
+          "travel_date": "2025-12-16",
+          "train": {
+            "code": "G103",
+            "from": "北京南站",
+            "to": "上海虹桥站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "1766300155302",
+              "name": "鸡大巴",
+              "id_type": "居民身份证",
+              "id_number": "310110200101011110",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "二等座",
+              "carriage_no": "11",
+              "seat_no": "1B"
+            }
+          ],
+          "price_total": 576,
+          "status": "paid"
+        },
+        {
+          "order_id": "o-01KCZTRNGS5TXM3GANV059QJ3N",
+          "booked_at": "2025-12-21T06:50:17.497Z",
+          "travel_date": "2025-12-15",
+          "train": {
+            "code": "G101",
+            "from": "北京南站",
+            "to": "上海虹桥站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "self-1a2967f7-bcbc-4b3c-9d6a-ad039c767291",
+              "name": "lisi",
+              "id_type": "居民身份证",
+              "id_number": "310110200001011113",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "二等座",
+              "carriage_no": "10",
+              "seat_no": "4C"
+            }
+          ],
+          "price_total": 576,
+          "status": "canceled"
+        },
+        {
+          "order_id": "o-01KCZTR1VEQQ53NH88A4JR32QX",
+          "booked_at": "2025-12-21T06:49:57.359Z",
+          "travel_date": "2025-12-15",
+          "train": {
+            "code": "G101",
+            "from": "北京南站",
+            "to": "上海虹桥站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "self-1a2967f7-bcbc-4b3c-9d6a-ad039c767291",
+              "name": "lisi",
+              "id_type": "居民身份证",
+              "id_number": "310110200001011113",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "二等座",
+              "carriage_no": "10",
+              "seat_no": "3B"
+            }
+          ],
+          "price_total": 576,
+          "status": "canceled"
+        },
+        {
+          "order_id": "o-01KCZTQE3RVRVQNJABSK6YHJCT",
+          "booked_at": "2025-12-21T06:49:37.144Z",
+          "travel_date": "2025-12-15",
+          "train": {
+            "code": "G101",
+            "from": "北京南站",
+            "to": "上海虹桥站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "self-1a2967f7-bcbc-4b3c-9d6a-ad039c767291",
+              "name": "lisi",
+              "id_type": "居民身份证",
+              "id_number": "310110200001011113",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "二等座",
+              "carriage_no": "10",
+              "seat_no": "4D"
+            }
+          ],
+          "price_total": 576,
+          "status": "canceled"
+        },
+        {
+          "order_id": "o-01KCZTFY6VANY9XK1DPTGRTE8P",
+          "booked_at": "2025-12-21T06:45:31.483Z",
+          "travel_date": "2025-12-15",
+          "train": {
+            "code": "G101",
+            "from": "北京南站",
+            "to": "上海虹桥站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "self-1a2967f7-bcbc-4b3c-9d6a-ad039c767291",
+              "name": "lisi",
+              "id_type": "居民身份证",
+              "id_number": "310110200001011113",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "二等座",
+              "carriage_no": "10",
+              "seat_no": "2C"
+            }
+          ],
+          "price_total": 576,
+          "status": "canceled"
+        },
+        {
+          "order_id": "o-01KCZT9FXNZHDG1GH9C6JTX7HS",
+          "booked_at": "2025-12-21T06:42:00.245Z",
+          "travel_date": "2025-12-15",
+          "train": {
+            "code": "G101",
+            "from": "北京南站",
+            "to": "上海虹桥站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "self-1a2967f7-bcbc-4b3c-9d6a-ad039c767291",
+              "name": "lisi",
+              "id_type": "居民身份证",
+              "id_number": "310110200001011113",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "二等座",
+              "carriage_no": "10",
+              "seat_no": "2A"
+            }
+          ],
+          "price_total": 576,
+          "status": "paid"
+        }
+      ],
+      "updated_at": "2025-12-22T06:21:58.378Z"
     }
   }
 }

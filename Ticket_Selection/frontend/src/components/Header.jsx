@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-const HOME_URL = import.meta.env?.VITE_HOME_URL || 'http://localhost:8099/';
+const HOME_URL = (typeof window !== 'undefined' && window.location && window.location.origin) || 'http://localhost:8099/';
 
 const Header = () => {
   const [userInfo, setUserInfo] = useState(null);
@@ -28,6 +28,36 @@ const Header = () => {
         }
       }
     } catch (e) {}
+    const onAuthChanged = () => {
+      try {
+        const sid2 = (() => { try { return localStorage.getItem('SESSION_ID'); } catch(e) { return null; } })();
+        if (!sid2) { setUserInfo(null); return; }
+        fetch('http://localhost:8082/api/v1/auth/session/profile', { headers: { Authorization: 'Bearer ' + sid2 } })
+          .then(r => r.json().then(d => ({ ok: r.ok, data: d })))
+          .then(res => { if (res.ok) setUserInfo(res.data); else setUserInfo(null); })
+          .catch(() => { setUserInfo(null); });
+      } catch (e) { setUserInfo(null); }
+    };
+    window.addEventListener('storage', onAuthChanged);
+    window.addEventListener('uc:auth-changed', onAuthChanged);
+    const check = () => {
+      try {
+        const sid3 = (() => { try { return localStorage.getItem('SESSION_ID'); } catch(e) { return null; } })();
+        if (!sid3) { setUserInfo(null); return; }
+        fetch('http://localhost:8082/api/v1/auth/session/profile', { headers: { Authorization: 'Bearer ' + sid3 } })
+          .then(r => r.json().then(d => ({ ok: r.ok, data: d })))
+          .then(res => { if (res.ok) { setUserInfo(res.data); } else { setUserInfo(null); try { localStorage.removeItem('SESSION_ID'); } catch(e) {} } })
+          .catch(() => { setUserInfo(null); });
+      } catch (e) { setUserInfo(null); }
+    };
+    const timer = setInterval(check, 2000);
+    window.addEventListener('focus', check);
+    return () => {
+      window.removeEventListener('storage', onAuthChanged);
+      window.removeEventListener('uc:auth-changed', onAuthChanged);
+      clearInterval(timer);
+      window.removeEventListener('focus', check);
+    };
   }, []);
 
   const handleSearch = (e) => {
@@ -42,8 +72,23 @@ const Header = () => {
 
   const handleLogout = (e) => {
     e.preventDefault();
-    try { localStorage.removeItem('SESSION_ID'); } catch (err) {}
-    setUserInfo(null);
+    const sid = (() => { try { return localStorage.getItem('SESSION_ID'); } catch(e) { return null; } })();
+    const done = () => {
+      try { localStorage.removeItem('SESSION_ID'); } catch (err) {}
+      setUserInfo(null);
+      try { window.dispatchEvent(new CustomEvent('uc:auth-changed', { detail: { sid: '', logged_in: false } })); } catch (e2) {}
+    };
+    if (sid) {
+      fetch('http://localhost:8080/api/v1/auth/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + sid } })
+        .then(() => done())
+        .catch(() => {
+          fetch('http://127.0.0.1:8082/api/v1/auth/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + sid } })
+            .then(() => done())
+            .catch(() => done());
+        });
+    } else {
+      done();
+    }
   };
 
   return (

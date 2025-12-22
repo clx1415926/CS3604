@@ -343,4 +343,55 @@ describe('Feature: Home_Page 首页静态页面与导航', () => {
     window.dispatchEvent(new Event('scroll'));
     expect(topBtn.style.display).toBe('none');
   });
+  it('自定义事件触发后应切换为退出展示（uc:auth-changed）', async () => {
+    bootHomePage({ startUrl: 'http://localhost:8080/' });
+    localStorage.setItem('SESSION_ID', 'sid-x');
+    window.dispatchEvent(new CustomEvent('uc:auth-changed', { detail: { sid: 'sid-x', logged_in: true } }));
+    await flushAsync();
+    const loginEl = document.getElementById('J-header-login');
+    const logoutEl = document.getElementById('J-header-logout');
+    expect(loginEl.style.display).toBe('none');
+    expect(logoutEl.style.display).toBe('');
+  });
+  it('存储事件触发后应切换为登录展示（storage 事件）', async () => {
+    localStorage.setItem('SESSION_ID', 'sid-y');
+    bootHomePage({ startUrl: 'http://localhost:8080/' });
+    await flushAsync();
+    const loginEl1 = document.getElementById('J-header-login');
+    const logoutEl1 = document.getElementById('J-header-logout');
+    expect(loginEl1.style.display).toBe('none');
+    expect(logoutEl1.style.display).toBe('');
+    localStorage.removeItem('SESSION_ID');
+    const ev = new Event('storage');
+    Object.defineProperty(ev, 'key', { value: 'SESSION_ID' });
+    window.dispatchEvent(ev);
+    await flushAsync();
+    const loginEl2 = document.getElementById('J-header-login');
+    const logoutEl2 = document.getElementById('J-header-logout');
+    expect(loginEl2.style.display).toBe('');
+    expect(logoutEl2.style.display).toBe('none');
+  });
+  it('会话失效轮询后应自动切换为登录展示（跨页面一致性）', async () => {
+    let calls = 0;
+    const fetchImpl = jest.fn(() => {
+      calls++;
+      if (calls <= 1) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({ username: 'u1', name: '张三' }) });
+      }
+      return Promise.resolve({ ok: false, json: () => Promise.resolve({}) });
+    });
+    localStorage.setItem('SESSION_ID', 'sid-p');
+    bootHomePage({ startUrl: 'http://localhost:8080/', fetchImpl });
+    await flushAsync();
+    const loginEl1 = document.getElementById('J-header-login');
+    const logoutEl1 = document.getElementById('J-header-logout');
+    expect(loginEl1.style.display).toBe('none');
+    expect(logoutEl1.style.display).toBe('');
+    window.dispatchEvent(new Event('focus'));
+    await flushAsync();
+    const loginEl2 = document.getElementById('J-header-login');
+    const logoutEl2 = document.getElementById('J-header-logout');
+    expect(loginEl2.style.display).toBe('');
+    expect(logoutEl2.style.display).toBe('none');
+  });
 });

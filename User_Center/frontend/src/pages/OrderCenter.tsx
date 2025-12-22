@@ -48,14 +48,6 @@ export default function OrderCenter() {
 
   // Unified SID reader: hash (?sid=...), search (?sid=...), session/local storage
   const getSid = () => {
-    const loggedOutSid = (() => {
-      try {
-        return sessionStorage.getItem('UC_LOGOUT_SID') || '';
-      } catch (e) {
-        return '';
-      }
-    })();
-
     const fromHash = (() => {
       const h = window.location.hash || '';
       const m = h.match(/sid=([^&]+)/);
@@ -69,29 +61,7 @@ export default function OrderCenter() {
     const fromSession = sessionStorage.getItem('session_id') || '';
     const fromLocal = localStorage.getItem('SESSION_ID') || '';
     const sid = fromHash || fromSearch || fromSession || fromLocal;
-
-    if (loggedOutSid && sid && sid === loggedOutSid) {
-      try {
-        localStorage.removeItem('SESSION_ID');
-        localStorage.removeItem('session_id');
-        sessionStorage.removeItem('session_id');
-        sessionStorage.removeItem('SESSION_ID');
-      } catch (e) {}
-      return '';
-    }
-
-    if (loggedOutSid && sid && sid !== loggedOutSid) {
-      try {
-        sessionStorage.removeItem('UC_LOGOUT_SID');
-      } catch (e) {}
-    }
-
-    if (sid) {
-      try {
-        localStorage.setItem('SESSION_ID', sid);
-        sessionStorage.setItem('session_id', sid);
-      } catch (e) {}
-    }
+    if (sid) { try { localStorage.setItem('SESSION_ID', sid); } catch (e) {} }
     return sid;
   };
 
@@ -229,18 +199,36 @@ export default function OrderCenter() {
       return;
     }
     await renewSession('cancel');
-    const r = await fetch(`http://localhost:3001/api/v1/orders/${id}/cancel`, { method: 'POST', headers: sid ? { Authorization: 'Bearer ' + sid } : {} });
-    if (r.ok) {
-      setCancelTarget(null);
-      setShowSuccess(true);
-      await fetchOrders();
-    } else {
-      if (r.status === 401) {
+    try {
+      const r = await fetch(`http://localhost:3001/api/v1/orders/${id}/cancel`, { method: 'POST', headers: sid ? { Authorization: 'Bearer ' + sid } : {} });
+      if (r.ok) {
         setCancelTarget(null);
-        markExpired('cancel_401');
-      } else {
-        alert('取消失败');
+        setShowSuccess(true);
+        await fetchOrders();
+        return;
       }
+      const data = await r.json().catch(() => ({} as any));
+      setCancelTarget(null);
+      if (r.status === 401) {
+        markExpired('cancel_401');
+        return;
+      }
+      if (r.status === 429 || data?.error === 'CANCEL_RATE_LIMIT_EXCEEDED') {
+        setError('您今日取消订单次数已达上限，无法继续购票');
+        return;
+      }
+      if (r.status === 400 || data?.error === 'INVALID_ORDER_STATE') {
+        setError('当前订单不可取消');
+        return;
+      }
+      if (r.status === 404 || data?.error === 'ORDER_NOT_FOUND') {
+        setError('订单不存在或已处理');
+        return;
+      }
+      setError('取消订单失败，请稍后重试');
+    } catch (e) {
+      setCancelTarget(null);
+      setError('网络异常');
     }
   }
 

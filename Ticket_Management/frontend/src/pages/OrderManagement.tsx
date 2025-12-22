@@ -81,6 +81,22 @@ export default function OrderManagement() {
       setShowSuccess(true);
       await refreshOrders();
     } else {
+      try {
+        const data = await r.json();
+        if (r.status === 429 || data?.error === 'CANCEL_RATE_LIMIT_EXCEEDED') {
+          alert('您今日取消订单次数已达上限，无法继续购票');
+          return;
+        }
+        if (r.status === 400 || data?.error === 'INVALID_ORDER_STATE') {
+          alert('当前订单不可取消');
+          return;
+        }
+        if (r.status === 404 || data?.error === 'ORDER_NOT_FOUND') {
+          alert('订单不存在或已处理');
+          return;
+        }
+      } catch (e) {
+      }
       alert('取消失败');
     }
   }

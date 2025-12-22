@@ -94,4 +94,33 @@ describe('Feature: Train list rendering and booking', () => {
       expect(window.location.hash).toContain('sid=sid-123');
     });
   });
+
+  // 预订仅跳转，不应调用锁座或下单接口
+  test('should not call lock/order APIs on booking click', async () => {
+    localStorage.setItem('SESSION_ID', 'sid-456');
+    const fetchSpy = jest.fn(() => Promise.resolve({ ok: true }));
+    global.fetch = fetchSpy;
+
+    const trains = [
+      {
+        date: '2025-12-15',
+        trainNo: 'K511',
+        fromStation: '北京站',
+        toStation: '上海站',
+        departTime: '12:35',
+        arriveTime: '12:15',
+        duration: '23小时40分',
+        seats: [{ type: '硬座', count: '有', price: 185 }],
+        startingPrice: 185,
+      },
+    ];
+
+    render(<TrainList trains={trains} />);
+    fireEvent.click(screen.getByRole('button', { name: '预订' }));
+
+    await waitFor(() => {
+      expect(window.location.hash).toContain('order-filling');
+    });
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
 });

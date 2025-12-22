@@ -30,14 +30,6 @@ const SharedHeader: React.FC<Props> = ({
     const uniqueBases = (bases: string[]) => Array.from(new Set(bases.filter(Boolean)));
 
     const getSid = () => {
-      const loggedOutSid = (() => {
-        try {
-          return sessionStorage.getItem('UC_LOGOUT_SID') || '';
-        } catch (e) {
-          return '';
-        }
-      })();
-
       const fromHash = (() => {
         const h = window.location.hash || '';
         const m = h.match(/sid=([^&]+)/);
@@ -51,23 +43,6 @@ const SharedHeader: React.FC<Props> = ({
       const fromSession = sessionStorage.getItem('session_id') || '';
       const fromLocal = localStorage.getItem('SESSION_ID') || '';
       const sid = fromHash || fromSearch || fromSession || fromLocal;
-
-      if (loggedOutSid && sid && sid === loggedOutSid) {
-        try {
-          localStorage.removeItem('SESSION_ID');
-          localStorage.removeItem('session_id');
-          sessionStorage.removeItem('session_id');
-          sessionStorage.removeItem('SESSION_ID');
-        } catch (e) {}
-        return '';
-      }
-
-      if (loggedOutSid && sid && sid !== loggedOutSid) {
-        try {
-          sessionStorage.removeItem('UC_LOGOUT_SID');
-        } catch (e) {}
-      }
-
       if (sid) {
         try {
           localStorage.setItem('SESSION_ID', sid);
@@ -148,9 +123,79 @@ const SharedHeader: React.FC<Props> = ({
     window.addEventListener('uc:auth-changed' as any, onAuthChanged);
     sync();
 
+    const poll = async () => {
+      const sid = getSid();
+      if (!sid) { setLogged(false); setNick(''); return; }
+      const bases = getAuthBases();
+      for (const base of bases) {
+        try {
+          const r = await fetch(`${base}/auth/session/profile`, { headers: { Authorization: 'Bearer ' + sid } });
+          const d = await r.json().catch(() => null);
+          if (r.ok && d && (d.username || d.name)) {
+            const displayName = (d.username || '') + (d.name ? '（' + d.name + '）' : '');
+            setLogged(true);
+            setNick(displayName);
+            try {
+              localStorage.setItem('UC_NICK', displayName);
+              sessionStorage.setItem('UC_NICK', displayName);
+              localStorage.setItem('UC_AUTH_BASE', base);
+            } catch (e) {}
+            return;
+          }
+        } catch (e) {}
+      }
+      try {
+        localStorage.removeItem('SESSION_ID');
+        sessionStorage.removeItem('session_id');
+      } catch (e) {}
+      setLogged(false);
+      setNick('');
+      try {
+        window.dispatchEvent(new CustomEvent('uc:auth-changed', { detail: { sid: '', logged_in: false } }));
+      } catch (e) {}
+    };
+    const timer = setInterval(poll, 2000);
+    const onFocus = () => { poll(); };
+    window.addEventListener('focus', onFocus);
+
+    const hubOrigin = 'http://localhost:8080';
+    const hubUrl = hubOrigin + '/auth-sync.html';
+    const iframe = document.createElement('iframe');
+    iframe.setAttribute('aria-hidden', 'true');
+    (iframe.style as any).display = 'none';
+    iframe.src = hubUrl;
+    document.body.appendChild(iframe);
+    const sendHub = (payload: any) => {
+      try { const w = (iframe as any).contentWindow; if (w) w.postMessage(payload, hubOrigin); } catch (e) {}
+    };
+    const onLocalAuthChanged = (ev: any) => {
+      const sid0 = (ev && ev.detail && ev.detail.sid) || localStorage.getItem('SESSION_ID') || '';
+      sendHub({ type: 'uc-auth', sid: sid0 || '', logged_in: !!(ev && ev.detail && ev.detail.logged_in), from: window.location.origin });
+    };
+    window.addEventListener('uc:auth-changed' as any, onLocalAuthChanged);
+    const onHubMessage = (e: MessageEvent) => {
+      const d = (e && (e as any).data) as any;
+      if (!d || d.type !== 'uc-auth' || !d.forwarded) return;
+      try {
+        if (d.logged_in) {
+          localStorage.setItem('SESSION_ID', d.sid || '');
+          sessionStorage.setItem('session_id', d.sid || '');
+        } else {
+          localStorage.removeItem('SESSION_ID');
+          sessionStorage.removeItem('session_id');
+        }
+      } catch (e2) {}
+      sync();
+    };
+    window.addEventListener('message', onHubMessage);
+
     return () => {
       window.removeEventListener('storage', onStorage);
       window.removeEventListener('uc:auth-changed' as any, onAuthChanged);
+      clearInterval(timer);
+      window.removeEventListener('focus', onFocus);
+      window.removeEventListener('uc:auth-changed' as any, onLocalAuthChanged);
+      window.removeEventListener('message', onHubMessage);
     };
   }, []);
 
@@ -160,61 +205,43 @@ const SharedHeader: React.FC<Props> = ({
 
   const onLogout = (e: React.MouseEvent) => {
     e.preventDefault();
-
-    try {
-      const sidNow =
-        sessionStorage.getItem('session_id') ||
-        localStorage.getItem('SESSION_ID') ||
-        (() => {
-          const h = window.location.hash || '';
-          const m = h.match(/sid=([^&]+)/);
-          return m ? decodeURIComponent(m[1]) : '';
-        })() ||
-        (() => {
-          const s = window.location.search || '';
-          const m = s.match(/sid=([^&]+)/);
-          return m ? decodeURIComponent(m[1]) : '';
-        })();
-
-      if (sidNow) {
-        sessionStorage.setItem('UC_LOGOUT_SID', sidNow);
+    const sid = (() => {
+      try {
+        return localStorage.getItem('SESSION_ID') || sessionStorage.getItem('session_id') || '';
+      } catch (e) {
+        return '';
       }
-    } catch (e) {}
-
-    try {
-      const url = new URL(window.location.href);
-      url.searchParams.delete('sid');
-
-      const stripSidFromHash = (hash: string) => {
-        let h = hash || '';
-        h = h.replace(/^#sid=[^&]*/i, '#');
-        h = h.replace(/^#&/i, '#');
-        h = h.replace(/([?&])sid=[^&]*/gi, '$1');
-        h = h.replace(/\?&/g, '?');
-        h = h.replace(/&&/g, '&');
-        h = h.replace(/[?&]$/g, '');
-        return h;
+    })();
+    const finalize = () => {
+      try {
+        localStorage.removeItem('SESSION_ID');
+        sessionStorage.removeItem('session_id');
+        localStorage.removeItem('UC_NICK');
+        sessionStorage.removeItem('UC_NICK');
+        localStorage.removeItem('UC_AUTH_BASE');
+      } catch (e) {}
+      setLogged(false);
+      setNick('');
+      try {
+        window.dispatchEvent(new CustomEvent('uc:auth-changed', { detail: { sid: '', logged_in: false } }));
+      } catch (e) {}
+    };
+    if (sid) {
+      const bases = [ 'http://localhost:8080/api/v1', 'http://127.0.0.1:8082/api/v1' ];
+      const doLogout = async () => {
+        for (const base of bases) {
+          try {
+            await fetch(`${base}/auth/logout`, { method: 'POST', headers: { Authorization: 'Bearer ' + sid } });
+            finalize();
+            return;
+          } catch (e) {}
+        }
+        finalize();
       };
-
-      url.hash = stripSidFromHash(url.hash);
-
-      window.history.replaceState(null, '', url.toString());
-    } catch (e) {}
-
-    try {
-      localStorage.removeItem('SESSION_ID');
-      sessionStorage.removeItem('session_id');
-      localStorage.removeItem('UC_NICK');
-      sessionStorage.removeItem('UC_NICK');
-      localStorage.removeItem('UC_AUTH_BASE');
-      localStorage.removeItem('session_id');
-      sessionStorage.removeItem('SESSION_ID');
-    } catch (e) {}
-    setLogged(false);
-    setNick('');
-    try {
-      window.dispatchEvent(new CustomEvent('uc:auth-changed', { detail: { sid: '', logged_in: false } }));
-    } catch (e) {}
+      doLogout();
+    } else {
+      finalize();
+    }
   };
 
   const styleVars: React.CSSProperties = {

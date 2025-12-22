@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="/assets/iconfont.css">
     
     
-  <script type="module" crossorigin src="/assets/index-8e7fef15.js"></script>
+  <script type="module" crossorigin src="/assets/index-37358d59.js"></script>
   <link rel="stylesheet" href="/assets/index-8c3da431.css">
 </head>
 <body role="main">
@@ -121,17 +121,40 @@
     <script>
       (function(){
         try {
+          var emitAuthChanged = function(payload) {
+            try { localStorage.setItem('AUTH_EVENT', JSON.stringify(payload)); } catch (e) {}
+            try { window.dispatchEvent(new CustomEvent('auth:changed', { detail: payload })); } catch (e) {}
+            try { window.dispatchEvent(new CustomEvent('uc:auth-changed', { detail: payload })); } catch (e) {}
+          };
+
           var params = new URLSearchParams(window.location.search || '');
           var sid = params.get('sid');
           if (sid) {
             try { localStorage.setItem('SESSION_ID', sid); } catch(e) {}
+            try { sessionStorage.setItem('session_id', sid); } catch(e) {}
             try { params.delete('sid'); } catch(e) {}
             var q = params.toString() ? ('?' + params.toString()) : '';
             var cleanUrl = window.location.origin + window.location.pathname + q + (window.location.hash || '');
             window.history.replaceState({}, document.title, cleanUrl);
           }
-          var storedSid = sid || (function(){ try { return localStorage.getItem('SESSION_ID'); } catch(e) { return null; } })();
-          if (storedSid) {
+
+          var readSid = function() {
+            var fromLocal = (function(){ try { return localStorage.getItem('SESSION_ID') || localStorage.getItem('session_id'); } catch(e) { return null; } })();
+            var fromSession = (function(){ try { return sessionStorage.getItem('session_id') || sessionStorage.getItem('SESSION_ID'); } catch(e) { return null; } })();
+            return sid || fromLocal || fromSession || null;
+          };
+
+          var syncHeader = function(reason) {
+            var storedSid = readSid();
+            if (!storedSid) {
+              var loginEl0 = document.getElementById('J-header-login');
+              var logoutEl0 = document.getElementById('J-header-logout');
+              var welcomeEl0 = document.getElementById('welcome-user');
+              if (welcomeEl0) welcomeEl0.textContent = '';
+              if (loginEl0) loginEl0.style.display = '';
+              if (logoutEl0) logoutEl0.style.display = 'none';
+              return;
+            }
             fetch('http://localhost:8082/api/v1/auth/session/profile', { headers: { Authorization: 'Bearer ' + storedSid } })
               .then(function(r){ return r.json().then(function(d){ return { ok: r.ok, data: d }; }); })
               .then(function(res){
@@ -144,23 +167,63 @@
                   }
                   if (loginEl) loginEl.style.display = 'none';
                   if (logoutEl) logoutEl.style.display = '';
+                } else {
+                  try { localStorage.removeItem('SESSION_ID'); } catch(err) {}
+                  try { localStorage.removeItem('session_id'); } catch(err) {}
+                  try { sessionStorage.removeItem('session_id'); } catch(err) {}
+                  try { sessionStorage.removeItem('SESSION_ID'); } catch(err) {}
+                  emitAuthChanged({ ts: new Date().toISOString(), source: 'TICKET_SELECTION', event: 'AUTH_INVALID', reason: reason || 'profile_not_ok', sid: '', logged_in: false });
+                  var loginEl2 = document.getElementById('J-header-login');
+                  var logoutEl2 = document.getElementById('J-header-logout');
+                  var welcomeEl2 = document.getElementById('welcome-user');
+                  if (welcomeEl2) welcomeEl2.textContent = '';
+                  if (loginEl2) loginEl2.style.display = '';
+                  if (logoutEl2) logoutEl2.style.display = 'none';
                 }
               })
               .catch(function(){});
-          }
+          };
+
+          syncHeader('boot');
           
           // 退出登录
           var regist_out = document.getElementById('regist_out');
           if (regist_out) {
             regist_out.addEventListener('click', function(e){
               e.preventDefault();
-              try { localStorage.removeItem('SESSION_ID'); } catch(err) {}
-              var loginEl = document.getElementById('J-header-login');
-              var logoutEl = document.getElementById('J-header-logout');
-              if (loginEl) loginEl.style.display = '';
-              if (logoutEl) logoutEl.style.display = 'none';
+              var sid2 = readSid();
+              var finalize = function(){
+                try { localStorage.removeItem('SESSION_ID'); } catch(err) {}
+                try { localStorage.removeItem('session_id'); } catch(err) {}
+                try { sessionStorage.removeItem('session_id'); } catch(err) {}
+                try { sessionStorage.removeItem('SESSION_ID'); } catch(err) {}
+                var loginEl = document.getElementById('J-header-login');
+                var logoutEl = document.getElementById('J-header-logout');
+                var welcomeEl = document.getElementById('welcome-user');
+                if (welcomeEl) welcomeEl.textContent = '';
+                if (loginEl) loginEl.style.display = '';
+                if (logoutEl) logoutEl.style.display = 'none';
+                emitAuthChanged({ ts: new Date().toISOString(), source: 'TICKET_SELECTION', event: 'LOGOUT', sid: '', logged_in: false });
+              };
+              if (sid2) {
+                fetch('http://localhost:8080/api/v1/auth/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + sid2 } })
+                  .then(function(){ finalize(); })
+                  .catch(function(){
+                    fetch('http://127.0.0.1:8082/api/v1/auth/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + sid2 } })
+                      .then(function(){ finalize(); })
+                      .catch(function(){ finalize(); });
+                  });
+              } else {
+                finalize();
+              }
             });
           }
+
+          document.addEventListener('visibilitychange', function(){ if (document.visibilityState === 'visible') syncHeader('visible'); });
+          window.addEventListener('focus', function(){ syncHeader('focus'); });
+          window.addEventListener('storage', function(e){ if (!e || (e.key !== 'SESSION_ID' && e.key !== 'session_id' && e.key !== 'AUTH_EVENT')) return; syncHeader('storage'); });
+          window.addEventListener('auth:changed', function(){ syncHeader('auth:changed'); });
+          window.addEventListener('uc:auth-changed', function(){ syncHeader('uc:auth-changed'); });
           
           // 清除伪元素背景
           var headerEl = document.querySelector('.header');

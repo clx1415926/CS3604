@@ -90,8 +90,8 @@ describe('Feature: OrderFilling', () => {
     expect(await screen.findByText('请选择乘车人')).toBeInTheDocument();
   });
 
-  it('should go through warm tip -> seat selection -> lock seat -> create order and navigate to payment', async () => {
-    // 场景：选择乘车人后提交订单，依次进入温馨提示、选座，锁座成功后创建订单并跳转支付页
+  it('should select seats first, then submit -> warm tip -> lock -> order -> payment', async () => {
+    // 场景：先选座后提交订单；提交时显示温馨提示，确认后锁座并下单
     localStorage.setItem('SESSION_ID', 'sid-test');
 
     const fetchMock = vi.fn((input, init) => {
@@ -111,6 +111,13 @@ describe('Feature: OrderFilling', () => {
               name: '张三',
               id_type: '居民身份证',
               id_number: '11010519491231002X',
+              verified_status: '已通过',
+            },
+            {
+              passenger_id: 'p2',
+              name: '李四',
+              id_type: '居民身份证',
+              id_number: '110105194912310021',
               verified_status: '已通过',
             },
           ],
@@ -156,27 +163,48 @@ describe('Feature: OrderFilling', () => {
 
     render(<OrderFilling />);
 
-    // 等待联系人同步完成并渲染
     await screen.findByText(/张三 \(/);
+    const checkboxes = screen.getAllByRole('checkbox');
+    fireEvent.click(checkboxes[0]);
+    fireEvent.click(checkboxes[1]);
 
-    // 交互：勾选乘车人
-    fireEvent.click(screen.getByRole('checkbox'));
-
-    // 交互：点击提交订单，出现温馨提示
-    fireEvent.click(screen.getByRole('button', { name: '提交订单' }));
-    expect(await screen.findByTestId('warm-tip')).toBeInTheDocument();
-
-    // 交互：确认温馨提示后进入选座
-    fireEvent.click(screen.getByRole('button', { name: '确认' }));
+    fireEvent.click(screen.getByRole('button', { name: /选择座位|修改座位/ }));
     expect(await screen.findByTestId('seat-modal')).toBeInTheDocument();
-
-    // 交互：确认选座（mock 组件内部会调用 onConfirm 并传回 2 个座位）
     fireEvent.click(screen.getByRole('button', { name: '确认选座' }));
 
-    // 断言：完成锁座+下单后跳转支付页（hash 参数包含 order_id 与 sid）
+    fireEvent.click(screen.getByRole('button', { name: '提交订单' }));
+    expect(await screen.findByTestId('warm-tip')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '确认' }));
+
     await waitFor(() => {
       expect(window.location.hash).toBe('#payment?order_id=o-777&sid=sid-test');
     });
+    expect(localStorage.getItem('TM_SELECTED_SEATS:sid-test:G123:2025-11-17')).toBeNull();
+  });
+
+  it('should show message when submitting without selecting seats', async () => {
+    localStorage.setItem('SESSION_ID', 'sid-test');
+    const fetchMock = vi.fn((input, init) => {
+      const url = typeof input === 'string' ? input : input?.url;
+      if (String(url).includes('/api/v1/auth/session/profile')) {
+        return mockJson(true, { username: 'u1', name: '测试用户', user_id: 'uid-1' });
+      }
+      if (String(url) === 'http://localhost:8083/api/v1/passengers?showFull=true') {
+        return mockJson(true, {
+          passengers: [
+            { passenger_id: 'p1', name: '张三', id_type: '居民身份证', id_number: '11010519491231002X', verified_status: '已通过' },
+          ],
+        });
+      }
+      return mockJson(false, { error: 'NOT_FOUND' }, 404);
+    });
+    globalThis.fetch = fetchMock;
+
+    render(<OrderFilling />);
+    await screen.findByText(/张三 \(/);
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button', { name: '提交订单' }));
+    expect(await screen.findByText('请先选择座位')).toBeInTheDocument();
   });
 
   it('should show sync error when contacts synchronization fails', async () => {

@@ -10,14 +10,6 @@ export default function HomePage() {
   const [showVerify, setShowVerify] = useState(false);
   useEffect(() => {
     const getSid = () => {
-      const loggedOutSid = (() => {
-        try {
-          return sessionStorage.getItem('UC_LOGOUT_SID') || '';
-        } catch (e) {
-          return '';
-        }
-      })();
-
       const fromHash = (() => {
         const h = window.location.hash || '';
         const m = h.match(/sid=([^&]+)/);
@@ -31,29 +23,7 @@ export default function HomePage() {
       const fromSession = sessionStorage.getItem('session_id') || '';
       const fromLocal = localStorage.getItem('SESSION_ID') || '';
       const sid = fromHash || fromSearch || fromSession || fromLocal;
-
-      if (loggedOutSid && sid && sid === loggedOutSid) {
-        try {
-          localStorage.removeItem('SESSION_ID');
-          localStorage.removeItem('session_id');
-          sessionStorage.removeItem('session_id');
-          sessionStorage.removeItem('SESSION_ID');
-        } catch (e) {}
-        return '';
-      }
-
-      if (loggedOutSid && sid && sid !== loggedOutSid) {
-        try {
-          sessionStorage.removeItem('UC_LOGOUT_SID');
-        } catch (e) {}
-      }
-
-      if (sid) {
-        try {
-          localStorage.setItem('SESSION_ID', sid);
-          sessionStorage.setItem('session_id', sid);
-        } catch (e) {}
-      }
+      if (sid) { try { localStorage.setItem('SESSION_ID', sid); } catch (e) {} }
       return sid;
     };
     const sid = getSid();
