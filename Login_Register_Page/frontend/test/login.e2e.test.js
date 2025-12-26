@@ -51,7 +51,10 @@ describeIf('Feature: Login page (E2E)', () => {
     await page.click('#id-verify');
 
     // 从页面中提取（开发模式展示的）验证码并完成校验
-    await page.waitForSelector('#sms-step-code:not([hidden])', { timeout: 15000 });
+    await page.waitForFunction(() => {
+      const el = document.querySelector('#sms-status-2');
+      return !!el && /验证码：\d{6}/.test(el.textContent || '');
+    }, { timeout: 15000 });
     const status = await page.$eval('#sms-status-2', (el) => el.textContent || '');
     const m = status.match(/验证码：([0-9]{6})/);
     expect(m).not.toBeNull();

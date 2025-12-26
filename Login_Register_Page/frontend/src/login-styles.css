@@ -667,6 +667,27 @@
   line-height: 1.5;
 }
 
+#sms-modal .verify-type {
+  text-align: center;
+  color: #3B99FC;
+  font-size: 14px;
+  margin: 4px 0 12px;
+}
+
+#sms-modal .input-row {
+  display: flex;
+  gap: 10px;
+}
+
+#sms-modal .input-row input {
+  flex: 1;
+}
+
+#sms-modal .get-code-btn {
+  width: 120px;
+  flex: 0 0 auto;
+}
+
 /* ====== 页脚样式 ====== */
 .page-login .footer {
   background-color: #F8F8F8;

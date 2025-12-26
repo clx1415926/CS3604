@@ -14,9 +14,8 @@ function mockJson(ok: boolean, body: any, status = ok ? 200 : 400) {
 
 describe('Feature: Passenger list batch delete', () => {
   beforeEach(() => {
-    // 准备：写入登录态，屏蔽 alert，避免测试输出干扰
+    // 准备：写入登录态
     localStorage.setItem('SESSION_ID', 'sid-test');
-    vi.spyOn(window, 'alert').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -37,8 +36,6 @@ describe('Feature: Passenger list batch delete', () => {
       return mockJson(false, { error: 'NOT_FOUND' }, 404);
     });
     (globalThis as any).fetch = fetchMock;
-    const alertSpy = vi.spyOn(window, 'alert');
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
 
     // 渲染：进入乘车人列表页
     render(<PassengerList />);
@@ -48,14 +45,17 @@ describe('Feature: Passenger list batch delete', () => {
     // 交互：直接点击“批量删除”
     await user.click(await screen.findByRole('button', { name: '批量删除' }));
 
-    // 断言：弹出提示“请选择要删除的乘车人”
-    expect(alertSpy).toHaveBeenCalledWith('请选择要删除的乘车人');
+    // 断言：页面内弹窗提示“请选择要删除的乘车人”
+    expect(await screen.findByText('请选择要删除的乘车人')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '确定' }));
+    await waitFor(() => {
+      expect(screen.queryByText('请选择要删除的乘车人')).toBeNull();
+    });
   });
 
   it('should delete all selected passengers after confirmation', async () => {
     // 场景：选择多位乘车人并确认后，应逐个调用 DELETE 接口删除（不包含本人）
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
-
     const fetchMock = vi.fn((input: any, init?: any) => {
       const url = typeof input === 'string' ? input : input?.url;
       if (url === 'http://localhost:8083/api/v1/passengers' && (!init?.method || init.method === 'GET')) {
@@ -120,8 +120,9 @@ describe('Feature: Passenger list batch delete', () => {
     await user.click(checkboxes[1]);
     await user.click(screen.getByRole('button', { name: '批量删除' }));
 
-    // 断言：弹窗文本包含选中人数
-    expect(confirmSpy).toHaveBeenCalledWith('确认删除选中的 2 位乘车人吗？');
+    // 断言：页面内确认弹窗文本包含选中人数
+    expect(await screen.findByText('确认删除选中的 2 位乘车人吗？')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '确认' }));
 
     // 断言：对每个被选中的乘车人各发起一次 DELETE 请求
     await waitFor(() => {

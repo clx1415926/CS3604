@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import './PassengerList.css';
-import gonganIcon from '../assets/passenger_assets/gongan.png';
 
 interface Passenger {
   passenger_id: string;
@@ -23,6 +22,24 @@ export default function PassengerList() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [confirmState, setConfirmState] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+    mode: 'confirm' | 'alert';
+    confirmText: string;
+    cancelText: string;
+    onConfirm: null | (() => Promise<void> | void);
+  }>({
+    open: false,
+    title: '提示',
+    message: '',
+    mode: 'alert',
+    confirmText: '确定',
+    cancelText: '取消',
+    onConfirm: null,
+  });
+  const [confirmPending, setConfirmPending] = useState(false);
 
   const getSid = () => {
     const fromLocal = localStorage.getItem('SESSION_ID') || localStorage.getItem('session_id') || '';
@@ -89,39 +106,84 @@ export default function PassengerList() {
     fetchPassengers();
   }, []);
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('确认删除该乘车人吗？')) return;
+  const showAlert = (message: string, title = '提示') => {
+    setConfirmPending(false);
+    setConfirmState({
+      open: true,
+      title,
+      message,
+      mode: 'alert',
+      confirmText: '确定',
+      cancelText: '取消',
+      onConfirm: null,
+    });
+  };
+
+  const showConfirm = (opts: { title?: string; message: string; confirmText?: string; cancelText?: string; onConfirm: () => Promise<void> | void }) => {
+    setConfirmPending(false);
+    setConfirmState({
+      open: true,
+      title: opts.title || '提示',
+      message: opts.message,
+      mode: 'confirm',
+      confirmText: opts.confirmText || '确认',
+      cancelText: opts.cancelText || '取消',
+      onConfirm: opts.onConfirm,
+    });
+  };
+
+  const deletePassengers = async (ids: string[]) => {
+    if (!ids.length) return;
     try {
-      const res = await fetch(`http://localhost:8083/api/v1/passengers/${id}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders() as HeadersInit
-      });
-      if (!res.ok) {
-        const d = await res.json();
-        alert(d.message || d.error || '删除失败');
-        return;
+      for (const id of ids) {
+        const res = await fetch(`http://localhost:8083/api/v1/passengers/${id}`, {
+          method: 'DELETE',
+          headers: getAuthHeaders() as HeadersInit,
+        });
+        if (!res.ok) {
+          const d = await res.json().catch(() => ({} as any));
+          throw new Error(d?.message || d?.error || '删除失败');
+        }
       }
-      fetchPassengers();
-    } catch (e) {
-      alert('删除失败');
+
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        for (const id of ids) next.delete(id);
+        return next;
+      });
+      await fetchPassengers();
+    } catch (e: any) {
+      showAlert(e?.message || '删除失败');
     }
   };
 
-  const handleBatchDelete = async () => {
+  const handleDelete = (id: string) => {
+    showConfirm({
+      message: '确认删除该乘车人吗？',
+      onConfirm: async () => {
+        setConfirmPending(true);
+        setConfirmState((s) => ({ ...s, open: false }));
+        await deletePassengers([id]);
+        setConfirmPending(false);
+      },
+    });
+  };
+
+  const handleBatchDelete = () => {
     if (selectedIds.size === 0) {
-      alert('请选择要删除的乘车人');
+      showAlert('请选择要删除的乘车人');
       return;
     }
-    if (!window.confirm(`确认删除选中的 ${selectedIds.size} 位乘车人吗？`)) return;
-    
-    for (const id of Array.from(selectedIds)) {
-      await fetch(`http://localhost:8083/api/v1/passengers/${id}`, { 
-        method: 'DELETE',
-        headers: getAuthHeaders() as HeadersInit
-      });
-    }
-    setSelectedIds(new Set());
-    fetchPassengers();
+    const ids = Array.from(selectedIds);
+    showConfirm({
+      message: `确认删除选中的 ${ids.length} 位乘车人吗？`,
+      onConfirm: async () => {
+        setConfirmPending(true);
+        setConfirmState((s) => ({ ...s, open: false }));
+        await deletePassengers(ids);
+        setConfirmPending(false);
+      },
+    });
   };
 
   const toggleSelect = (id: string) => {
@@ -233,6 +295,51 @@ export default function PassengerList() {
           </>
         )}
       </div>
+
+      {confirmState.open && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: '#fff', borderRadius: 4, width: 480, maxWidth: '90%', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', overflow: 'hidden', fontSize: 14 }}>
+            <div style={{ padding: '0 16px', height: 40, lineHeight: '40px', background: '#2d7dd2', color: '#fff', fontSize: 14, fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>{confirmState.title}</span>
+              <span style={{ cursor: confirmPending ? 'not-allowed' : 'pointer', fontSize: 20, opacity: 0.8 }} onClick={() => { if (!confirmPending) setConfirmState((s) => ({ ...s, open: false })); }}>×</span>
+            </div>
+            <div style={{ padding: '30px 20px', display: 'flex', alignItems: 'flex-start', gap: 16 }}>
+              <div style={{ fontSize: 32, color: confirmState.mode === 'alert' ? '#2ecc71' : '#ffb800', lineHeight: 1 }}>{confirmState.mode === 'alert' ? '✔' : '⚠'}</div>
+              <div style={{ fontSize: 16, marginTop: 4, fontWeight: 'bold' }}>{confirmState.message}</div>
+            </div>
+            <div style={{ padding: '10px 20px 20px', display: 'flex', justifyContent: 'center', gap: 12 }}>
+              {confirmState.mode === 'confirm' && (
+                <button
+                  style={{ background: '#fff', color: '#666', border: '1px solid #dcdfe6', padding: '9px 23px', borderRadius: 4, cursor: confirmPending ? 'not-allowed' : 'pointer', fontSize: 14, opacity: confirmPending ? 0.6 : 1 }}
+                  disabled={confirmPending}
+                  onClick={() => setConfirmState((s) => ({ ...s, open: false }))}
+                >
+                  {confirmState.cancelText}
+                </button>
+              )}
+              <button
+                style={{ background: '#ff8a00', color: '#fff', border: 'none', padding: '9px 23px', borderRadius: 4, cursor: confirmPending ? 'not-allowed' : 'pointer', fontSize: 14, opacity: confirmPending ? 0.6 : 1 }}
+                disabled={confirmPending}
+                onClick={async () => {
+                  if (confirmPending) return;
+                  if (confirmState.mode === 'alert') {
+                    setConfirmState((s) => ({ ...s, open: false }));
+                    return;
+                  }
+                  const cb = confirmState.onConfirm;
+                  if (!cb) {
+                    setConfirmState((s) => ({ ...s, open: false }));
+                    return;
+                  }
+                  await cb();
+                }}
+              >
+                {confirmState.confirmText}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -478,19 +478,6 @@
       "created_at": "2025-12-20T04:53:19.617Z"
     },
     {
-      "passenger_id": "1766206542454",
-      "user_id": "fb39eff6-24c2-4882-bb8a-52bb82d0e7ec",
-      "name": "玉玉",
-      "id_type": "居民身份证",
-      "id_number": "647a2b12a11ab40a1199c1cdb478f9e4:08ca563e92ebd473274f91624326f353dff752b737b71bbbb4fd84aedcdec70d",
-      "phone_country_code": "+86",
-      "phone_number": "13311111112",
-      "traveler_type": "学生",
-      "verified_status": "已通过",
-      "is_self": false,
-      "created_at": "2025-12-20T04:55:42.454Z"
-    },
-    {
       "passenger_id": "self-f5c6631e-5348-43ce-8ad7-2fb9a6ab7b9e",
       "user_id": "f5c6631e-5348-43ce-8ad7-2fb9a6ab7b9e",
       "name": "zhangsan",
@@ -556,6 +543,19 @@
       "verified_status": "已通过",
       "is_self": false,
       "created_at": "2025-12-21T06:55:55.302Z"
+    },
+    {
+      "passenger_id": "1766758297942",
+      "user_id": "fb39eff6-24c2-4882-bb8a-52bb82d0e7ec",
+      "name": "张三",
+      "id_type": "居民身份证",
+      "id_number": "6597ef3c20b83e2df2ed2b039edd977a:3eda17625748530c50bddcde8f7927785fb91f91f8c81e6142ab520b1c4a3c99",
+      "phone_country_code": "+86",
+      "phone_number": "18621523333",
+      "traveler_type": "成人",
+      "verified_status": "已通过",
+      "is_self": false,
+      "created_at": "2025-12-26T14:11:37.942Z"
     }
   ],
   "users": {

@@ -16,18 +16,20 @@ const tabQrBtn = $('#tab-qr-btn');
 const tabAccount = $('#tab-account');
 const tabQr = $('#tab-qr');
 
-tabAccountBtn.addEventListener('click', () => {
-  tabAccountBtn.classList.add('active');
-  tabQrBtn.classList.remove('active');
-  tabAccount.classList.add('active');
-  tabQr.classList.remove('active');
-});
-tabQrBtn.addEventListener('click', () => {
-  tabQrBtn.classList.add('active');
-  tabAccountBtn.classList.remove('active');
-  tabQr.classList.add('active');
-  tabAccount.classList.remove('active');
-});
+if (tabAccountBtn && tabQrBtn && tabAccount && tabQr) {
+  tabAccountBtn.addEventListener('click', () => {
+    tabAccountBtn.classList.add('active');
+    tabQrBtn.classList.remove('active');
+    tabAccount.classList.add('active');
+    tabQr.classList.remove('active');
+  });
+  tabQrBtn.addEventListener('click', () => {
+    tabQrBtn.classList.add('active');
+    tabAccountBtn.classList.remove('active');
+    tabQr.classList.add('active');
+    tabAccount.classList.remove('active');
+  });
+}
 
 // 账户登录
 const loginForm = $('#login-form');
@@ -38,8 +40,6 @@ const loginStatus = $('#login-status');
 // 2FA 弹窗相关元素
 const smsModal = /** @type {HTMLDivElement} */(document.getElementById('sms-modal'));
 const smsClose = /** @type {HTMLButtonElement} */(document.getElementById('sms-close'));
-const smsStepId = /** @type {HTMLDivElement} */(document.getElementById('sms-step-id'));
-const smsStepCode = /** @type {HTMLDivElement} */(document.getElementById('sms-step-code'));
 const idLast4Input = /** @type {HTMLInputElement} */(document.getElementById('id-last4'));
 const idVerifyBtn = /** @type {HTMLButtonElement} */(document.getElementById('id-verify'));
 const smsMaskedPhone = /** @type {HTMLSpanElement} */(document.getElementById('sms-masked-phone'));
@@ -56,17 +56,37 @@ let currentFlowId = null;
 let expireAt = 0;
 let countdownTimer = null;
 let resendTimer = null;
+let codeBtnBaseText = (idVerifyBtn && idVerifyBtn.textContent) ? String(idVerifyBtn.textContent) : '获取验证码';
+
+function persistLoginAndRedirect(session_id, redirect) {
+  if (loginStatus) setText(loginStatus, '登录成功，正在跳转…');
+  sessionStorage.setItem('session_id', session_id);
+  try { localStorage.setItem('SESSION_ID', session_id); } catch (e) {}
+  try { window.dispatchEvent(new CustomEvent('uc:auth-changed', { detail: { sid: session_id, logged_in: true } })); } catch (e) {}
+  setTimeout(() => {
+    const home = (window && window.HOME_URL) || 'http://localhost:8080/';
+    const base = redirect || home;
+    const sep = base.includes('?') ? '&' : '?';
+    const next = `${base}${sep}sid=${encodeURIComponent(session_id)}`;
+    window.location.href = next;
+  }, 500);
+}
 
 function openSmsModal(masked, flowId) {
   currentFlowId = flowId;
   smsErr1.textContent = ''; smsStatus1.textContent = '';
   smsErr2.textContent = ''; smsStatus2.textContent = '';
-  smsStepId.removeAttribute('hidden');
-  smsStepCode.setAttribute('hidden', 'hidden');
   smsMaskedPhone.textContent = masked || '***********';
   smsModal.removeAttribute('hidden');
   idLast4Input.value = '';
   smsCodeInput.value = '';
+  codeBtnBaseText = '获取验证码';
+  if (idVerifyBtn) {
+    idVerifyBtn.textContent = codeBtnBaseText;
+    idVerifyBtn.disabled = false;
+  }
+  if (smsVerifyBtn) smsVerifyBtn.disabled = true;
+  if (smsCountdown) smsCountdown.textContent = '';
   idLast4Input.focus();
 }
 
@@ -75,6 +95,11 @@ function closeSmsModal() {
   currentFlowId = null;
   if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
   if (resendTimer) { clearInterval(resendTimer); resendTimer = null; }
+  codeBtnBaseText = '获取验证码';
+  if (idVerifyBtn) {
+    idVerifyBtn.textContent = codeBtnBaseText;
+    idVerifyBtn.disabled = false;
+  }
 }
 
 smsClose && smsClose.addEventListener('click', (e) => { e.preventDefault(); closeSmsModal(); });
@@ -93,16 +118,29 @@ function startCountdown(minutes) {
   countdownTimer = setInterval(tick, 1000);
 }
 
-function startResendCountdown(seconds) {
+function startResendCountdown(seconds, baseText = undefined) {
   let left = seconds;
-  smsResendBtn.disabled = true;
+  const btn = idVerifyBtn;
+  if (!btn) return;
+  const text = typeof baseText === 'string' && baseText.length ? baseText : (btn.textContent || '重新发送');
+  codeBtnBaseText = text;
+  btn.disabled = true;
   if (resendTimer) clearInterval(resendTimer);
+  btn.textContent = `${text}(${left}s)`;
   resendTimer = setInterval(() => {
-    left -= 1; if (left <= 0) { clearInterval(resendTimer); resendTimer = null; smsResendBtn.disabled = false; }
+    left -= 1;
+    if (left <= 0) {
+      clearInterval(resendTimer);
+      resendTimer = null;
+      btn.disabled = false;
+      btn.textContent = text;
+      return;
+    }
+    btn.textContent = `${text}(${left}s)`;
   }, 1000);
 }
 
-loginForm.addEventListener('submit', async (e) => {
+if (loginForm) loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   loginError.textContent = '';
   loginStatus.textContent = '';
@@ -142,17 +180,7 @@ loginForm.addEventListener('submit', async (e) => {
     }
     // 否则直接登录成功
     const { session_id, redirect } = data;
-    setText(loginStatus, '登录成功，正在跳转…');
-    sessionStorage.setItem('session_id', session_id);
-    try { localStorage.setItem('SESSION_ID', session_id); } catch (e) {}
-    try { window.dispatchEvent(new CustomEvent('uc:auth-changed', { detail: { sid: session_id, logged_in: true } })); } catch (e) {}
-    setTimeout(() => {
-      const home = (window && window.HOME_URL) || 'http://localhost:8080/';
-      const base = redirect || home;
-      const sep = base.includes('?') ? '&' : '?';
-      const next = `${base}${sep}sid=${encodeURIComponent(session_id)}`;
-      window.location.href = next;
-    }, 500);
+    persistLoginAndRedirect(session_id, redirect);
   } catch (err) {
     setText(loginError, '网络错误，请稍后再试');
   } finally {
@@ -188,18 +216,18 @@ idVerifyBtn && idVerifyBtn.addEventListener('click', async (e) => {
       else smsErr1.textContent = data.message || '验证失败';
       return;
     }
-    // 切换到验证码输入步骤
-    smsStepId.setAttribute('hidden', 'hidden');
-    smsStepCode.removeAttribute('hidden');
-    smsStatus2.textContent = '验证码已发送，请查收';
+    codeBtnBaseText = '重新发送';
+    if (idVerifyBtn) idVerifyBtn.textContent = codeBtnBaseText;
+    smsStatus2.textContent = data.sent === false ? '验证码仍在有效期内' : '验证码已发送，请查收';
     if (data.dev_code) smsStatus2.textContent += `（开发联调验证码：${data.dev_code}）`;
+    if (smsVerifyBtn) smsVerifyBtn.disabled = false;
     startCountdown((data.ttl_minutes || 5));
-    startResendCountdown((data.countdown_seconds || 60));
+    startResendCountdown((data.countdown_seconds || 60), '重新发送');
     smsCodeInput.focus();
   } catch (err) {
     smsErr1.textContent = '网络错误，请稍后再试';
   } finally {
-    idVerifyBtn.disabled = false;
+    if (idVerifyBtn && !resendTimer) idVerifyBtn.disabled = false;
   }
 });
 
@@ -254,17 +282,7 @@ smsVerifyBtn && smsVerifyBtn.addEventListener('click', async (e) => {
     // 登录成功
     const { session_id, redirect } = data;
     closeSmsModal();
-    setText(loginStatus, '登录成功，正在跳转…');
-    sessionStorage.setItem('session_id', session_id);
-    try { localStorage.setItem('SESSION_ID', session_id); } catch (e) {}
-    try { window.dispatchEvent(new CustomEvent('uc:auth-changed', { detail: { sid: session_id, logged_in: true } })); } catch (e) {}
-    setTimeout(() => {
-      const home = (window && window.HOME_URL) || 'http://localhost:8080/';
-      const base = redirect || home;
-      const sep = base.includes('?') ? '&' : '?';
-      const next = `${base}${sep}sid=${encodeURIComponent(session_id)}`;
-      window.location.href = next;
-    }, 500);
+    persistLoginAndRedirect(session_id, redirect);
   } catch (err) {
     smsErr2.textContent = '网络错误，请稍后再试';
   } finally {

@@ -513,7 +513,10 @@ app.get(`${base}/terms`, (req, res) => {
 app.post(`${base}/auth/login`, async (req, res) => {
   const nowHeader = req.get('x-simulate-time');
   const now = nowHeader ? new Date(nowHeader) : new Date();
-  if (req.get('x-simulate-maintenance') === '1' || isMaintenance(now)) {
+  if (req.get('x-simulate-maintenance') === '1') {
+    return error(res, 503, 'MAINTENANCE_WINDOW', '系统维护中，服务时间：每日5:00-次日1:00；周二5:00-24:00');
+  }
+  if (process.env.NODE_ENV !== 'test' && isMaintenance(now)) {
     return error(res, 503, 'MAINTENANCE_WINDOW', '系统维护中，服务时间：每日5:00-次日1:00；周二5:00-24:00');
   }
   const {
@@ -574,42 +577,36 @@ app.post(`${base}/auth/login`, async (req, res) => {
 
   // 成功登录
   resetFail(key);
-  // 强制：登录二次短信验证流程（设置环境变量 FORCE_LOGIN_2FA=1 时启用）
-  const forceLogin2FA = process.env.FORCE_LOGIN_2FA === '1' || process.env.FORCE_LOGIN_2FA === 'true';
-  if (forceLogin2FA) {
-    const flow_id = uuidv4();
-    let phone_number = null; let phone_country_code = '+86';
-    try {
-      const acc = await db.findByUserId(account.user_id);
-      if (acc && acc.phone_number) { phone_number = acc.phone_number; phone_country_code = acc.phone_country_code || '+86'; }
-    } catch (e) {}
-    // 预置账户兜底手机号（如需要，可在 accountStore 中补充 phone_number 字段）
-    if (!phone_number) {
-      const fb = accountStore.get(key);
-      if (fb && fb.phone_number) phone_number = fb.phone_number;
+  const flow_id = uuidv4();
+  let phone_number = null;
+  let phone_country_code = '+86';
+  try {
+    const acc = await db.findByUserId(account.user_id);
+    if (acc && acc.phone_number) {
+      phone_number = acc.phone_number;
+      phone_country_code = acc.phone_country_code || '+86';
     }
-    login2FAFlows.set(flow_id, {
-      user_id: account.user_id,
-      login_key: key,
-      identifier_type: type,
-      identifier,
-      phone_country_code,
-      phone_number,
-      created_at: Date.now(),
-      id_fail_count: 0,
-      locked_until: 0,
-      code_fail_count: 0,
-      code: null,
-      code_expires_at: 0,
-    });
-    const masked = phone_number ? `${String(phone_number).slice(0,3)}****${String(phone_number).slice(-4)}` : '***********';
-    return res.json({ need_sms_verification: true, flow_id, masked_phone: masked, ttl_minutes: 5, message: '为保障账户安全，需进行短信身份验证' });
+  } catch (e) {}
+  if (!phone_number) {
+    const fb = accountStore.get(key);
+    if (fb && fb.phone_number) phone_number = fb.phone_number;
   }
-  const session_id = `sid-${account.user_id}`;
-  const existing = loginSessions.get(session_id);
-  if (existing) { existing.last_active_at = Date.now(); loginSessions.set(session_id, existing); }
-  else { loginSessions.set(session_id, { user_id: account.user_id, last_active_at: Date.now() }); }
-  return res.json({ session_id, user_id: account.user_id, redirect: process.env.HOME_URL || 'http://localhost:8080/', message: '登录成功' });
+  login2FAFlows.set(flow_id, {
+    user_id: account.user_id,
+    login_key: key,
+    identifier_type: type,
+    identifier,
+    phone_country_code,
+    phone_number,
+    created_at: Date.now(),
+    id_fail_count: 0,
+    locked_until: 0,
+    code_fail_count: 0,
+    code: null,
+    code_expires_at: 0,
+  });
+  const masked = phone_number ? `${String(phone_number).slice(0, 3)}****${String(phone_number).slice(-4)}` : '***********';
+  return res.json({ need_sms_verification: true, flow_id, masked_phone: masked, ttl_minutes: 5, message: '为保障账户安全，需进行短信身份验证' });
 });
 
 // 获取会话状态

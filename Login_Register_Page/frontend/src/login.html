@@ -137,37 +137,28 @@
       <div class="modal-overlay"></div>
       <div class="modal-content">
         <div class="modal-header">
-          <h3 id="sms-title">身份验证</h3>
+          <h3 id="sms-title">选择验证方式</h3>
           <button id="sms-close" class="modal-close" aria-label="关闭">×</button>
         </div>
         <div class="modal-body">
-          <!-- Step 1: 身份证后4位校验 -->
-          <div id="sms-step-id">
-            <p class="hint">请输入登录账号绑定的证件号后4位</p>
-            <div class="input-group">
-              <input type="text" id="id-last4" inputmode="numeric" pattern="\d{4}" maxlength="4" placeholder="请输入后4位" aria-label="身份证后4位" />
-            </div>
-            <div class="actions">
-              <button id="id-verify" class="primary-btn">验证</button>
-            </div>
-            <div id="sms-error" class="error" aria-live="polite"></div>
-            <div id="sms-status" class="status" aria-live="polite"></div>
+          <div class="verify-type" aria-label="验证方式">短信验证</div>
+          <div class="input-group">
+            <input type="text" id="id-last4" inputmode="numeric" pattern="\d{4}" maxlength="4" placeholder="请输入登录账号绑定的证件号后4位" aria-label="证件号后4位" />
           </div>
-          
-          <!-- Step 2: 短信验证码输入 -->
-          <div id="sms-step-code" hidden>
-            <p class="hint">我们已向绑定手机号 <span id="sms-masked-phone">***********</span> 发送6位数字验证码</p>
-            <div class="input-group">
-              <input type="text" id="sms-code" inputmode="numeric" pattern="\d{6}" maxlength="6" placeholder="请输入验证码" aria-label="短信验证码" />
-            </div>
-            <div class="actions">
-              <button id="sms-verify" class="primary-btn">确认登录</button>
-              <button id="sms-resend" class="secondary-btn" disabled>重新发送</button>
-              <span class="countdown" id="sms-countdown" aria-live="polite">剩余 05:00</span>
-            </div>
-            <div id="sms-error-2" class="error" aria-live="polite"></div>
-            <div id="sms-status-2" class="status" aria-live="polite"></div>
+          <div class="input-group input-row">
+            <input type="text" id="sms-code" inputmode="numeric" pattern="\d{6}" maxlength="6" placeholder="输入验证码" aria-label="短信验证码" />
+            <button id="id-verify" class="secondary-btn get-code-btn">获取验证码</button>
           </div>
+          <div class="actions">
+            <button id="sms-verify" class="primary-btn">确定</button>
+            <span class="countdown" id="sms-countdown" aria-live="polite"></span>
+          </div>
+          <button id="sms-resend" class="secondary-btn" disabled hidden>重新发送</button>
+          <span id="sms-masked-phone" hidden>***********</span>
+          <div id="sms-error" class="error" aria-live="polite"></div>
+          <div id="sms-status" class="status" aria-live="polite"></div>
+          <div id="sms-error-2" class="error" aria-live="polite"></div>
+          <div id="sms-status-2" class="status" aria-live="polite"></div>
         </div>
       </div>
     </div>
