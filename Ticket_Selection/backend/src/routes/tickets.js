@@ -56,9 +56,40 @@ router.get('/api/tickets', (req, res) => {
 
     if (trainTypes && String(trainTypes).length > 0) {
       const types = Array.isArray(trainTypes) ? trainTypes : String(trainTypes).split(',');
+      
       filteredTrains = filteredTrains.filter((train) => {
         const trainInitial = String(train.trainNo || '').charAt(0).toUpperCase();
-        return types.includes(trainInitial);
+        
+        // Mock data logic for Fuxing and Smart
+        // Let's assume:
+        // G101, G103, G1 are Fuxing
+        // G1, G101 are Smart
+        const isFuxing = ['G101', 'G103', 'G1'].includes(train.trainNo);
+        const isSmart = ['G1', 'G101'].includes(train.trainNo);
+        const isOther = !['G', 'D', 'C', 'Z', 'T', 'K'].includes(trainInitial);
+
+        // Check if any selected type matches this train
+        // Note: The logic in 12306 web is OR across checkboxes in the same group.
+        // If user selects "G" and "Fuxing", it usually means show trains that are EITHER G OR Fuxing? 
+        // Or AND?
+        // Actually, "Fuxing" is an attribute. 
+        // If user selects "G" and "D", it shows G OR D.
+        // If user selects "G" and "Fuxing", logically it should be G OR Fuxing (if they are in same group).
+        // Let's implement OR logic for all types in `types`.
+        
+        let matches = false;
+        
+        // Check letter types
+        if (['G', 'D', 'C', 'Z', 'T', 'K'].includes(trainInitial) && types.includes(trainInitial)) {
+            matches = true;
+        }
+        
+        // Check special types
+        if (types.includes('Fuxing') && isFuxing) matches = true;
+        if (types.includes('Smart') && isSmart) matches = true;
+        if (types.includes('Other') && isOther) matches = true;
+        
+        return matches;
       });
     }
 

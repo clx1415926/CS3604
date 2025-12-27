@@ -68,6 +68,9 @@ function FilterPanel({ onFilterChange, availableFromStations = [], availableToSt
                     <label><input className="train-type-item" type="checkbox" value="Z" onChange={handleTrainTypeChange} /> 直达 (Z)</label>
                     <label><input className="train-type-item" type="checkbox" value="T" onChange={handleTrainTypeChange} /> 特快 (T)</label>
                     <label><input className="train-type-item" type="checkbox" value="K" onChange={handleTrainTypeChange} /> 快速 (K)</label>
+                    <label><input className="train-type-item" type="checkbox" value="Other" onChange={handleTrainTypeChange} /> 其他</label>
+                    <label><input className="train-type-item" type="checkbox" value="Fuxing" onChange={handleTrainTypeChange} /> 复兴号</label>
+                    <label><input className="train-type-item" type="checkbox" value="Smart" onChange={handleTrainTypeChange} /> 智能动车组</label>
                 </div>
             </div>
 

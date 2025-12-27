@@ -107,7 +107,15 @@ export default function OrderCenter() {
       }
     }
 
-    if (sawUnauthorized) markExpired('renew_unauthorized');
+    if (sawUnauthorized) {
+      markExpired('renew_unauthorized');
+      // Force redirect to login if session is strictly invalid
+      if (reason === 'interval' || reason === 'fetch_orders') {
+         if (window.confirm('登录已过期，请重新登录')) {
+             window.location.href = 'http://localhost:8080/login.html';
+         }
+      }
+    }
     return false;
   };
 

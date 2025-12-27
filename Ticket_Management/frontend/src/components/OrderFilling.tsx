@@ -88,7 +88,13 @@ export default function OrderFilling() {
     const sidParam = getParam('sid');
     let sid = sidParam || localStorage.getItem('SESSION_ID') || '';
     if (sidParam) { try { localStorage.setItem('SESSION_ID', sidParam); } catch (e) {} sid = sidParam; }
-    sid = sid || 'sess-super-12306';
+    
+    // Check if sid is present
+    if (!sid) {
+       setSyncError('未检测到登录状态，请先登录');
+       setContacts(fallbackContacts); // Or empty? Fallback for now.
+       return;
+    }
 
     const authBases = ['http://localhost:8080/api/v1', 'http://localhost:8081/api/v1', 'http://127.0.0.1:8082/api/v1'];
 

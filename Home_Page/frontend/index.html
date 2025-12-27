@@ -84,6 +84,50 @@
             </li>
             <li role="menuitem" class="nav-item nav-item-w1">
               <a href="javascript:void(0)" class="nav-hd item">车票 <i class="icon icon-down"></i></a>
+              <!-- 悬停下拉菜单 -->
+              <div class="nav-bd" role="menu">
+                <div class="nav-bd-con">
+                  <!-- 购买组 -->
+                  <div class="nav-group">
+                    <div class="nav-tit">购买</div>
+                    <div class="nav-group-bd">
+                      <ul class="nav-list">
+                        <li><a href="http://localhost:5173/index.html">单程</a></li>
+                        <li><a href="http://localhost:5173/index.html">中转换乘</a></li>
+                      </ul>
+                      <ul class="nav-list border-left">
+                        <li><a href="http://localhost:5173/index.html">往返</a></li>
+                        <li><a href="http://localhost:5173/index.html">计次·定期票</a></li>
+                      </ul>
+                    </div>
+                  </div>
+                  <!-- 变更组 -->
+                  <div class="nav-group group-border-left">
+                    <div class="nav-tit">变更</div>
+                    <div class="nav-group-bd">
+                      <ul class="nav-list">
+                        <li><a href="http://localhost:5173/index.html">退票</a></li>
+                        <li><a href="http://localhost:5173/index.html">变更到站</a></li>
+                      </ul>
+                      <ul class="nav-list border-left">
+                        <li><a href="http://localhost:5173/index.html">改签</a></li>
+                      </ul>
+                    </div>
+                  </div>
+                  <!-- 更多组 -->
+                  <div class="nav-group group-border-left">
+                    <div class="nav-tit">更多</div>
+                    <div class="nav-group-bd">
+                      <ul class="nav-list">
+                        <li><a href="http://localhost:5173/index.html">中铁银通卡</a></li>
+                      </ul>
+                      <ul class="nav-list border-left">
+                        <li><a href="http://localhost:5173/index.html">国际列车</a></li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </li>
             <li role="menuitem" class="nav-item">
               <a href="javascript:void(0)" class="nav-hd item">团购服务 <i class="icon icon-down"></i></a>
@@ -125,7 +169,7 @@
 
     <!-- 主内容区 -->
     <div class="wrapper">
-      <section class="ticket-search-card" aria-label="车票查询">
+      <section id="ticket-booking" class="ticket-search-card" aria-label="车票查询">
         <aside class="ticket-side" aria-label="功能导航">
           <ul>
             <li class="active"><i class="icon icon-train"></i><span>车票</span></li>

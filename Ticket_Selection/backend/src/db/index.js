@@ -79,9 +79,8 @@ async function withTransaction(db, fn) {
 }
 
 function seedTrains() {
-  return [
+  const baseTrains = [
     {
-      date: '2025-12-15',
       trainNo: 'G101',
       fromStation: '北京南站',
       toStation: '上海虹桥站',
@@ -96,7 +95,6 @@ function seedTrains() {
       startingPrice: 553,
     },
     {
-      date: '2025-12-15',
       trainNo: 'D313',
       fromStation: '北京南站',
       toStation: '上海虹桥站',
@@ -110,7 +108,6 @@ function seedTrains() {
       startingPrice: 428,
     },
     {
-      date: '2025-12-15',
       trainNo: 'K511',
       fromStation: '北京西站',
       toStation: '上海站',
@@ -125,7 +122,6 @@ function seedTrains() {
       startingPrice: 156,
     },
     {
-      date: '2025-12-15',
       trainNo: 'G7001',
       fromStation: '南京南站',
       toStation: '上海虹桥站',
@@ -140,7 +136,6 @@ function seedTrains() {
       startingPrice: 134,
     },
     {
-      date: '2025-12-15',
       trainNo: 'D5401',
       fromStation: '南京南站',
       toStation: '上海虹桥站',
@@ -154,7 +149,6 @@ function seedTrains() {
       startingPrice: 119,
     },
     {
-      date: '2025-12-15',
       trainNo: 'G7002',
       fromStation: '上海虹桥站',
       toStation: '南京南站',
@@ -169,7 +163,6 @@ function seedTrains() {
       startingPrice: 134,
     },
     {
-      date: '2025-12-16',
       trainNo: 'G103',
       fromStation: '北京南站',
       toStation: '上海虹桥站',
@@ -183,7 +176,6 @@ function seedTrains() {
       startingPrice: 428,
     },
     {
-      date: '2025-12-16',
       trainNo: 'D315',
       fromStation: '北京南站',
       toStation: '上海虹桥站',
@@ -197,7 +189,6 @@ function seedTrains() {
       startingPrice: 428,
     },
     {
-      date: '2025-12-16',
       trainNo: 'G153',
       fromStation: '北京南站',
       toStation: '南京南站',
@@ -212,7 +203,6 @@ function seedTrains() {
       startingPrice: 443,
     },
     {
-      date: '2025-12-16',
       trainNo: 'G7003',
       fromStation: '南京南站',
       toStation: '上海虹桥站',
@@ -227,7 +217,6 @@ function seedTrains() {
       startingPrice: 134,
     },
     {
-      date: '2025-12-16',
       trainNo: 'G506',
       fromStation: '长沙南',
       toStation: '北京西站',
@@ -241,7 +230,6 @@ function seedTrains() {
       startingPrice: 650,
     },
     {
-      date: '2025-12-16',
       trainNo: 'G1234',
       fromStation: '长春',
       toStation: '北京',
@@ -255,6 +243,25 @@ function seedTrains() {
       startingPrice: 500,
     },
   ];
+
+  const result = [];
+  const today = new Date();
+  
+  // Generate data for next 30 days
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const dateStr = `${y}-${m}-${day}`;
+    
+    baseTrains.forEach(train => {
+      result.push({ ...train, date: dateStr });
+    });
+  }
+  
+  return result;
 }
 
 async function initDb() {

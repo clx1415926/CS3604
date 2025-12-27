@@ -227,6 +227,112 @@ body {
   margin-left: 4px;
 }
 
+/* 首页车票下拉菜单样式 */
+.nav-bd {
+  display: none;
+  position: absolute;
+  top: 40px;
+  left: 0;
+  background-color: #fff;
+  border: 1px solid #d0d0d0;
+  box-shadow: 0 0 5px rgba(0,0,0,0.2);
+  z-index: 10000;
+  width: 1200px; /* 固定宽度，匹配 wrapper */
+  left: 50%;
+  transform: translateX(-50%); /* 居中对齐 wrapper */
+  /* 由于 .nav-item 是 relative，这里的 left 50% 是相对于 .nav-item 的，这可能不对。
+     如果 .nav-box .wrapper 是 relative，我们需要更小心的定位。
+     但通常 .nav-item 是 relative。为了让 .nav-bd 撑开并对齐整个 wrapper，
+     我们需要把它放到 .nav-box 或者 .wrapper 层级下，或者强制定位。
+     
+     简单起见，这里假设 .nav-item 宽度不大，.nav-bd 需要很宽。
+     为了严格匹配设计图（横跨），我们设置 min-width 并尝试左对齐。
+     
+     实际上，参考图片显示菜单宽度很大。
+     为了简单实现且不破坏 DOM 结构，我们保持绝对定位，但调整 left 值。
+     .nav-item 在 wrapper 内部，wrapper 居中。
+     如果我们将 .nav-bd 宽度设为 1200px（wrapper宽），并向左偏移以对齐 wrapper 的左边？
+     .nav-item 是 "车票"，在 "首页" 右边。 "首页" 宽度约 60-80px?
+     我们可以给 .nav-bd 一个固定的 left 偏移量，或者让它相对于最近的 relative 祖先（.nav-item）定位。
+     为了效果更好，我们给 .nav-bd 一个较大的 min-width，比如 800px，
+     并让内容左对齐。
+  */
+  min-width: 600px; /* 足够容纳三列 */
+  left: -80px; /* 向左偏移以对齐更美观，或者对齐首页 */
+  transform: none;
+}
+
+.nav-item:hover .nav-bd {
+  display: block;
+}
+
+.nav-bd-con {
+  display: flex;
+  padding: 15px 0;
+  color: #666;
+}
+
+.nav-group {
+  padding: 0 20px;
+}
+
+.nav-group.group-border-left {
+  border-left: 1px solid #297acc; /* 大组之间的蓝色分隔线 */
+}
+
+.nav-tit {
+  color: #3b99fc;
+  font-weight: bold;
+  font-size: 14px;
+  margin-bottom: 8px;
+  /* 标题稍微缩进或对齐 */
+}
+
+.nav-group-bd {
+  display: flex;
+}
+
+.nav-list {
+  list-style: none;
+  padding: 0 15px; /* 列表内边距 */
+  min-width: 100px; /* 保证每列宽度 */
+}
+
+.nav-list.border-left {
+  border-left: 1px solid #eee; /* 小组之间的浅色分隔线 */
+}
+
+.nav-list li {
+  line-height: 28px; /* 增加行高 */
+}
+
+.nav-list a {
+  color: #333;
+  text-decoration: none;
+  font-size: 14px; /* 字体稍大 */
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.nav-list a[href^="javascript"] {
+  cursor: default;
+}
+
+.nav-list a:hover {
+  color: #3b99fc;
+  text-decoration: none; /* 移除下划线 */
+}
+
+/* Smooth Scroll for the whole page */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Scroll target offset to ensure visibility */
+#ticket-booking {
+  scroll-margin-top: 20px;
+}
+
 /* 轮播图区域 */
 .section-first {
   position: relative;
