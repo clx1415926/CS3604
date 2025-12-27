@@ -151,7 +151,7 @@ function App() {
                         initialStudent={(initialParams.student === '1')}
                     />
                     <div className="train-list-wrapper" style={{ flex: 1, marginTop: '20px' }}>
-                        <TrainList trains={trains} />
+                        <TrainList trains={trains} query={query} />
                     </div>
                 </div>
             </main>

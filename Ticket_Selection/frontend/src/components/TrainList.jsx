@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-function TrainList({ trains }) {
+function TrainList({ trains, query }) {
     const [error, setError] = useState('');
     const [loadingId, setLoadingId] = useState(null);
     const book = async (train) => {
@@ -37,7 +37,40 @@ function TrainList({ trains }) {
         }
     };
     if (!trains || trains.length === 0) {
-        return <p className="no-results-message">没有符合条件的车次。</p>;
+        const from = query?.fromStation;
+        const to = query?.toStation;
+        
+        if (from && to) {
+            return (
+                <div className="no-ticket-w" style={{
+                    border: '1px solid #ededed',
+                    backgroundColor: '#fff',
+                    padding: '40px 0',
+                    textAlign: 'center',
+                    marginTop: '10px',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    minHeight: '120px'
+                }}>
+                    <div className="icon-box" style={{ marginRight: '20px' }}>
+                        <svg width="48" height="48" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M512 0C229.668571 0 0 229.668571 0 512s229.668571 512 512 512 512-229.668571 512-512S794.331429 0 512 0z m0 914.285714c-221.952 0-402.285714-180.333714-402.285714-402.285714S290.048 109.714286 512 109.714286s402.285714 180.333714 402.285714 402.285714-180.333714 402.285714-402.285714 402.285714z" fill="#DEDEDE"></path>
+                            <path d="M470.857143 256h82.285714v329.142857h-82.285714zM470.857143 658.285714h82.285714v82.285715h-82.285714z" fill="#DEDEDE"></path>
+                        </svg>
+                    </div>
+                    <div className="txt-box" style={{ textAlign: 'left', fontSize: '14px', color: '#666', lineHeight: '24px' }}>
+                        <div style={{ color: '#999' }}>
+                            很抱歉，按您的查询条件，当前未找到从<span style={{ fontWeight: 'bold', color: '#333', margin: '0 4px' }}>{from}</span>到<span style={{ fontWeight: 'bold', color: '#333', margin: '0 4px' }}>{to}</span>的列车。
+                        </div>
+                        <div style={{ color: '#999' }}>
+                            您可以试用<a href="javascript:void(0)" style={{ color: '#0077FF', cursor: 'pointer', textDecoration: 'none' }}>中转换乘</a>功能，查询途中换乘一次的部分列车余票情况。
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        return <p className="no-results-message" style={{ textAlign: 'center', padding: '40px', color: '#999' }}>没有符合条件的车次。</p>;
     }
 
     return (
