@@ -32,9 +32,6 @@ export default function OrderFilling() {
 
   const seatsCacheKeyBase = (sid: string) => `TM_SELECTED_SEATS:${sid || 'anonymous'}:${trainId}:${travelDate}`;
 
-  const getContactsCacheKey = (sid: string) => `TM_CONTACTS_CACHE:${sid || 'anonymous'}`;
-  const contactsCacheTtlMs = 2 * 60 * 1000;
-
   const safeParseJson = (raw: string | null) => {
     if (!raw) return null;
     try {
@@ -124,26 +121,35 @@ export default function OrderFilling() {
       return false;
     };
 
+    // 获取当前用户的 user_id
+    const getCurrentUserId = async (): Promise<string | null> => {
+      for (const base of authBases) {
+        try {
+          const r = await fetch(`${base}/auth/session`, { headers: { Authorization: `Bearer ${sid}` } });
+          if (r.ok) {
+            const data = await r.json().catch(() => ({}));
+            return data.user_id || null;
+          }
+        } catch (e) {}
+      }
+      return null;
+    };
+
     const fetchContacts = async () => {
       setIsSyncing(true);
       setSyncError('');
 
+      // 先获取当前用户的 user_id 用于日志记录
+      const currentUserId = await getCurrentUserId();
+      
       const logBase = {
         ts: new Date().toISOString(),
-        user_id: profile?.user_id,
+        user_id: currentUserId || profile?.user_id,
         sid,
       };
 
-      const cacheKey = getContactsCacheKey(sid);
-      const cached = safeParseJson(localStorage.getItem(cacheKey));
-      const cachedContacts = Array.isArray(cached?.contacts) ? cached.contacts : null;
-      const cachedAt = typeof cached?.saved_at === 'number' ? cached.saved_at : 0;
-      const cacheFresh = cachedAt > 0 && Date.now() - cachedAt <= contactsCacheTtlMs;
-      if (cacheFresh && cachedContacts && cachedContacts.length > 0) {
-        setContacts(cachedContacts);
-        setPassengers(prev => prev.filter(p => cachedContacts.some((m: any) => m.passenger_id === p.passenger_id)));
-        console.info({ ...logBase, event: 'PASSENGERS_CACHE_APPLIED', count: cachedContacts.length });
-      }
+      // 不再使用缓存，每次都从后端获取最新数据
+      // 确保不同用户登录后获取正确的乘车人列表
 
       try {
         const doFetch = async (attempt: number) => {
@@ -162,9 +168,6 @@ export default function OrderFilling() {
             }
             const data = await rc.json();
             const mapped = normalizePassengers(data);
-            try {
-              localStorage.setItem(cacheKey, JSON.stringify({ saved_at: Date.now(), contacts: mapped }));
-            } catch (e) {}
             setContacts(mapped);
             setPassengers(prev => prev.filter(p => mapped.some(m => m.passenger_id === p.passenger_id)));
             console.info({ ...logBase, event: 'PASSENGERS_SYNC_OK', count: mapped.length, attempt });
@@ -185,15 +188,6 @@ export default function OrderFilling() {
         const errorCode = typeof error?.message === 'string' ? error.message : 'SYNC_FAILED';
         const status = typeof error?.status === 'number' ? error.status : undefined;
         console.error({ ...logBase, event: 'PASSENGERS_SYNC_FAIL', error_code: errorCode, status });
-
-        const cached = safeParseJson(localStorage.getItem(cacheKey));
-        const cachedContacts = Array.isArray(cached?.contacts) ? cached.contacts : null;
-        if (cachedContacts && cachedContacts.length > 0) {
-          setContacts(cachedContacts);
-          setSyncError('网络异常，已展示最近一次缓存联系人');
-          console.info({ ...logBase, event: 'PASSENGERS_SYNC_CACHE_HIT', count: cachedContacts.length });
-          return;
-        }
 
         setContacts(fallbackContacts);
         setPassengers(prev => prev.filter(p => fallbackContacts.some((m: any) => m.passenger_id === p.passenger_id)));

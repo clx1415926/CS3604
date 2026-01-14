@@ -583,6 +583,87 @@
       "verified_status": "已通过",
       "is_self": false,
       "created_at": "2025-12-28T06:50:23.298Z"
+    },
+    {
+      "passenger_id": "self-bcf0a538-f465-4cfe-9ed5-d36d78d307c8",
+      "user_id": "bcf0a538-f465-4cfe-9ed5-d36d78d307c8",
+      "name": "zjc",
+      "id_type": "居民身份证",
+      "id_number": "54fafebed96afbe9392772081fa4a7bb:0c43ad757d88721f677f9cd61623afebf17617999a03e79e014c83e21422100b",
+      "phone_country_code": "+86",
+      "phone_number": "18900000000",
+      "traveler_type": "成人",
+      "verified_status": "已通过",
+      "is_self": true,
+      "protected_flag": 1,
+      "created_at": "2025-12-28T14:52:11.804Z"
+    },
+    {
+      "passenger_id": "1766933599100",
+      "user_id": "bcf0a538-f465-4cfe-9ed5-d36d78d307c8",
+      "name": "czf",
+      "id_type": "居民身份证",
+      "id_number": "4454d1eb62b1d56b6b14a97ce5211505:fc0e4f9d4b3fb0252047b3c302306900f4c5142b0a231833b948819938889d5d",
+      "phone_country_code": "+86",
+      "phone_number": "18958197890",
+      "traveler_type": "成人",
+      "verified_status": "已通过",
+      "is_self": false,
+      "created_at": "2025-12-28T14:53:19.100Z"
+    },
+    {
+      "passenger_id": "self-30fd195d-9658-4302-98f4-e9c744f0d241",
+      "user_id": "30fd195d-9658-4302-98f4-e9c744f0d241",
+      "name": "pz",
+      "id_type": "居民身份证",
+      "id_number": "a0b236af30d06d94e0c823494aedfb2c:a0029fae1b046915cb9f655be452850220f7d43f70b5962bb7a0d124df95a825",
+      "phone_country_code": "+86",
+      "phone_number": "18900000001",
+      "traveler_type": "成人",
+      "verified_status": "已通过",
+      "is_self": true,
+      "protected_flag": 1,
+      "created_at": "2025-12-28T15:25:19.767Z"
+    },
+    {
+      "passenger_id": "1766935577953",
+      "user_id": "30fd195d-9658-4302-98f4-e9c744f0d241",
+      "name": "czf",
+      "id_type": "居民身份证",
+      "id_number": "71ba7691cb4da80b1b2e15ae5468e17e:389e133dd79953b035a25e10f3146011883cdb0d6aa72c0ea86dbd62aaa76e14",
+      "phone_country_code": "+86",
+      "phone_number": "18958197890",
+      "traveler_type": "成人",
+      "verified_status": "已通过",
+      "is_self": false,
+      "created_at": "2025-12-28T15:26:17.953Z"
+    },
+    {
+      "passenger_id": "self-4662f541-c5ad-4447-8d44-4eac058ea969",
+      "user_id": "4662f541-c5ad-4447-8d44-4eac058ea969",
+      "name": "yxz",
+      "id_type": "居民身份证",
+      "id_number": "b079b0d2f468ad664df943ed82dcb956:17cbb5368c7508b04eb36196a066c87e9f3327dfed387b45f348cb9e67f529e5",
+      "phone_country_code": "+86",
+      "phone_number": "18910000000",
+      "traveler_type": "成人",
+      "verified_status": "已通过",
+      "is_self": true,
+      "protected_flag": 1,
+      "created_at": "2025-12-28T15:39:31.812Z"
+    },
+    {
+      "passenger_id": "1766936418512",
+      "user_id": "4662f541-c5ad-4447-8d44-4eac058ea969",
+      "name": "czf",
+      "id_type": "居民身份证",
+      "id_number": "c975086759e547e578e4955fe26ce0dd:429e5ec5d7f8a82ad30af462da12e6b24f8273ce9146f0c70e0b5452aa504048",
+      "phone_country_code": "+86",
+      "phone_number": "18958197890",
+      "traveler_type": "成人",
+      "verified_status": "已通过",
+      "is_self": false,
+      "created_at": "2025-12-28T15:40:18.512Z"
     }
   ],
   "users": {
@@ -1509,6 +1590,121 @@
         }
       ],
       "updated_at": "2025-12-28T07:46:17.788Z"
+    },
+    "bcf0a538-f465-4cfe-9ed5-d36d78d307c8": {
+      "orders": [],
+      "updated_at": "2025-12-28T14:54:42.842Z"
+    },
+    "4662f541-c5ad-4447-8d44-4eac058ea969": {
+      "orders": [
+        {
+          "order_id": "o-01KDJTH1YG5HJJBFWFS6D6ZWHH",
+          "booked_at": "2025-12-28T15:51:42.288Z",
+          "travel_date": "2025-12-15",
+          "train": {
+            "code": "G101",
+            "from": "北京南站",
+            "to": "上海虹桥站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "self-4662f541-c5ad-4447-8d44-4eac058ea969",
+              "name": "yxz",
+              "id_type": "居民身份证",
+              "id_number": "360731196303110883",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "二等座",
+              "carriage_no": "10",
+              "seat_no": "3B"
+            }
+          ],
+          "price_total": 576,
+          "status": "canceled"
+        },
+        {
+          "order_id": "o-01KDJTERWW8GAD6YT4TG6VJTYC",
+          "booked_at": "2025-12-28T15:50:27.485Z",
+          "travel_date": "2025-12-15",
+          "train": {
+            "code": "D313",
+            "from": "北京南站",
+            "to": "上海虹桥站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "self-4662f541-c5ad-4447-8d44-4eac058ea969",
+              "name": "yxz",
+              "id_type": "居民身份证",
+              "id_number": "360731196303110883",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "二等座",
+              "carriage_no": "10",
+              "seat_no": "1C"
+            }
+          ],
+          "price_total": 576,
+          "status": "canceled"
+        },
+        {
+          "order_id": "o-01KDJTBYEEK41TQCGFQBDMR7A1",
+          "booked_at": "2025-12-28T15:48:54.864Z",
+          "travel_date": "2025-12-15",
+          "train": {
+            "code": "G101",
+            "from": "北京南站",
+            "to": "上海虹桥站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "self-4662f541-c5ad-4447-8d44-4eac058ea969",
+              "name": "yxz",
+              "id_type": "居民身份证",
+              "id_number": "360731196303110883",
+              "phone_number": null,
+              "ticket_type": null
+            },
+            {
+              "passenger_id": "1766936418512",
+              "name": "czf",
+              "id_type": "居民身份证",
+              "id_number": "330182200501221315",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "二等座",
+              "carriage_no": "10",
+              "seat_no": "5A"
+            },
+            {
+              "seat_class": "二等座",
+              "carriage_no": "10",
+              "seat_no": "2C"
+            }
+          ],
+          "price_total": 576,
+          "status": "paid"
+        }
+      ],
+      "updated_at": "2025-12-28T15:51:56.121Z"
     }
   }
 }

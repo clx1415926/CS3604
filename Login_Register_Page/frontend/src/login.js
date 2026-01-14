@@ -60,6 +60,19 @@ let codeBtnBaseText = (idVerifyBtn && idVerifyBtn.textContent) ? String(idVerify
 
 function persistLoginAndRedirect(session_id, redirect) {
   if (loginStatus) setText(loginStatus, '登录成功，正在跳转…');
+  
+  // 清除所有旧的乘车人缓存，确保新用户获取正确的乘车人列表
+  try {
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith('TM_CONTACTS_CACHE:') || key.startsWith('TM_SELECTED_SEATS:'))) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+  } catch (e) {}
+  
   sessionStorage.setItem('session_id', session_id);
   try { localStorage.setItem('SESSION_ID', session_id); } catch (e) {}
   try { window.dispatchEvent(new CustomEvent('uc:auth-changed', { detail: { sid: session_id, logged_in: true } })); } catch (e) {}

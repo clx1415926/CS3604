@@ -63,11 +63,8 @@ const sidCache = new Map();
 const looksLikeSessionId = (token) => typeof token === 'string' && (token.startsWith('sid-') || token.startsWith('sess-'));
 
 async function resolveSessionToUserId(sessionId) {
-  const cached = sidCache.get(sessionId);
-  if (cached && cached.user_id && cached.expires_at && Date.now() < cached.expires_at) {
-    return { userId: cached.user_id, invalid: false };
-  }
-
+  // 不使用缓存，每次都从认证服务获取最新的 user_id
+  // 避免用户切换时返回错误的 user_id
   const bases = ['http://localhost:8080/api/v1', 'http://localhost:8081/api/v1', 'http://127.0.0.1:8082/api/v1'];
   let sawUnauthorized = false;
   for (const base of bases) {
@@ -88,7 +85,6 @@ async function resolveSessionToUserId(sessionId) {
       const d = await r.json().catch(() => ({}));
       const userId = d && typeof d.user_id === 'string' ? d.user_id : null;
       if (userId) {
-        sidCache.set(sessionId, { user_id: userId, expires_at: Date.now() + 60 * 1000 });
         return { userId, invalid: false };
       }
     } catch (e) {
@@ -102,18 +98,35 @@ async function resolveSessionToUserId(sessionId) {
 
 async function getUserId(req) {
   const auth = req.headers['authorization'];
-  if (!auth || !auth.startsWith('Bearer ')) return null;
-  const token = auth.slice(7);
-  if (token === 'sess-super-12306') return 'u-super';
-  if (token.startsWith('sid-')) {
-    const parsed = token.slice(4);
-    if (parsed) return parsed;
+  if (!auth || !auth.startsWith('Bearer ')) {
+    console.log('[DEBUG getUserId] No auth header or invalid format');
+    return null;
   }
+  const token = auth.slice(7);
+  console.log(`[DEBUG getUserId] Token: ${token}`);
+  
+  if (token === 'sess-super-12306') {
+    console.log('[DEBUG getUserId] Super user token detected');
+    return 'u-super';
+  }
+  
+  // 对于 sid-xxx 格式，先尝试从认证服务验证，确保 session 有效
+  // 不再直接信任 sid- 后面的内容
   if (looksLikeSessionId(token)) {
+    console.log('[DEBUG getUserId] Resolving session from auth service...');
     const resolved = await resolveSessionToUserId(token);
+    console.log(`[DEBUG getUserId] Resolved: userId=${resolved.userId}, invalid=${resolved.invalid}`);
     if (resolved.invalid) return null;
     if (resolved.userId) return resolved.userId;
+    
+    // 如果认证服务不可用，尝试从 sid-xxx 格式中提取
+    if (token.startsWith('sid-')) {
+      const parsed = token.slice(4);
+      console.log(`[DEBUG getUserId] Fallback parsing sid- token: ${parsed}`);
+      if (parsed) return parsed;
+    }
   }
+  console.log(`[DEBUG getUserId] Returning token as userId: ${token}`);
   return token;
 }
 
@@ -180,7 +193,11 @@ function createServer() {
 
       if (u.pathname === '/api/v1/passengers') {
         if (req.method === 'GET') {
+          // 调试日志：打印收到的请求和解析出的 userId
+          const authHeader = req.headers['authorization'] || '';
+          console.log(`[DEBUG] GET /api/v1/passengers - Auth: ${authHeader}, Parsed userId: ${userId}`);
           const r = await passengerRoutes.getPassengers(userId, Object.fromEntries(u.searchParams));
+          console.log(`[DEBUG] Returning ${r.body?.passengers?.length || 0} passengers for userId: ${userId}`);
           return send(res, r.status, r.body, reqInfo);
         }
         if (req.method === 'POST') {

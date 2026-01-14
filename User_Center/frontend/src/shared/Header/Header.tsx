@@ -219,6 +219,15 @@ const SharedHeader: React.FC<Props> = ({
         localStorage.removeItem('UC_NICK');
         sessionStorage.removeItem('UC_NICK');
         localStorage.removeItem('UC_AUTH_BASE');
+        // 清除所有乘车人缓存，确保下次登录获取正确的乘车人
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.startsWith('TM_CONTACTS_CACHE:') || key.startsWith('TM_SELECTED_SEATS:'))) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
       } catch (e) {}
       setLogged(false);
       setNick('');
