@@ -6,7 +6,7 @@
   /* 12306 官方色彩规范 */
   --primary: #3B99FC;
   --secondary: #FF8000;
-  --error: #E12525;
+  --error: #ff4d4f;
   --warning: #FF9027;
   --text-primary: #333333;
   --text-secondary: #666666;
@@ -258,6 +258,17 @@
   border-color: var(--primary);
   outline: none;
   box-shadow: 0 0 0 2px rgba(59, 153, 252, 0.2);
+}
+
+.page-register .field input.invalid,
+.page-register .field select.invalid {
+  border-color: var(--error);
+  box-shadow: 0 0 0 2px rgba(255, 77, 79, 0.2);
+}
+
+.page-register .checkbox input.invalid {
+  outline: 2px solid var(--error);
+  outline-offset: 2px;
 }
 
 .page-register .field input::placeholder {
