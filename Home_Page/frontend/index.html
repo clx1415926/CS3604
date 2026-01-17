@@ -401,388 +401,117 @@
       </a>
     </div>
 
+    <!-- 引入统一认证中间件 -->
+    <script src="/auth.js"></script>
     <script>
       (function(){
-        try {
-          console.log('[HOME] boot', { href: window.location.href, readyState: document.readyState });
-          var params = new URLSearchParams(window.location.search || '');
-          var sid = params.get('sid');
+        // 获取当前 sid
+        function getCurrentSid() {
+          return window.AuthMiddleware ? window.AuthMiddleware.getState().sid : 
+            (localStorage.getItem('SESSION_ID') || '');
+        }
+        
+        // 构建带 sid 的 URL
+        function buildUrlWithSid(baseUrl, extraParams) {
+          var sid = getCurrentSid();
+          var params = extraParams || '';
           if (sid) {
-            try { localStorage.setItem('SESSION_ID', sid); } catch(e) {}
-            var cleanUrl = window.location.origin + window.location.pathname;
-            window.history.replaceState({}, document.title, cleanUrl);
-            try { window.dispatchEvent(new CustomEvent('uc:auth-changed', { detail: { sid: sid, logged_in: true } })); } catch(e) {}
+            params = params ? (params + '&sid=' + encodeURIComponent(sid)) : ('sid=' + encodeURIComponent(sid));
           }
-          var storedSid = sid || (function(){ try { return localStorage.getItem('SESSION_ID'); } catch(e) { return null; } })();
-          if (storedSid) {
-            fetch('http://localhost:8082/api/v1/auth/session/profile', { headers: { Authorization: 'Bearer ' + storedSid } })
-              .then(function(r){ return r.json().then(function(d){ return { ok: r.ok, data: d }; }); })
-              .then(function(res){
-                if (res.ok && res.data && (res.data.username || res.data.name)) {
-                  var welcomeEl = document.getElementById('welcome-user');
-                  var loginEl = document.getElementById('J-header-login');
-                  var logoutEl = document.getElementById('J-header-logout');
-                  if (welcomeEl) {
-                    welcomeEl.textContent = (res.data.username || '') + (res.data.name ? '（' + res.data.name + '）' : '');
-                  }
-                  try { localStorage.setItem('UC_NICK', (res.data.username || '') + (res.data.name ? '（' + res.data.name + '）' : '')); localStorage.setItem('UC_AUTH_BASE', 'http://localhost:8082/api/v1'); } catch(e) {}
-                  if (loginEl) loginEl.style.display = 'none';
-                  if (logoutEl) logoutEl.style.display = '';
-                }
-              })
-              .catch(function(){});
-          }
-          function __refreshAuthUi(){
-            var sidA = (function(){ try { return localStorage.getItem('SESSION_ID'); } catch(e){ return null; } })();
-            var loginEl = document.getElementById('J-header-login');
-            var logoutEl = document.getElementById('J-header-logout');
-            var welcomeEl = document.getElementById('welcome-user');
-            var ticketEl = document.getElementById('link-ticket');
-            var personalEl = document.getElementById('link-personal');
-            var my12306El = document.getElementById('my12306');
-            var nick = (function(){ try { return localStorage.getItem('UC_NICK'); } catch(e){ return ''; } })() || '';
-            if (sidA) {
-              if (welcomeEl && nick) welcomeEl.textContent = nick;
-              if (loginEl) loginEl.style.display = 'none';
-              if (logoutEl) logoutEl.style.display = '';
-              if (ticketEl) ticketEl.href = 'http://localhost:5173/index.html' + (sidA ? ('?sid=' + encodeURIComponent(sidA)) : '');
-              if (personalEl) personalEl.href = 'http://localhost:5176/index.html' + (sidA ? ('?sid=' + encodeURIComponent(sidA)) : '');
-              if (my12306El) my12306El.href = 'http://localhost:5176/index.html' + (sidA ? ('?sid=' + encodeURIComponent(sidA)) : '');
-            } else {
-              if (welcomeEl) welcomeEl.textContent = '';
-              if (loginEl) loginEl.style.display = '';
-              if (logoutEl) logoutEl.style.display = 'none';
-              if (ticketEl) ticketEl.href = 'http://localhost:5173/index.html';
-              if (personalEl) personalEl.href = 'http://localhost:5176/index.html';
-              if (my12306El) my12306El.href = 'http://localhost:5176/index.html';
-            }
-          }
-          window.addEventListener('storage', function(e){ if (!e || !('key' in e) || e.key === 'SESSION_ID' || e.key === 'UC_NICK' || e.key === 'UC_AUTH_BASE') __refreshAuthUi(); });
-          window.addEventListener('uc:auth-changed', function(){ __refreshAuthUi(); });
-          var __authPoll = function(){
-            var sidP = (function(){ try { return localStorage.getItem('SESSION_ID'); } catch(e){ return null; } })();
-            if (!sidP) return;
-            fetch('http://localhost:8082/api/v1/auth/session/profile', { headers: { Authorization: 'Bearer ' + sidP } })
-              .then(function(r){ return r.json().then(function(d){ return { ok: r.ok, data: d }; }); })
-              .then(function(res){
-                if (!res.ok || !(res.data && (res.data.username || res.data.name))) {
-                  try { localStorage.removeItem('SESSION_ID'); } catch(e) {}
-                  __refreshAuthUi();
-                  try { window.dispatchEvent(new CustomEvent('uc:auth-changed', { detail: { sid: '', logged_in: false } })); } catch(e) {}
-                }
-              })
-              .catch(function(){});
-          };
-          try { window.__AUTH_POLL_TIMER__ = setInterval(__authPoll, 2000); } catch(e) {}
-          window.addEventListener('focus', function(){ try { __authPoll(); } catch(e) {} });
-          var __hubOrigin = 'http://localhost:8080';
-          var __hubUrl = __hubOrigin + '/auth-sync.html';
-          var __hubIframe = document.createElement('iframe');
-          __hubIframe.setAttribute('aria-hidden','true');
-          __hubIframe.style.display = 'none';
-          __hubIframe.src = __hubUrl;
-          document.body.appendChild(__hubIframe);
-          var __sendHub = function(payload){
-            try { var w = __hubIframe && __hubIframe.contentWindow; if (w) w.postMessage(payload, __hubOrigin); } catch(e) {}
-          };
-          window.addEventListener('uc:auth-changed', function(ev){
-            var sid0 = (ev && ev.detail && ev.detail.sid) || (function(){ try { return localStorage.getItem('SESSION_ID'); } catch(e){ return null; } })();
-            __sendHub({ type: 'uc-auth', sid: sid0 || '', logged_in: !!(ev && ev.detail && ev.detail.logged_in), from: window.location.origin });
-          });
-          window.addEventListener('message', function(e){
-            var d = e && e.data; if (!d || d.type !== 'uc-auth' || !d.forwarded) return;
-            if (d.logged_in) { try { localStorage.setItem('SESSION_ID', d.sid || ''); } catch(err) {} } else { try { localStorage.removeItem('SESSION_ID'); } catch(err) {} }
-            __refreshAuthUi();
-          });
-          __refreshAuthUi();
-          var ticket = document.getElementById('link-ticket');
-          if (ticket) {
-            console.log('[HOME] hook ticket link', { id: 'link-ticket' });
-            var sidForLink = (function(){ try { return localStorage.getItem('SESSION_ID'); } catch(e){ return null; } })();
-            if (sidForLink) {
-              ticket.href = 'http://localhost:5173/index.html?sid=' + encodeURIComponent(sidForLink);
-            }
-            ticket.addEventListener('click', function(ev){
-              try {
-                ev.preventDefault();
-                console.log('[HOME] ticket link click', { isTrusted: ev && ev.isTrusted, type: ev && ev.type });
-                var from = (document.getElementById('fromStation')||{}).value || '';
-                var to = (document.getElementById('toStation')||{}).value || '';
-                var date = (document.getElementById('departDate')||{}).value || '';
-                var student = (document.getElementById('opt-student')||{}).checked ? '1' : '0';
-                var hs = (document.getElementById('opt-highspeed')||{}).checked ? '1' : '0';
-                var params = [
-                  from ? 'from='+encodeURIComponent(from) : null,
-                  to ? 'to='+encodeURIComponent(to) : null,
-                  date ? 'date='+encodeURIComponent(date) : null,
-                  student === '1' ? 'student=1' : null,
-                  hs === '1' ? 'highspeed=1' : null,
-                  'type=single'
-                ].filter(Boolean).join('&');
-                try { localStorage.setItem('LAST_QUERY', JSON.stringify({ from: from, to: to, date: date, student: student, highspeed: hs })); } catch(e) {}
-                var base = 'http://localhost:5173/index.html';
-                if (sidForLink) params += (params ? '&' : '') + 'sid=' + encodeURIComponent(sidForLink);
-                var url = base + (params ? ('?'+params) : '');
-                console.log('[HOME] link-ticket click ->', url);
-                var before = window.location.href;
-                window.location.href = url;
-                setTimeout(function(){
-                  console.log('[HOME] after href set', { before: before, now: window.location.href });
-                }, 0);
-                setTimeout(function(){
-                  if (window.location.href === before) {
-                    console.warn('[HOME] href unchanged, try assign');
-                    try { window.location.assign(url); } catch (e) { console.error('[HOME] assign failed', e); }
-                  }
-                }, 50);
-                setTimeout(function(){
-                  if (!/\b5173\/index\.html\b/.test(window.location.href)) {
-                    console.warn('[HOME] still not on query page, try replace');
-                    try { window.location.replace(url); } catch (e) { console.error('[HOME] replace failed', e); }
-                  }
-                }, 200);
-              } catch (err) {
-                console.error('[HOME] ticket link click error', err);
-                window.location.href = ticket.href;
-              }
-            });
-          }
-          var personal = document.getElementById('link-personal');
-          if (personal) {
-            var sidForPersonal = (function(){ try { return localStorage.getItem('SESSION_ID'); } catch(e){ return null; } })();
-            if (sidForPersonal) {
-              personal.href = 'http://localhost:5176/index.html?sid=' + encodeURIComponent(sidForPersonal);
-            }
-          }
-          var my12306 = document.getElementById('my12306');
-          if (my12306) {
-            var sidForMy = (function(){ try { return localStorage.getItem('SESSION_ID'); } catch(e){ return null; } })();
-            if (sidForMy) {
-              my12306.href = 'http://localhost:5176/index.html?sid=' + encodeURIComponent(sidForMy);
-            }
-          }
-          var logoutBtn = document.getElementById('regist_out');
-          if (logoutBtn) {
-            logoutBtn.addEventListener('click', function(e){
-              e.preventDefault();
-              var sid3 = (function(){ try { return localStorage.getItem('SESSION_ID'); } catch(e){ return null; } })();
-              var finalize = function(){
-                try { localStorage.removeItem('SESSION_ID'); } catch(e) {}
-                try { sessionStorage.clear(); } catch(e) {}
-                var loginEl = document.getElementById('J-header-login');
-                var logoutEl2 = document.getElementById('J-header-logout');
-                var welcomeEl = document.getElementById('welcome-user');
-                var ticketEl = document.getElementById('link-ticket');
-                var personalEl = document.getElementById('link-personal');
-                var my12306El = document.getElementById('my12306');
-                if (welcomeEl) welcomeEl.textContent = '';
-                if (loginEl) loginEl.style.display = '';
-                if (logoutEl2) logoutEl2.style.display = 'none';
-                if (ticketEl) ticketEl.href = 'http://localhost:5173/index.html';
-                if (personalEl) personalEl.href = 'http://localhost:5176/index.html';
-                if (my12306El) my12306El.href = 'http://localhost:5176/index.html';
-                try { window.dispatchEvent(new CustomEvent('uc:auth-changed', { detail: { sid: '', logged_in: false } })); } catch(e) {}
-                var clean = window.location.origin + window.location.pathname;
-                try { window.location.replace(clean); } catch(e) { window.location.href = clean; }
-              };
-              if (sid3) {
-                fetch('http://localhost:8080/api/v1/auth/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + sid3 } })
-                  .then(function(){ finalize(); })
-                  .catch(function(){
-                    fetch('http://127.0.0.1:8082/api/v1/auth/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + sid3 } })
-                      .then(function(){ finalize(); })
-                      .catch(function(){ finalize(); });
-                  });
-              } else {
-                finalize();
-              }
-            });
-          }
-          var navTicketAnchor = (function(){
-            var list = document.querySelectorAll('.nav .nav-item .nav-hd.item');
-            for (var i = 0; i < list.length; i++) {
-              var txt = (list[i].textContent || '').replace(/\s+/g, '');
-              if (txt.indexOf('车票') !== -1) return list[i];
-            }
-            return null;
-          })();
-          if (navTicketAnchor) {
-            navTicketAnchor.addEventListener('click', function(ev){
-              try {
-                ev.preventDefault();
-              } catch(e) {}
-              var sidForNav = (function(){ try { return localStorage.getItem('SESSION_ID'); } catch(e){ return null; } })();
-              var base = 'http://localhost:5173/index.html';
-              var url = sidForNav ? base + '?sid=' + encodeURIComponent(sidForNav) : base;
-              var before = window.location.href;
-              window.location.href = url;
-              setTimeout(function(){ try { console.log('[HOME] nav ticket ->', url); } catch(e) {} }, 0);
-              setTimeout(function(){ if (window.location.href === before) { try { window.location.assign(url); } catch(e) {} } }, 60);
-              setTimeout(function(){ if (!/\b5173\/index\.html\b/.test(window.location.href)) { try { window.location.replace(url); } catch(e) {} } }, 200);
-            });
-          }
-          (function(){
-            var trigger = document.getElementById('my12306');
-            if (!trigger) return;
-            var navItem = trigger.closest('.menu-item.menu-nav');
-            if (!navItem) return;
-            var dropdown = document.getElementById('megamenu-2') || navItem.querySelector('.menu-nav-bd');
-            var header = document.querySelector('.header');
-            var hideTimer = null;
-            var openMenu = function(){ if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; } navItem.classList.add('open'); if (header) header.classList.add('menu-open'); };
-            var scheduleClose = function(){ if (hideTimer) clearTimeout(hideTimer); hideTimer = setTimeout(function(){ navItem.classList.remove('open'); if (header) header.classList.remove('menu-open'); }, 220); };
-            ['mouseenter','focusin'].forEach(function(evt){ trigger.addEventListener(evt, openMenu); });
-            ['mouseleave','focusout'].forEach(function(evt){ trigger.addEventListener(evt, scheduleClose); });
-            if (dropdown) {
-              ['mouseenter','focusin'].forEach(function(evt){ dropdown.addEventListener(evt, openMenu); });
-              ['mouseleave','focusout'].forEach(function(evt){ dropdown.addEventListener(evt, scheduleClose); });
-            }
-          })();
-          function bindMy12306Jump(selector, viewPath) {
-            var el = document.querySelector(selector);
-            if (!el) return;
-            el.addEventListener('click', function(e){
-              e.preventDefault();
-              var anchor = document.getElementById('my12306');
-              if (!anchor) return;
-              try {
-                var u = new URL(anchor.href);
-                var sid = u.searchParams.get('sid') || (function(){ try { return localStorage.getItem('SESSION_ID'); } catch(e){ return null; } })();
-                if (sid && !u.searchParams.get('sid')) { u.searchParams.set('sid', sid); }
-                u.hash = '#/otn/' + viewPath;
-                window.location.href = u.toString();
-              } catch(err) {}
-            });
-          }
-          bindMy12306Jump('a[name="g_href"][data-href="view/train_order.html"]', 'view/train_order.html');
-          bindMy12306Jump('a[name="g_href"][data-href="view/passengers.html"]', 'view/passengers.html');
-          bindMy12306Jump('a[name="g_href"][data-href="view/information.html"]', 'view/information.html');
-          var btn = document.getElementById('btn-orders');
-          if (btn) {
-            btn.addEventListener('click', function(e){
-              var sid2 = (function(){ try { return localStorage.getItem('SESSION_ID'); } catch(e) { return null; } })();
-              if (sid2) { 
-                window.location.href = 'http://localhost:5174/?sid=' + encodeURIComponent(sid2); 
-              } else { 
-                window.location.href = 'http://localhost:8082/login.html'; 
-              }
-            });
-          }
-          // 乘客管理已移除
-          var dateInput = document.getElementById('departDate');
-          if (dateInput && !dateInput.value) {
-            var today = new Date();
-            var y = today.getFullYear();
-            var m = String(today.getMonth()+1).padStart(2,'0');
-            var d = String(today.getDate()).padStart(2,'0');
-            dateInput.value = y+'-'+m+'-'+d;
-            console.log('[HOME] default date set', dateInput.value);
-          }
-          var swapBtn = document.getElementById('swapStations');
-          if (swapBtn) {
-            swapBtn.addEventListener('click', function(){
-              var fromEl = document.getElementById('fromStation');
-              var toEl = document.getElementById('toStation');
-              if (fromEl && toEl) {
-                var t = fromEl.value; fromEl.value = toEl.value; toEl.value = t;
-                console.log('[HOME] swap', { from: fromEl.value, to: toEl.value });
-              }
-            });
-          }
-          var ticketForm = document.getElementById('ticket-form');
-          if (ticketForm) {
-            console.log('[HOME] hook ticket form submit');
-            ticketForm.addEventListener('submit', function(e){
-              console.log('[HOME] form submit event');
-              e.preventDefault();
-              var from = (document.getElementById('fromStation')||{}).value || '';
-              var to = (document.getElementById('toStation')||{}).value || '';
-              var date = (document.getElementById('departDate')||{}).value || '';
-              var student = (document.getElementById('opt-student')||{}).checked ? '1' : '0';
-              var hs = (document.getElementById('opt-highspeed')||{}).checked ? '1' : '0';
-              var sidForLink = (function(){ try { return localStorage.getItem('SESSION_ID'); } catch(e){ return null; } })();
-              var base = 'http://localhost:5173/index.html';
-              var params = [
-                from ? 'from='+encodeURIComponent(from) : null,
-                to ? 'to='+encodeURIComponent(to) : null,
-                date ? 'date='+encodeURIComponent(date) : null,
-                student === '1' ? 'student=1' : null,
-                hs === '1' ? 'highspeed=1' : null,
-                'type=single'
-              ].filter(Boolean).join('&');
-              if (sidForLink) params += (params ? '&' : '') + 'sid=' + encodeURIComponent(sidForLink);
-              try { localStorage.setItem('LAST_QUERY', JSON.stringify({ from: from, to: to, date: date, student: student, highspeed: hs })); } catch(e) {}
-              console.log('[HOME] submit', { from: from, to: to, date: date, student: student, highspeed: hs, sid: sidForLink });
-              console.log('[HOME] redirect', base + (params ? ('?'+params) : ''));
-              window.location.href = base + (params ? ('?'+params) : '');
-              setTimeout(function(){ console.log('[HOME] after href set', window.location.href); }, 0);
-            });
-            var submitBtn = ticketForm.querySelector('.submit-btn');
-            if (submitBtn) { submitBtn.addEventListener('click', function(){ console.log('[HOME] submit button clicked'); }); }
-          }
-          document.addEventListener('visibilitychange', function(){ console.log('[HOME] visibilitychange', document.visibilityState); });
-          window.addEventListener('popstate', function(e){ console.log('[HOME] popstate', e.state); });
-          window.addEventListener('hashchange', function(){ console.log('[HOME] hashchange', window.location.href); });
-          window.addEventListener('beforeunload', function(){ console.log('[HOME] beforeunload', window.location.href); });
-          window.addEventListener('unload', function(){ console.log('[HOME] unload'); });
-          document.addEventListener('click', function(e){
-            try {
-              var t = e.target;
-              var info = { tag: (t && t.tagName), id: t && t.id, cls: t && t.className };
-              if (t && (t.id === 'link-ticket' || (t.closest && t.closest('#ticket-form')))) {
-                console.log('[HOME] click', info);
-              }
-            } catch (err) {}
-          }, true);
-          var disabledBanners = document.querySelectorAll('.feature-banner.disabled');
-          disabledBanners.forEach(function(el){
-            el.addEventListener('click', function(e){
-              e.preventDefault();
-              e.stopPropagation();
-              return false;
-            });
-          });
+          return baseUrl + (params ? '?' + params : '');
+        }
+        
+        // UI 更新函数
+        function updateAuthUI(state) {
+          var loginEl = document.getElementById('J-header-login');
+          var logoutEl = document.getElementById('J-header-logout');
+          var welcomeEl = document.getElementById('welcome-user');
+          var ticketEl = document.getElementById('link-ticket');
+          var personalEl = document.getElementById('link-personal');
+          var my12306El = document.getElementById('my12306');
           
-          // 处理服务列表中的未实现功能按钮
-          var serviceItems = document.querySelectorAll('.service-item');
-          serviceItems.forEach(function(item) {
-            item.addEventListener('click', function(e) {
-              e.preventDefault();
-              e.stopPropagation();
-              return false;
-            });
+          if (state.logged && state.user) {
+            var nick = (state.user.username || '') + (state.user.name ? '（' + state.user.name + '）' : '');
+            if (welcomeEl) welcomeEl.textContent = nick;
+            if (loginEl) loginEl.style.display = 'none';
+            if (logoutEl) logoutEl.style.display = '';
+            // 需要在链接中传递 sid，因为 localStorage 按端口隔离
+            var sid = state.sid || '';
+            if (ticketEl) ticketEl.href = buildUrlWithSid('http://localhost:5173/index.html');
+            if (personalEl) personalEl.href = buildUrlWithSid('http://localhost:5176/index.html');
+            if (my12306El) my12306El.href = buildUrlWithSid('http://localhost:5176/index.html');
+          } else {
+            if (welcomeEl) welcomeEl.textContent = '';
+            if (loginEl) loginEl.style.display = '';
+            if (logoutEl) logoutEl.style.display = 'none';
+            if (ticketEl) ticketEl.href = 'http://localhost:5173/index.html';
+            if (personalEl) personalEl.href = 'http://localhost:5176/index.html';
+            if (my12306El) my12306El.href = 'http://localhost:5176/index.html';
+          }
+        }
+        
+        // 初始化认证
+        if (window.AuthMiddleware) {
+          window.AuthMiddleware.onChange(updateAuthUI);
+          window.AuthMiddleware.init().then(function(state) {
+            updateAuthUI(state);
           });
-          var gotop = document.querySelector('.js-gotop');
-          if (gotop) {
-            gotop.addEventListener('click', function(){
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            });
-            window.addEventListener('scroll', function(){
-              var topBtn = document.querySelector('.gototop');
-              if (topBtn) {
-                if (window.pageYOffset > 300) {
-                  topBtn.style.display = 'block';
-                } else {
-                  topBtn.style.display = 'none';
-                }
-              }
-            });
-          }
-          var headerEl = document.querySelector('.header');
-          if (headerEl) {
-            var beforeStyle = window.getComputedStyle(headerEl, '::before');
-            var beforeContent = beforeStyle && beforeStyle.getPropertyValue('content');
-            if (beforeContent && beforeContent !== 'none' && beforeContent !== 'normal' && beforeContent !== '""') {
-              var st = document.createElement('style');
-              st.textContent = '.header::before{content:none !important;display:none !important;background:transparent !important;}';
-              document.head.appendChild(st);
+        }
+        
+        // 退出登录
+        var logoutBtn = document.getElementById('regist_out');
+        if (logoutBtn) {
+          logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (window.AuthMiddleware) {
+              window.AuthMiddleware.logout().then(function(state) {
+                updateAuthUI(state);
+                // 刷新页面
+                window.location.reload();
+              });
             }
-            window.__HEADER_BEFORE_REMOVED__ = (function(){
-              var c = window.getComputedStyle(headerEl, '::before').getPropertyValue('content');
-              return !c || c === 'none' || c === 'normal' || c === '""';
-            })();
+          });
+        }
+        
+        // 车票链接点击
+        var ticket = document.getElementById('link-ticket');
+        if (ticket) {
+          ticket.addEventListener('click', function(ev) {
+            ev.preventDefault();
+            var from = (document.getElementById('fromStation')||{}).value || '';
+            var to = (document.getElementById('toStation')||{}).value || '';
+            var date = (document.getElementById('departDate')||{}).value || '';
+            var student = (document.getElementById('opt-student')||{}).checked ? '1' : '0';
+            var hs = (document.getElementById('opt-highspeed')||{}).checked ? '1' : '0';
+            var params = [
+              from ? 'from='+encodeURIComponent(from) : null,
+              to ? 'to='+encodeURIComponent(to) : null,
+              date ? 'date='+encodeURIComponent(date) : null,
+              student === '1' ? 'student=1' : null,
+              hs === '1' ? 'highspeed=1' : null,
+              'type=single'
+            ].filter(Boolean).join('&');
+            try { localStorage.setItem('LAST_QUERY', JSON.stringify({ from: from, to: to, date: date, student: student, highspeed: hs })); } catch(e) {}
+            var url = buildUrlWithSid('http://localhost:5173/index.html', params);
+            window.location.href = url;
+          });
+        }
+        
+        // 导航栏车票链接
+        var navTicketAnchor = (function(){
+          var list = document.querySelectorAll('.nav .nav-item .nav-hd.item');
+          for (var i = 0; i < list.length; i++) {
+            var txt = (list[i].textContent || '').replace(/\s+/g, '');
+            if (txt.indexOf('车票') !== -1) return list[i];
           }
-        } catch (e) {}
+          return null;
+        })();
+        if (navTicketAnchor) {
+          navTicketAnchor.addEventListener('click', function(ev) {
+            ev.preventDefault();
+            window.location.href = buildUrlWithSid('http://localhost:5173/index.html');
+          });
+        }
       })();
     </script>
   </body>
