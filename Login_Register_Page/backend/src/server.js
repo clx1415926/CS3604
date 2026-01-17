@@ -624,7 +624,9 @@ app.get(`${base}/auth/session`, (req, res) => {
     });
   }
   let sess = loginSessions.get(sid);
-  if (!sess) {
+  // 移除自动重建会话逻辑：已退出的会话不应被自动恢复
+  // 仅在测试模式下允许 sid-xxx 格式的自动会话
+  if (!sess && process.env.NODE_ENV === 'test') {
     const mm = String(sid).match(/^sid-(.+)$/);
     if (mm && mm[1]) {
       sess = { user_id: mm[1], last_active_at: Date.now() };
@@ -658,7 +660,8 @@ app.get(`${base}/auth/session/profile`, async (req, res) => {
     return res.json({ user_id: 'u-super', username: 'super', name: '超级用户' });
   }
   let sess = loginSessions.get(sid);
-  if (!sess) {
+  // 仅在测试模式下允许自动会话
+  if (!sess && process.env.NODE_ENV === 'test') {
     const mm = String(sid).match(/^sid-(.+)$/);
     if (mm && mm[1]) {
       sess = { user_id: mm[1], last_active_at: Date.now() };
@@ -697,7 +700,8 @@ app.get(`${base}/auth/session/account`, async (req, res) => {
     });
   }
   let sess = loginSessions.get(sid);
-  if (!sess) {
+  // 仅在测试模式下允许自动会话
+  if (!sess && process.env.NODE_ENV === 'test') {
     const mm = String(sid).match(/^sid-(.+)$/);
     if (mm && mm[1]) {
       sess = { user_id: mm[1], last_active_at: Date.now() };
@@ -768,7 +772,8 @@ app.post(`${base}/auth/session/phone/change`, async (req, res) => {
   if (!m) return error(res, 401, 'SESSION_EXPIRED', '登录已过期，请重新登录');
   const sid = m[1];
   let sess = loginSessions.get(sid);
-  if (!sess) {
+  // 仅在测试模式下允许自动会话
+  if (!sess && process.env.NODE_ENV === 'test') {
     const mm = String(sid).match(/^sid-(.+)$/);
     if (mm && mm[1]) {
       sess = { user_id: mm[1], last_active_at: Date.now() };
@@ -805,7 +810,8 @@ app.patch(`${base}/auth/session/traveler-type/change`, async (req, res) => {
   if (!m) return error(res, 401, 'SESSION_EXPIRED', '登录已过期，请重新登录');
   const sid = m[1];
   let sess = loginSessions.get(sid);
-  if (!sess) {
+  // 仅在测试模式下允许自动会话
+  if (!sess && process.env.NODE_ENV === 'test') {
     const mm = String(sid).match(/^sid-(.+)$/);
     if (mm && mm[1]) {
       sess = { user_id: mm[1], last_active_at: Date.now() };
