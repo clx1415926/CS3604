@@ -6,6 +6,8 @@ export default function Payment() {
   console.log('🎯 Payment 组件被渲染');
   
   const [orderId, setOrderId] = useState<string>('');
+  const [orderAmount, setOrderAmount] = useState<string>('0.00');
+  const [orderDetails, setOrderDetails] = useState<any>(null);
   const [message, setMessage] = useState<string>('');
   const [isNavigating, setIsNavigating] = useState<boolean>(false);
 
@@ -17,7 +19,58 @@ export default function Payment() {
     const extractedOrderId = (m ? decodeURIComponent(m[1]) : 'o-001').trim();
     console.log('🎯 提取的订单ID:', extractedOrderId);
     setOrderId(extractedOrderId);
+    
+    // 获取订单详情
+    if (extractedOrderId) {
+      fetchOrderDetails(extractedOrderId, h);
+    }
   }, []);
+  
+  const fetchOrderDetails = async (oid: string, hash: string) => {
+    try {
+      const mSid = hash.match(/sid=([^&]+)/);
+      const sid = (mSid ? decodeURIComponent(mSid[1]) : (localStorage.getItem('SESSION_ID') || '')).trim();
+      
+      if (!sid) {
+        console.log('未找到 session ID');
+        return;
+      }
+      
+      console.log('正在获取订单详情:', oid, 'sid:', sid);
+      const response = await fetch(`http://localhost:3001/api/v1/orders/${oid}`, {
+        headers: { Authorization: `Bearer ${sid}` }
+      });
+      
+      console.log('订单详情响应状态:', response.status);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('订单详情响应数据:', data);
+        
+        // 后端返回的格式是 { order: {...} }
+        const orderData = data.order || data;
+        console.log('解析后的订单数据:', orderData);
+        console.log('订单座位信息:', orderData.seats);
+        console.log('订单价格信息:', orderData.price_total);
+        
+        setOrderDetails(orderData);
+        
+        if (orderData.price_total !== undefined && orderData.price_total !== null) {
+          const amount = Number(orderData.price_total).toFixed(2);
+          setOrderAmount(amount);
+          console.log('设置订单金额:', amount);
+        } else {
+          console.error('订单数据中没有price_total字段');
+        }
+      } else {
+        console.error('获取订单详情失败，状态码:', response.status);
+        const errorText = await response.text();
+        console.error('错误响应:', errorText);
+      }
+    } catch (error) {
+      console.error('获取订单详情失败:', error);
+    }
+  };
 
   const pay = async () => {
     console.log('=== 支付流程开始 ===');
@@ -93,7 +146,17 @@ export default function Payment() {
       <div className="section-title">订单支付</div>
       <div className="order-card">
         <div>订单号：{orderId}</div>
-        <div>金额：¥576.00</div>
+        <div>金额：¥{orderAmount}</div>
+        {orderDetails && (
+          <>
+            <div>车次：{orderDetails.train?.code || '-'}</div>
+            <div>乘车日期：{orderDetails.travel_date || '-'}</div>
+            <div>出发站：{orderDetails.train?.from || '-'}</div>
+            <div>到达站：{orderDetails.train?.to || '-'}</div>
+            <div>座位信息：{(orderDetails.seats || []).map((s: any) => `${s.carriage_no}车${s.seat_no}(${s.seat_class})`).join('、') || '-'}</div>
+            <div>乘客：{(orderDetails.passengers || []).map((p: any) => p.name).join('、') || '-'}</div>
+          </>
+        )}
       </div>
       <div className="panel">
         <div>支付方式</div>

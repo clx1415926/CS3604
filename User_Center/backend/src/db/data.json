@@ -1496,6 +1496,285 @@
     "84d20cb3-406f-4c34-9c9e-da7e491017cb": {
       "orders": [
         {
+          "order_id": "o-01KF7YA9RMJK71RV9XQXQK1JRY",
+          "booked_at": "2026-01-18T06:57:40.118Z",
+          "travel_date": "2026-01-21",
+          "train": {
+            "code": "Z7101",
+            "from": "北京站",
+            "to": "上海站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "self-84d20cb3-406f-4c34-9c9e-da7e491017cb",
+              "name": "czf",
+              "id_type": "居民身份证",
+              "id_number": "330182200501221315",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "商务座",
+              "carriage_no": "1",
+              "seat_no": "1B"
+            }
+          ],
+          "price_total": 1748,
+          "status": "paid"
+        },
+        {
+          "order_id": "o-01KF7XBVCCAX779N5HD3GXQFHY",
+          "booked_at": "2026-01-18T06:41:02.348Z",
+          "travel_date": "2026-01-27",
+          "train": {
+            "code": "D595",
+            "from": "北京站",
+            "to": "上海站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "self-84d20cb3-406f-4c34-9c9e-da7e491017cb",
+              "name": "czf",
+              "id_type": "居民身份证",
+              "id_number": "330182200501221315",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "二等座",
+              "carriage_no": "3",
+              "seat_no": "1A"
+            }
+          ],
+          "price_total": 576,
+          "status": "paid"
+        },
+        {
+          "order_id": "o-01KF7W7BDG93S0QV8MCRZN9QFJ",
+          "booked_at": "2026-01-18T06:21:06.352Z",
+          "travel_date": "2026-01-18",
+          "train": {
+            "code": "D9748",
+            "from": "北京站",
+            "to": "上海站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "self-84d20cb3-406f-4c34-9c9e-da7e491017cb",
+              "name": "czf",
+              "id_type": "居民身份证",
+              "id_number": "330182200501221315",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "二等座",
+              "carriage_no": "3",
+              "seat_no": "1A"
+            }
+          ],
+          "price_total": 576,
+          "status": "paid"
+        },
+        {
+          "order_id": "o-01KF7W0S19EW2RTBVTMJD2C1BY",
+          "booked_at": "2026-01-18T06:17:30.922Z",
+          "travel_date": "2026-01-31",
+          "train": {
+            "code": "T8810",
+            "from": "北京站",
+            "to": "上海站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "self-84d20cb3-406f-4c34-9c9e-da7e491017cb",
+              "name": "czf",
+              "id_type": "居民身份证",
+              "id_number": "330182200501221315",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "二等座",
+              "carriage_no": "1",
+              "seat_no": "1A"
+            }
+          ],
+          "price_total": 576,
+          "status": "paid"
+        },
+        {
+          "order_id": "o-01KF7TV2QJJ299Z11SZSNMRBNQ",
+          "booked_at": "2026-01-18T05:56:55.666Z",
+          "travel_date": "2026-01-18",
+          "train": {
+            "code": "D9748",
+            "from": "北京站",
+            "to": "上海站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "self-84d20cb3-406f-4c34-9c9e-da7e491017cb",
+              "name": "czf",
+              "id_type": "居民身份证",
+              "id_number": "330182200501221315",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "二等座",
+              "carriage_no": "10",
+              "seat_no": "1C"
+            }
+          ],
+          "price_total": 576,
+          "status": "paid"
+        },
+        {
+          "order_id": "o-01KF7TPGR7Y4VA7C8S8FE7A6BP",
+          "booked_at": "2026-01-18T05:54:26.183Z",
+          "travel_date": "2026-01-18",
+          "train": {
+            "code": "K9530",
+            "from": "北京站",
+            "to": "上海站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "self-84d20cb3-406f-4c34-9c9e-da7e491017cb",
+              "name": "czf",
+              "id_type": "居民身份证",
+              "id_number": "330182200501221315",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "二等座",
+              "carriage_no": "10",
+              "seat_no": "1B"
+            }
+          ],
+          "price_total": 576,
+          "status": "paid"
+        },
+        {
+          "order_id": "o-01KF7TED5XBC87R8Y3RN4D7SXZ",
+          "booked_at": "2026-01-18T05:50:00.381Z",
+          "travel_date": "2026-01-18",
+          "train": {
+            "code": "T9751",
+            "from": "北京站",
+            "to": "上海站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "1766904623298",
+              "name": "hyl",
+              "id_type": "居民身份证",
+              "id_number": "620000196402091674",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "二等座",
+              "carriage_no": "10",
+              "seat_no": "1B"
+            }
+          ],
+          "price_total": 576,
+          "status": "paid"
+        },
+        {
+          "order_id": "o-01KF7TDBSDVBHAXF9W8AC0BM6H",
+          "booked_at": "2026-01-18T05:49:26.189Z",
+          "travel_date": "2026-01-18",
+          "train": {
+            "code": "D281",
+            "from": "北京站",
+            "to": "上海站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "1766904623298",
+              "name": "hyl",
+              "id_type": "居民身份证",
+              "id_number": "620000196402091674",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "二等座",
+              "carriage_no": "10",
+              "seat_no": "2B"
+            }
+          ],
+          "price_total": 576,
+          "status": "canceled"
+        },
+        {
+          "order_id": "o-01KF7TAJTFFVHYNFBP0JJ465CJ",
+          "booked_at": "2026-01-18T05:47:55.088Z",
+          "travel_date": "2026-01-18",
+          "train": {
+            "code": "D281",
+            "from": "北京站",
+            "to": "上海站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "1766904623298",
+              "name": "hyl",
+              "id_type": "居民身份证",
+              "id_number": "620000196402091674",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "二等座",
+              "carriage_no": "10",
+              "seat_no": "1B"
+            }
+          ],
+          "price_total": 576,
+          "status": "canceled"
+        },
+        {
           "order_id": "o-01KDHYR259VBNZRRSG91V9R8WV",
           "booked_at": "2025-12-28T07:46:11.754Z",
           "travel_date": "2025-12-15",
@@ -1589,7 +1868,7 @@
           "status": "paid"
         }
       ],
-      "updated_at": "2025-12-28T07:46:17.788Z"
+      "updated_at": "2026-01-18T06:57:47.539Z"
     },
     "bcf0a538-f465-4cfe-9ed5-d36d78d307c8": {
       "orders": [],

@@ -140,6 +140,8 @@ router.post('/lock', (req, res) => {
     const { train_id, travel_date, seats } = req.body || {};
     const requested = Array.isArray(seats) ? seats : [];
     if (requested.length === 0) return res.json({ locks: [] });
+    
+    console.log('[座位锁定] 收到的seats请求:', JSON.stringify(requested));
 
     const user_key = authUserKey(req);
     const trainCode = String(train_id || '');
@@ -151,7 +153,10 @@ router.post('/lock', (req, res) => {
     const normalized = requested.map((s) => ({
       carriage_no: s?.carriage_no || '10',
       seat_no: s?.seat_no || '16A',
+      seat_class: s?.seat_class || '二等座',
     }));
+    
+    console.log('[座位锁定] 标准化后的seats:', JSON.stringify(normalized));
 
     const db = await getDb();
     const expiresAt = new Date(Date.now() + 2 * 60 * 1000).toISOString();
@@ -209,7 +214,8 @@ router.post('/lock', (req, res) => {
            VALUES(?, ?, ?, ?, ?, ?, ?, ?)`,
           [ts, user_key, 'lock', trainCode, travelDate, carriageNo, seatNo, lock_token]
         );
-        locks.push({ lock_token, expires_at: expiresAt, carriage_no: carriageNo, seat_no: seatNo });
+        locks.push({ lock_token, expires_at: expiresAt, carriage_no: carriageNo, seat_no: seatNo, seat_class: s.seat_class });
+        console.log(`[座位锁定-完成] carriage=${carriageNo}, seat=${seatNo}, class=${s.seat_class}`);
       }
       return locks;
     });

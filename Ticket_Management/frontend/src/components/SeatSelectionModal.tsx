@@ -16,6 +16,7 @@ type Passenger = {
   id_type?: string;
   id_number?: string;
   masked_id_number?: string;
+  seat_type?: string;
 };
 
 type Props = {
@@ -27,6 +28,7 @@ type Props = {
   arriveTime?: string;
   passengerCount?: number;
   passengers?: Passenger[];
+  seatClass?: string;
   onConfirm?: (selectedSeats: any[]) => void | Promise<void>;
   onCancel?: () => void;
 };
@@ -40,10 +42,24 @@ export default function SeatSelectionModal({
   arriveTime = '12:09',
   passengerCount = 1,
   passengers = [],
+  seatClass = '二等座',
   onConfirm = () => {},
   onCancel = () => {},
 }: Props) {
-  const [carriageNo, setCarriageNo] = useState('10');
+  // 根据座位类型设置初始车厢号
+  const getInitialCarriageNo = (seatClass: string) => {
+    const carriageMap: { [key: string]: string } = {
+      '商务座': '1',
+      '一等座': '3',
+      '二等座': '7',
+      '硬座': '15',
+      '硬卧': '19',
+      '软卧': '23',
+    };
+    return carriageMap[seatClass] || '7';
+  };
+  
+  const [carriageNo, setCarriageNo] = useState(getInitialCarriageNo(seatClass));
   const [seatMap, setSeatMap] = useState<Seat[]>([]);
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,13 +74,13 @@ export default function SeatSelectionModal({
       fetchSeatMap();
     }, 2000);
     return () => clearInterval(t);
-  }, [carriageNo, trainId, travelDate]);
+  }, [carriageNo, trainId, travelDate, seatClass]);
 
   const fetchSeatMap = async () => {
     setLoading(true);
     try {
       const sid = localStorage.getItem('SESSION_ID') || '';
-      const res = await fetch(`http://localhost:3001/api/v1/seats/map?train_id=${trainId}&travel_date=${travelDate}&seat_class=二等座&carriage_no=${carriageNo}`, {
+      const res = await fetch(`http://localhost:3001/api/v1/seats/map?train_id=${trainId}&travel_date=${travelDate}&seat_class=${encodeURIComponent(seatClass)}&carriage_no=${carriageNo}`, {
         headers: sid ? { Authorization: `Bearer ${sid}` } : {},
       });
       if (res.ok) {
@@ -148,11 +164,13 @@ export default function SeatSelectionModal({
     
     // 为每位乘客智能分配不冲突的座位
     // 根据已占用座位情况，找到可用的排号
-    const seats: { carriage_no: string; seat_no: string }[] = [];
+    const seats: { carriage_no: string; seat_no: string; seat_class?: string }[] = [];
     const usedSeatNos = new Set<string>(); // 本次已分配的座位号
     
     for (let i = 0; i < passengerCount; i++) {
       const seatCol = selectedSeats[i]; // 用户选择的座位字母（A/B/C/D/F）
+      const passenger = passengers[i];
+      const passengerSeatClass = passenger?.seat_type || seatClass;
       let assigned = false;
       
       // 从第1排开始尝试，找到一个未被占用的座位
@@ -162,7 +180,8 @@ export default function SeatSelectionModal({
         if (!occupiedSeats.has(seatNo) && !usedSeatNos.has(seatNo)) {
           seats.push({
             carriage_no: carriageNo,
-            seat_no: seatNo
+            seat_no: seatNo,
+            seat_class: passengerSeatClass
           });
           usedSeatNos.add(seatNo);
           assigned = true;
@@ -176,6 +195,8 @@ export default function SeatSelectionModal({
         return;
       }
     }
+    
+    console.log('[座位选择模态框] 分配的座位:', seats);
     
     try {
       await Promise.resolve(onConfirm(seats));
@@ -243,7 +264,7 @@ export default function SeatSelectionModal({
                 borderBottom: index < passengers.length - 1 ? '1px solid #f0f0f0' : 'none'
               }}>
                 <div>{index + 1}</div>
-                <div>二等座</div>
+                <div>{p.seat_type || seatClass}</div>
                 <div>成人票</div>
                 <div>{p.name}</div>
                 <div>{p.id_type || '居民身份证'}</div>
@@ -381,7 +402,7 @@ export default function SeatSelectionModal({
             background: '#f0f9ff',
             borderRadius: 4
           }}>
-            本次列车，二等座余票 <span style={{ color: '#ff4d4f', fontWeight: 600, fontSize: 18 }}>{remainingSeats}</span> 张。
+            本次列车，{seatClass}余票 <span style={{ color: '#ff4d4f', fontWeight: 600, fontSize: 18 }}>{remainingSeats}</span> 张。
           </div>
 
           {error && (

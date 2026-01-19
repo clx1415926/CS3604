@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="3" failures="0" errors="0" time="1.711">
+    <testsuite name="test/components/SeatSelectionModal.price.test.jsx" timestamp="2026-01-16T05:09:05.185Z" hostname="zhuofanchen" tests="3" failures="0" errors="0" skipped="0" time="0.064">
+        <testcase classname="test/components/SeatSelectionModal.price.test.jsx" name="SeatSelectionModal Price &amp; Type Logic &gt; should display seat types tabs with prices" time="0.036">
+        </testcase>
+        <testcase classname="test/components/SeatSelectionModal.price.test.jsx" name="SeatSelectionModal Price &amp; Type Logic &gt; should switch seat type and update display" time="0.02">
+        </testcase>
+        <testcase classname="test/components/SeatSelectionModal.price.test.jsx" name="SeatSelectionModal Price &amp; Type Logic &gt; should default to first available type" time="0.007">
+        </testcase>
+    </testsuite>
+</testsuites>

@@ -112,15 +112,59 @@ router.post('/', requireAuth, (req, res) => {
     }
 
     const order_id = `o-${ulid()}`;
-    const price_total = 576.0;
     const token = req.authToken;
     const user_key = identityKeyFromToken(token);
 
-    const seats = seat_locks.map((lock) => ({
-      seat_class: '二等座',
-      carriage_no: lock.carriage_no || '10',
-      seat_no: lock.seat_no || '16A',
-    }));
+    // 根据座位类型计算价格和分配车厢
+    const seatPriceMap = {
+      '二等座': 553.0,
+      '一等座': 933.0,
+      '商务座': 1748.0,
+      '硬座': 185.0,
+      '硬卧': 280.0,
+      '软卧': 420.0,
+    };
+    
+    // 根据座位类型分配车厢范围
+    const carriageRangeMap = {
+      '商务座': { start: 1, end: 2 },
+      '一等座': { start: 3, end: 6 },
+      '二等座': { start: 7, end: 14 },
+      '硬座': { start: 15, end: 18 },
+      '硬卧': { start: 19, end: 22 },
+      '软卧': { start: 23, end: 25 },
+    };
+
+    console.log('[订单创建] 收到的 seat_locks:', JSON.stringify(seat_locks));
+    console.log('[订单创建] 收到的 passengers:', JSON.stringify(passengers));
+    
+    const seats = seat_locks.map((lock, index) => {
+      const seatClass = lock.seat_class || passengers[index]?.seat_type || '二等座';
+      let carriageNo = lock.carriage_no;
+      
+      // 如果车厢号是通用的（如10），根据座位类型重新分配
+      if (!carriageNo || carriageNo === '10') {
+        const range = carriageRangeMap[seatClass] || carriageRangeMap['二等座'];
+        carriageNo = String(range.start);
+      }
+      
+      console.log(`[订单创建] 座位${index}: 类型=${seatClass}, 车厢=${carriageNo}, 座位号=${lock.seat_no}`);
+      
+      return {
+        seat_class: seatClass,
+        carriage_no: carriageNo,
+        seat_no: lock.seat_no || '16A',
+      };
+    });
+    
+    // 计算总价
+    const price_total = seats.reduce((sum, seat) => {
+      const seatPrice = seatPriceMap[seat.seat_class] || 553.0;
+      console.log(`[订单创建] 座位类型=${seat.seat_class}, 价格=${seatPrice}`);
+      return sum + seatPrice;
+    }, 0);
+    
+    console.log('[订单创建] 计算的总价格:', price_total);
 
     const db = await getDb();
     await withTransaction(db, async () => {
@@ -214,6 +258,7 @@ router.post('/', requireAuth, (req, res) => {
         );
       }
       for (const s of seats) {
+        console.log(`[订单创建-保存] 座位: order_id=${order_id}, seat_class=${s.seat_class}, carriage=${s.carriage_no}, seat=${s.seat_no}`);
         await run(
           db,
           `INSERT INTO order_seats(order_id, seat_class, carriage_no, seat_no)
@@ -243,6 +288,7 @@ router.post('/', requireAuth, (req, res) => {
       }
     });
 
+    console.log(`[订单创建-完成] order_id=${order_id}, price_total=${price_total}, status=unpaid`);
     res.status(201).json({ order_id, status: 'unpaid', price_total });
   })().catch((e) => {
     if (e && (e.code === 'SEAT_NOT_AVAILABLE' || e.code === 'LOCK_INVALID')) {
@@ -373,7 +419,11 @@ router.get('/:order_id', async (req, res) => {
         `SELECT seat_class, carriage_no, seat_no FROM order_seats WHERE order_id = ? ORDER BY id ASC`,
         [order_id]
       );
-      return res.json({ order: orderRowToApi(order, passengers, seats) });
+      console.log(`[订单详情] order_id=${order_id}, price_total=${order.price_total}`);
+      console.log(`[订单详情] seats:`, JSON.stringify(seats));
+      const apiResponse = orderRowToApi(order, passengers, seats);
+      console.log(`[订单详情] API响应:`, JSON.stringify(apiResponse));
+      return res.json({ order: apiResponse });
     } catch (e) {
       console.error('[ticket-management][order-detail] db error', e);
       return res.status(500).json({ error: 'DB_ERROR' });

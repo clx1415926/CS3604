@@ -148,21 +148,26 @@ export default function OrderManagement() {
           <button className="btn-primary" onClick={refreshOrders}>刷新</button>
         </div>
         {filtered.length === 0 && <div className="order-card">暂无订单</div>}
-        {filtered.map((o: any) => (
+        {filtered.map((o: any) => {
+          console.log('[订单管理] 订单数据:', o);
+          return (
           <div className="order-card" key={o.order_id} style={{ marginBottom: 12 }}>
             <div><span>订单号</span><span>：{o.order_id}</span></div>
             <div><span>乘车日期</span><span>：{String(o.travel_date || o.booked_at || '').slice(0, 10) || '-'}</span></div>
             <div><span>车次号</span><span>：{o.train?.code}</span></div>
             <div><span>乘客姓名</span><span>：{(o.passengers || []).map((p: any) => p.name).join('、')}</span></div>
-            <div><span>席别</span><span>：{(o.seats || []).map((s: any) => s.seat_class).join('、')}</span></div>
-            <div><span>价格</span><span>：{`¥${Number(o.price_total).toFixed(2)}`}</span></div>
+            <div><span>座位信息</span><span>：{(o.seats || []).map((s: any) => `${s.carriage_no}车${s.seat_no}(${s.seat_class})`).join('、') || '-'}</span></div>
+            <div><span>价格</span><span>：{`¥${Number(o.price_total || 0).toFixed(2)}`}</span></div>
             <div><span>状态</span><span>：{o.status}</span></div>
             <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
               <button className="btn-cancel" onClick={() => setCancelTarget(o.order_id)}>取消订单</button>
-              {o.status === 'unpaid' && <button className="btn-primary" onClick={() => window.location.hash = `#payment?order_id=${o.order_id}`}>去支付</button>}
+              {o.status === 'unpaid' && <button className="btn-primary" onClick={() => {
+                const sidParam = sid ? `&sid=${encodeURIComponent(sid)}` : '';
+                window.location.hash = `#payment?order_id=${o.order_id}${sidParam}`;
+              }}>去支付</button>}
             </div>
           </div>
-        ))}
+        )})}
       </div>
       
       {cancelTarget && (
