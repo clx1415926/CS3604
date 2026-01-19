@@ -6,16 +6,47 @@ const Header = () => {
   const inputRef = useRef(null);
 
   useEffect(() => {
-    try {
-      const sid = (() => { try { return localStorage.getItem('SESSION_ID'); } catch(e) { return null; } })();
-      if (sid) {
-        fetch('http://localhost:8082/api/v1/auth/session/profile', { headers: { Authorization: 'Bearer ' + sid } })
-          .then(r => r.json().then(d => ({ ok: r.ok, data: d })))
-          .then(res => { if (res.ok) setUserInfo(res.data); })
-          .catch(() => {});
+    // 使用统一认证中间件
+    const onAuthChange = (state) => {
+      console.log('[Header] Auth state changed:', state);
+      if (state.logged && state.user) {
+        setUserInfo(state.user);
+      } else {
+        setUserInfo(null);
       }
-    } catch (e) {}
+    };
+    
+    // 兼容模式：直接查询后端
+    const checkAuth = () => {
+      const sid = (() => { try { return localStorage.getItem('SESSION_ID'); } catch(e) { return null; } })();
+      console.log('[Header] Checking auth, sid:', sid ? 'exists' : 'none');
+      if (!sid) { setUserInfo(null); return; }
+      fetch('http://localhost:8082/api/v1/auth/session/profile', { headers: { Authorization: 'Bearer ' + sid } })
+        .then(r => r.json().then(d => ({ ok: r.ok, data: d })))
+        .then(res => { 
+          console.log('[Header] Auth response:', res.ok, res.data);
+          if (res.ok) setUserInfo(res.data); else setUserInfo(null); 
+        })
+        .catch((e) => { console.log('[Header] Auth error:', e); setUserInfo(null); });
+    };
+    
+    // 优先使用 AuthMiddleware，否则用兼容模式
+    if (window.AuthMiddleware) {
+      console.log('[Header] Using AuthMiddleware');
+      window.AuthMiddleware.onChange(onAuthChange);
+      window.AuthMiddleware.checkAuth(true).then(onAuthChange);
+    } else {
+      console.log('[Header] AuthMiddleware not found, using fallback');
+      checkAuth();
+      const timer = setInterval(checkAuth, 3000);
+      window.addEventListener('focus', checkAuth);
+      return () => {
+        clearInterval(timer);
+        window.removeEventListener('focus', checkAuth);
+      };
+    }
 
+    // 移除 header::before 伪元素
     try {
       const headerEl = document.querySelector('.header');
       if (headerEl) {
@@ -28,36 +59,6 @@ const Header = () => {
         }
       }
     } catch (e) {}
-    const onAuthChanged = () => {
-      try {
-        const sid2 = (() => { try { return localStorage.getItem('SESSION_ID'); } catch(e) { return null; } })();
-        if (!sid2) { setUserInfo(null); return; }
-        fetch('http://localhost:8082/api/v1/auth/session/profile', { headers: { Authorization: 'Bearer ' + sid2 } })
-          .then(r => r.json().then(d => ({ ok: r.ok, data: d })))
-          .then(res => { if (res.ok) setUserInfo(res.data); else setUserInfo(null); })
-          .catch(() => { setUserInfo(null); });
-      } catch (e) { setUserInfo(null); }
-    };
-    window.addEventListener('storage', onAuthChanged);
-    window.addEventListener('uc:auth-changed', onAuthChanged);
-    const check = () => {
-      try {
-        const sid3 = (() => { try { return localStorage.getItem('SESSION_ID'); } catch(e) { return null; } })();
-        if (!sid3) { setUserInfo(null); return; }
-        fetch('http://localhost:8082/api/v1/auth/session/profile', { headers: { Authorization: 'Bearer ' + sid3 } })
-          .then(r => r.json().then(d => ({ ok: r.ok, data: d })))
-          .then(res => { if (res.ok) { setUserInfo(res.data); } else { setUserInfo(null); try { localStorage.removeItem('SESSION_ID'); } catch(e) {} } })
-          .catch(() => { setUserInfo(null); });
-      } catch (e) { setUserInfo(null); }
-    };
-    const timer = setInterval(check, 2000);
-    window.addEventListener('focus', check);
-    return () => {
-      window.removeEventListener('storage', onAuthChanged);
-      window.removeEventListener('uc:auth-changed', onAuthChanged);
-      clearInterval(timer);
-      window.removeEventListener('focus', check);
-    };
   }, []);
 
   const handleSearch = (e) => {
@@ -72,22 +73,24 @@ const Header = () => {
 
   const handleLogout = (e) => {
     e.preventDefault();
-    const sid = (() => { try { return localStorage.getItem('SESSION_ID'); } catch(e) { return null; } })();
-    const done = () => {
-      try { localStorage.removeItem('SESSION_ID'); } catch (err) {}
-      setUserInfo(null);
-      try { window.dispatchEvent(new CustomEvent('uc:auth-changed', { detail: { sid: '', logged_in: false } })); } catch (e2) {}
-    };
-    if (sid) {
-      fetch('http://localhost:8080/api/v1/auth/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + sid } })
-        .then(() => done())
-        .catch(() => {
-          fetch('http://127.0.0.1:8082/api/v1/auth/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + sid } })
-            .then(() => done())
-            .catch(() => done());
-        });
+    if (window.AuthMiddleware) {
+      window.AuthMiddleware.logout().then((state) => {
+        setUserInfo(null);
+      });
     } else {
-      done();
+      // 兼容模式
+      const sid = (() => { try { return localStorage.getItem('SESSION_ID'); } catch(e) { return null; } })();
+      const done = () => {
+        try { localStorage.removeItem('SESSION_ID'); } catch (err) {}
+        try { sessionStorage.removeItem('session_id'); } catch (err) {}
+        setUserInfo(null);
+      };
+      if (sid) {
+        fetch('http://localhost:8082/api/v1/auth/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + sid } })
+          .then(() => done()).catch(() => done());
+      } else {
+        done();
+      }
     }
   };
 

@@ -6,13 +6,23 @@ function TrainList({ trains, query }) {
     const book = async (train) => {
         setError('');
         let sid = (() => { try { return localStorage.getItem('SESSION_ID'); } catch (e) { return null; } })();
-        if (!sid) {
+        
+        // 验证 session 是否有效
+        if (sid) {
             try {
-                const params = new URLSearchParams(window.location.search || '');
-                const sidParam = params.get('sid');
-                if (sidParam) { try { localStorage.setItem('SESSION_ID', sidParam); } catch (e) {} sid = sidParam; }
-            } catch (e) {}
+                const checkRes = await fetch('http://localhost:8082/api/v1/auth/session', {
+                    headers: { Authorization: 'Bearer ' + sid }
+                });
+                if (!checkRes.ok) {
+                    // 会话已失效，清除本地存储
+                    try { localStorage.removeItem('SESSION_ID'); } catch (e) {}
+                    sid = null;
+                }
+            } catch (e) {
+                // 网络错误时保守处理
+            }
         }
+        
         if (!sid) { setError('请先登录后预订'); return; }
         
         try {

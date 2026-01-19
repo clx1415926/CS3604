@@ -4,6 +4,19 @@ import '../../assets/home_assets/iconfont.css';
 import logoDefault from '../../assets/logo.png';
 import logo2xDefault from '../../assets/logo@2x.png';
 
+// 声明 AuthMiddleware 类型
+declare global {
+  interface Window {
+    AuthMiddleware?: {
+      init: () => Promise<{ logged: boolean; user: any; sid: string }>;
+      checkAuth: (force?: boolean) => Promise<{ logged: boolean; user: any; sid: string }>;
+      logout: () => Promise<{ logged: boolean; user: any; sid: string }>;
+      onChange: (cb: (state: { logged: boolean; user: any; sid: string }) => void) => void;
+      getState: () => { logged: boolean; user: any; sid: string };
+    };
+  }
+}
+
 type Props = {
   homeHref?: string;
   myHref?: string;
@@ -27,176 +40,59 @@ const SharedHeader: React.FC<Props> = ({
   const [logged, setLogged] = useState(false);
 
   useEffect(() => {
-    const uniqueBases = (bases: string[]) => Array.from(new Set(bases.filter(Boolean)));
-
-    const getSid = () => {
-      const fromHash = (() => {
-        const h = window.location.hash || '';
-        const m = h.match(/sid=([^&]+)/);
-        return m ? decodeURIComponent(m[1]) : '';
-      })();
-      const fromSearch = (() => {
-        const s = window.location.search || '';
-        const m = s.match(/sid=([^&]+)/);
-        return m ? decodeURIComponent(m[1]) : '';
-      })();
-      const fromSession = sessionStorage.getItem('session_id') || '';
-      const fromLocal = localStorage.getItem('SESSION_ID') || '';
-      const sid = fromHash || fromSearch || fromSession || fromLocal;
-      if (sid) {
-        try {
-          localStorage.setItem('SESSION_ID', sid);
-          sessionStorage.setItem('session_id', sid);
-        } catch (e) {}
-      }
-      return sid;
-    };
-    const getAuthBases = () =>
-      uniqueBases([
-        (typeof window !== 'undefined' && (window as any).API_BASE) || '',
-        localStorage.getItem('UC_AUTH_BASE') || '',
-        'http://localhost:8080/api/v1',
-        'http://127.0.0.1:8082/api/v1',
-      ]);
-
-    const loadNick = async (sid: string) => {
-      if (!sid) {
+    // 使用统一认证中间件
+    const onAuthChange = (state: { logged: boolean; user: any; sid: string }) => {
+      console.log('[Header] Auth state changed:', state);
+      if (state.logged && state.user) {
+        const displayName = (state.user.username || '') + (state.user.name ? '（' + state.user.name + '）' : '');
+        setLogged(true);
+        setNick(displayName);
+      } else {
         setLogged(false);
         setNick('');
-        return;
       }
-
-      setLogged(true);
-
-      const fetchProfile = async (base: string) => {
-        try {
-          const r = await fetch(`${base}/auth/session/profile`, {
-            headers: { Authorization: 'Bearer ' + sid },
-          });
-          const d = await r.json().catch(() => null);
-          return { ok: r.ok, data: d };
-        } catch (e) {
-          return { ok: false, data: null };
-        }
-      };
-
-      const bases = getAuthBases();
-      for (const base of bases) {
-        const result = await fetchProfile(base);
-        if (result.ok && result.data && (result.data.username || result.data.name)) {
-          const displayName =
-            (result.data.username || '') +
-            (result.data.name ? '（' + result.data.name + '）' : '');
-          setNick(displayName);
-          try {
-            localStorage.setItem('UC_NICK', displayName);
-            sessionStorage.setItem('UC_NICK', displayName);
-            localStorage.setItem('UC_AUTH_BASE', base);
-          } catch (e) {}
-          return;
-        }
-      }
-
-      const name =
-        localStorage.getItem('UC_NICK') ||
-        localStorage.getItem('ACCOUNT_NICK') ||
-        sessionStorage.getItem('UC_NICK') ||
-        '';
-      setNick(name || '用户');
     };
-
-    const sync = () => {
-      const sid = getSid();
-      loadNick(sid);
-    };
-
-    const onStorage = (e: StorageEvent) => {
-      if (!e || (e.key !== 'SESSION_ID' && e.key !== 'UC_NICK' && e.key !== 'UC_AUTH_BASE')) return;
-      sync();
-    };
-
-    const onAuthChanged = () => {
-      sync();
-    };
-
-    window.addEventListener('storage', onStorage);
-    window.addEventListener('uc:auth-changed' as any, onAuthChanged);
-    sync();
-
-    const poll = async () => {
-      const sid = getSid();
+    
+    // 兼容模式：直接查询后端
+    const checkAuth = async () => {
+      const sid = localStorage.getItem('SESSION_ID') || sessionStorage.getItem('session_id') || '';
+      console.log('[Header] Checking auth, sid:', sid ? 'exists' : 'none');
       if (!sid) { setLogged(false); setNick(''); return; }
-      const bases = getAuthBases();
-      for (const base of bases) {
-        try {
-          const r = await fetch(`${base}/auth/session/profile`, { headers: { Authorization: 'Bearer ' + sid } });
-          const d = await r.json().catch(() => null);
-          if (r.ok && d && (d.username || d.name)) {
-            const displayName = (d.username || '') + (d.name ? '（' + d.name + '）' : '');
-            setLogged(true);
-            setNick(displayName);
-            try {
-              localStorage.setItem('UC_NICK', displayName);
-              sessionStorage.setItem('UC_NICK', displayName);
-              localStorage.setItem('UC_AUTH_BASE', base);
-            } catch (e) {}
-            return;
-          }
-        } catch (e) {}
-      }
       try {
-        localStorage.removeItem('SESSION_ID');
-        sessionStorage.removeItem('session_id');
-      } catch (e) {}
-      setLogged(false);
-      setNick('');
-      try {
-        window.dispatchEvent(new CustomEvent('uc:auth-changed', { detail: { sid: '', logged_in: false } }));
-      } catch (e) {}
-    };
-    const timer = setInterval(poll, 2000);
-    const onFocus = () => { poll(); };
-    window.addEventListener('focus', onFocus);
-
-    const hubOrigin = 'http://localhost:8080';
-    const hubUrl = hubOrigin + '/auth-sync.html';
-    const iframe = document.createElement('iframe');
-    iframe.setAttribute('aria-hidden', 'true');
-    (iframe.style as any).display = 'none';
-    iframe.src = hubUrl;
-    document.body.appendChild(iframe);
-    const sendHub = (payload: any) => {
-      try { const w = (iframe as any).contentWindow; if (w) w.postMessage(payload, hubOrigin); } catch (e) {}
-    };
-    const onLocalAuthChanged = (ev: any) => {
-      const sid0 = (ev && ev.detail && ev.detail.sid) || localStorage.getItem('SESSION_ID') || '';
-      sendHub({ type: 'uc-auth', sid: sid0 || '', logged_in: !!(ev && ev.detail && ev.detail.logged_in), from: window.location.origin });
-    };
-    window.addEventListener('uc:auth-changed' as any, onLocalAuthChanged);
-    const onHubMessage = (e: MessageEvent) => {
-      const d = (e && (e as any).data) as any;
-      if (!d || d.type !== 'uc-auth' || !d.forwarded) return;
-      try {
-        if (d.logged_in) {
-          localStorage.setItem('SESSION_ID', d.sid || '');
-          sessionStorage.setItem('session_id', d.sid || '');
+        const r = await fetch('http://localhost:8082/api/v1/auth/session/profile', { headers: { Authorization: 'Bearer ' + sid } });
+        const d = await r.json().catch(() => null);
+        console.log('[Header] Auth response:', r.ok, d);
+        if (r.ok && d && (d.username || d.name)) {
+          const displayName = (d.username || '') + (d.name ? '（' + d.name + '）' : '');
+          setLogged(true);
+          setNick(displayName);
         } else {
-          localStorage.removeItem('SESSION_ID');
-          sessionStorage.removeItem('session_id');
+          setLogged(false);
+          setNick('');
         }
-      } catch (e2) {}
-      sync();
+      } catch (e) {
+        console.log('[Header] Auth error:', e);
+        setLogged(false);
+        setNick('');
+      }
     };
-    window.addEventListener('message', onHubMessage);
-
-    return () => {
-      window.removeEventListener('storage', onStorage);
-      window.removeEventListener('uc:auth-changed' as any, onAuthChanged);
-      clearInterval(timer);
-      window.removeEventListener('focus', onFocus);
-      window.removeEventListener('uc:auth-changed' as any, onLocalAuthChanged);
-      window.removeEventListener('message', onHubMessage);
-    };
+    
+    // 优先使用 AuthMiddleware，否则用兼容模式
+    if (window.AuthMiddleware) {
+      console.log('[Header] Using AuthMiddleware');
+      window.AuthMiddleware.onChange(onAuthChange);
+      window.AuthMiddleware.init().then(onAuthChange);
+    } else {
+      console.log('[Header] AuthMiddleware not found, using fallback');
+      checkAuth();
+      const timer = setInterval(checkAuth, 3000);
+      window.addEventListener('focus', checkAuth);
+      window.addEventListener('focus', checkAuth);
+      return () => {
+        clearInterval(timer);
+        window.removeEventListener('focus', checkAuth);
+      };
+    }
   }, []);
 
   const computedMyHref = myHref || ((typeof window !== 'undefined' && window.location && window.location.origin)
@@ -205,51 +101,55 @@ const SharedHeader: React.FC<Props> = ({
 
   const onLogout = (e: React.MouseEvent) => {
     e.preventDefault();
-    const sid = (() => {
-      try {
-        return localStorage.getItem('SESSION_ID') || sessionStorage.getItem('session_id') || '';
-      } catch (e) {
-        return '';
-      }
-    })();
-    const finalize = () => {
-      try {
-        localStorage.removeItem('SESSION_ID');
-        sessionStorage.removeItem('session_id');
-        localStorage.removeItem('UC_NICK');
-        sessionStorage.removeItem('UC_NICK');
-        localStorage.removeItem('UC_AUTH_BASE');
-        // 清除所有乘车人缓存，确保下次登录获取正确的乘车人
-        const keysToRemove: string[] = [];
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && (key.startsWith('TM_CONTACTS_CACHE:') || key.startsWith('TM_SELECTED_SEATS:'))) {
-            keysToRemove.push(key);
+    if (window.AuthMiddleware) {
+      window.AuthMiddleware.logout().then(() => {
+        setLogged(false);
+        setNick('');
+        // 清除乘车人缓存
+        try {
+          const keysToRemove: string[] = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.startsWith('TM_CONTACTS_CACHE:') || key.startsWith('TM_SELECTED_SEATS:'))) {
+              keysToRemove.push(key);
+            }
           }
-        }
-        keysToRemove.forEach(key => localStorage.removeItem(key));
-      } catch (e) {}
-      setLogged(false);
-      setNick('');
-      try {
-        window.dispatchEvent(new CustomEvent('uc:auth-changed', { detail: { sid: '', logged_in: false } }));
-      } catch (e) {}
-    };
-    if (sid) {
-      const bases = [ 'http://localhost:8080/api/v1', 'http://127.0.0.1:8082/api/v1' ];
-      const doLogout = async () => {
-        for (const base of bases) {
-          try {
-            await fetch(`${base}/auth/logout`, { method: 'POST', headers: { Authorization: 'Bearer ' + sid } });
-            finalize();
-            return;
-          } catch (e) {}
-        }
-        finalize();
-      };
-      doLogout();
+          keysToRemove.forEach(key => localStorage.removeItem(key));
+        } catch (e) {}
+        // 刷新页面
+        window.location.reload();
+      });
     } else {
-      finalize();
+      // 兼容模式
+      const sid = localStorage.getItem('SESSION_ID') || sessionStorage.getItem('session_id') || '';
+      const finalize = () => {
+        try {
+          localStorage.removeItem('SESSION_ID');
+          sessionStorage.removeItem('session_id');
+          localStorage.removeItem('UC_NICK');
+          sessionStorage.removeItem('UC_NICK');
+          localStorage.removeItem('UC_AUTH_BASE');
+          // 清除乘车人缓存
+          const keysToRemove: string[] = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.startsWith('TM_CONTACTS_CACHE:') || key.startsWith('TM_SELECTED_SEATS:'))) {
+              keysToRemove.push(key);
+            }
+          }
+          keysToRemove.forEach(key => localStorage.removeItem(key));
+        } catch (e) {}
+        setLogged(false);
+        setNick('');
+        // 刷新页面
+        window.location.reload();
+      };
+      if (sid) {
+        fetch('http://localhost:8082/api/v1/auth/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + sid } })
+          .then(() => finalize()).catch(() => finalize());
+      } else {
+        finalize();
+      }
     }
   };
 
