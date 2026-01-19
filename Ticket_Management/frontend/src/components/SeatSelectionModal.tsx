@@ -16,6 +16,7 @@ type Passenger = {
   id_type?: string;
   id_number?: string;
   masked_id_number?: string;
+  seat_type?: string;
 };
 
 type Props = {
@@ -27,6 +28,7 @@ type Props = {
   arriveTime?: string;
   passengerCount?: number;
   passengers?: Passenger[];
+  seatClass?: string;
   onConfirm?: (selectedSeats: any[]) => void | Promise<void>;
   onCancel?: () => void;
 };
@@ -40,10 +42,24 @@ export default function SeatSelectionModal({
   arriveTime = '12:09',
   passengerCount = 1,
   passengers = [],
+  seatClass = '二等座',
   onConfirm = () => {},
   onCancel = () => {},
 }: Props) {
-  const [carriageNo, setCarriageNo] = useState('10');
+  // 根据座位类型设置初始车厢号
+  const getInitialCarriageNo = (seatClass: string) => {
+    const carriageMap: { [key: string]: string } = {
+      '商务座': '1',
+      '一等座': '3',
+      '二等座': '7',
+      '硬座': '15',
+      '硬卧': '19',
+      '软卧': '23',
+    };
+    return carriageMap[seatClass] || '7';
+  };
+  
+  const [carriageNo, setCarriageNo] = useState(getInitialCarriageNo(seatClass));
   const [seatMap, setSeatMap] = useState<Seat[]>([]);
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,20 +69,18 @@ export default function SeatSelectionModal({
   const [occupiedSeats, setOccupiedSeats] = useState<Set<string>>(new Set()); // 已占用座位集合
 
   useEffect(() => {
-    setSelectedSeats([]);
-    setError('');
     fetchSeatMap();
     const t = setInterval(() => {
       fetchSeatMap();
     }, 2000);
     return () => clearInterval(t);
-  }, [carriageNo, trainId, travelDate]);
+  }, [carriageNo, trainId, travelDate, seatClass]);
 
   const fetchSeatMap = async () => {
     setLoading(true);
     try {
       const sid = localStorage.getItem('SESSION_ID') || '';
-      const res = await fetch(`http://localhost:3001/api/v1/seats/map?train_id=${trainId}&travel_date=${travelDate}&seat_class=二等座&carriage_no=${carriageNo}`, {
+      const res = await fetch(`http://localhost:3001/api/v1/seats/map?train_id=${trainId}&travel_date=${travelDate}&seat_class=${encodeURIComponent(seatClass)}&carriage_no=${carriageNo}`, {
         headers: sid ? { Authorization: `Bearer ${sid}` } : {},
       });
       if (res.ok) {
@@ -93,62 +107,96 @@ export default function SeatSelectionModal({
     }
   };
 
-  const getSeatColumn = (seat: Seat) => {
-    if (seat.column) return String(seat.column);
-    const s = String(seat.seat_no || '');
-    const m = s.match(/[A-Z]$/i);
-    return m ? m[0].toUpperCase() : '';
-  };
-
-  const getSeatIsOccupied = (seat: Seat) => {
-    return Boolean(seat.occupied) || seat.status === 'locked' || seat.status === 'sold';
-  };
-
-  const findFirstAvailableSeatNoByColumn = (col: string) => {
-    const candidates = seatMap
-      .filter(s => getSeatColumn(s) === col)
-      .filter(s => !getSeatIsOccupied(s))
-      .map(s => String(s.seat_no));
-
-    const byRow = (a: string, b: string) => {
-      const ra = Number((a.match(/^\d+/) || ['0'])[0]);
-      const rb = Number((b.match(/^\d+/) || ['0'])[0]);
-      return ra - rb;
-    };
-
-    candidates.sort(byRow);
-    return candidates[0] || '';
-  };
-
-  const toggleSeatByColumn = (col: string) => {
-    const seatNo = findFirstAvailableSeatNoByColumn(col);
-    if (!seatNo) return;
-
+  const toggleSeat = (seatNo: string, occupied: boolean) => {
+    if (occupied) return;
+    
     if (selectedSeats.includes(seatNo)) {
-      setSelectedSeats(prev => prev.filter(s => s !== seatNo));
+      setSelectedSeats(selectedSeats.filter(s => s !== seatNo));
+    } else {
+      if (selectedSeats.length >= passengerCount) {
+        setError(`最多只能选择 ${passengerCount} 个座位`);
+        return;
+      }
+      setSelectedSeats([...selectedSeats, seatNo]);
       setError('');
-      return;
     }
+  };
 
-    if (selectedSeats.length >= passengerCount) {
-      setError(`最多只能选择 ${passengerCount} 个座位`);
-      return;
+  // 计算乘客的预分配座位号（用于显示）
+  const getPreviewSeatNo = (pIndex: number): string | null => {
+    const seatCol = selectedSeats[pIndex];
+    if (!seatCol) return null;
+    
+    // 计算该乘客之前同样选择该位置的乘客数量
+    let sameColCount = 0;
+    for (let i = 0; i < pIndex; i++) {
+      if (selectedSeats[i] === seatCol) {
+        sameColCount++;
+      }
     }
-
-    setSelectedSeats(prev => [...prev, seatNo]);
-    setError('');
+    
+    // 从第1排开始，跳过已占用和已分配给之前乘客的座位
+    let skipCount = 0;
+    for (let row = 1; row <= 20; row++) {
+      const seatNo = `${row}${seatCol}`;
+      if (!occupiedSeats.has(seatNo)) {
+        if (skipCount === sameColCount) {
+          return `${carriageNo}车${seatNo}`;
+        }
+        skipCount++;
+      }
+    }
+    return null;
   };
 
   const handleConfirm = async () => {
     if (confirming) return;
-
-    const validSeats = selectedSeats.filter(Boolean);
-    if (validSeats.length !== passengerCount) return;
+    
+    // 检查每位乘客是否都选择了座位
+    const validSeats = selectedSeats.filter(s => s);
+    if (validSeats.length !== passengerCount) {
+      setError('请为每位乘客选择座位偏好');
+      return;
+    }
     
     setConfirming(true);
     setError('');
-
-    const seats = validSeats.map(seatNo => ({ carriage_no: carriageNo, seat_no: seatNo }));
+    
+    // 为每位乘客智能分配不冲突的座位
+    // 根据已占用座位情况，找到可用的排号
+    const seats: { carriage_no: string; seat_no: string; seat_class?: string }[] = [];
+    const usedSeatNos = new Set<string>(); // 本次已分配的座位号
+    
+    for (let i = 0; i < passengerCount; i++) {
+      const seatCol = selectedSeats[i]; // 用户选择的座位字母（A/B/C/D/F）
+      const passenger = passengers[i];
+      const passengerSeatClass = passenger?.seat_type || seatClass;
+      let assigned = false;
+      
+      // 从第1排开始尝试，找到一个未被占用的座位
+      for (let row = 1; row <= 20; row++) {
+        const seatNo = `${row}${seatCol}`;
+        // 检查是否未被占用且本次未分配过
+        if (!occupiedSeats.has(seatNo) && !usedSeatNos.has(seatNo)) {
+          seats.push({
+            carriage_no: carriageNo,
+            seat_no: seatNo,
+            seat_class: passengerSeatClass
+          });
+          usedSeatNos.add(seatNo);
+          assigned = true;
+          break;
+        }
+      }
+      
+      if (!assigned) {
+        setError(`无法为乘客${i + 1}分配${seatCol}座位，请选择其他位置`);
+        setConfirming(false);
+        return;
+      }
+    }
+    
+    console.log('[座位选择模态框] 分配的座位:', seats);
     
     try {
       await Promise.resolve(onConfirm(seats));
@@ -216,7 +264,7 @@ export default function SeatSelectionModal({
                 borderBottom: index < passengers.length - 1 ? '1px solid #f0f0f0' : 'none'
               }}>
                 <div>{index + 1}</div>
-                <div>二等座</div>
+                <div>{p.seat_type || seatClass}</div>
                 <div>成人票</div>
                 <div>{p.name}</div>
                 <div>{p.id_type || '居民身份证'}</div>
@@ -249,58 +297,100 @@ export default function SeatSelectionModal({
               <span style={{ color: '#52c41a', fontWeight: 600 }}>✓ 选座咯</span>
               <span style={{ fontSize: 12, color: '#999' }}>请为每位乘客选择座位偏好</span>
             </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12 }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: '#333' }}>{carriageNo}号车厢 - 二等座</div>
-              <select
-                value={carriageNo}
-                onChange={e => setCarriageNo(e.target.value)}
-                style={{ padding: '6px 8px', border: '1px solid #d9d9d9', borderRadius: 4, background: '#fff' }}
-              >
-                {['10', '11', '12', '13', '14', '15'].map(n => (
-                  <option key={n} value={n}>{n}号车厢</option>
-                ))}
-              </select>
-            </div>
-
-            <div style={{ fontSize: 13, color: '#666', marginBottom: 10 }}>
-              需要选择 {passengerCount} 个座位，已选择 {selectedSeats.filter(Boolean).length} 个
-            </div>
-
-            {loading ? (
-              <div style={{ padding: '10px 0', color: '#666' }}>加载中...</div>
-            ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  {['A', 'B', 'C', 'D', 'F'].map(col => {
-                    const seatNo = findFirstAvailableSeatNoByColumn(col);
-                    const disabled = !seatNo;
-                    return (
-                      <button
-                        key={col}
-                        type="button"
-                        onClick={() => toggleSeatByColumn(col)}
-                        disabled={disabled}
-                        style={{
-                          width: 36,
-                          height: 36,
-                          border: selectedSeats.includes(seatNo) ? '2px solid #1890ff' : '1px solid #d9d9d9',
-                          borderRadius: 4,
-                          background: selectedSeats.includes(seatNo) ? '#e6f7ff' : (disabled ? '#f5f5f5' : '#fff'),
-                          color: disabled ? '#999' : '#333',
-                          fontWeight: 600,
-                          cursor: disabled ? 'not-allowed' : 'pointer',
-                          fontSize: 13,
-                          opacity: disabled ? 0.7 : 1,
-                        }}
-                      >
-                        {col}
-                      </button>
-                    );
-                  })}
+            
+            {/* 每位乘客的座位选择 */}
+            {passengers.map((passenger, pIndex) => (
+              <div key={passenger.passenger_id} style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 15,
+                marginBottom: pIndex < passengers.length - 1 ? 12 : 0,
+                padding: '10px 15px',
+                background: '#fff',
+                borderRadius: 4,
+                border: '1px solid #e8e8e8'
+              }}>
+                <span style={{ 
+                  minWidth: 60, 
+                  fontSize: 13, 
+                  color: '#333',
+                  fontWeight: 500 
+                }}>
+                  {passenger.name}
+                </span>
+                
+                {/* 座位选择布局 */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 12, color: '#666' }}>窗</span>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {['A', 'B', 'C'].map(col => {
+                      const isSelected = selectedSeats[pIndex] === col;
+                      return (
+                        <button
+                          key={col}
+                          onClick={() => {
+                            const newSeats = [...selectedSeats];
+                            newSeats[pIndex] = col;
+                            setSelectedSeats(newSeats);
+                            setError('');
+                          }}
+                          style={{
+                            width: 32,
+                            height: 32,
+                            border: isSelected ? '2px solid #1890ff' : '1px solid #d9d9d9',
+                            borderRadius: 4,
+                            background: isSelected ? '#e6f7ff' : '#fff',
+                            color: isSelected ? '#1890ff' : '#333',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            fontSize: 13
+                          }}
+                        >
+                          {col}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <span style={{ fontSize: 12, color: '#999' }}>过道</span>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {['D', 'F'].map(col => {
+                      const isSelected = selectedSeats[pIndex] === col;
+                      return (
+                        <button
+                          key={col}
+                          onClick={() => {
+                            const newSeats = [...selectedSeats];
+                            newSeats[pIndex] = col;
+                            setSelectedSeats(newSeats);
+                            setError('');
+                          }}
+                          style={{
+                            width: 32,
+                            height: 32,
+                            border: isSelected ? '2px solid #1890ff' : '1px solid #d9d9d9',
+                            borderRadius: 4,
+                            background: isSelected ? '#e6f7ff' : '#fff',
+                            color: isSelected ? '#1890ff' : '#333',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            fontSize: 13
+                          }}
+                        >
+                          {col}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <span style={{ fontSize: 12, color: '#666' }}>窗</span>
                 </div>
+                
+                {selectedSeats[pIndex] && (
+                  <span style={{ fontSize: 12, color: '#1890ff', marginLeft: 10 }}>
+                    已选: {getPreviewSeatNo(pIndex) || '分配中...'}
+                  </span>
+                )}
               </div>
-            )}
+            ))}
           </div>
 
           {/* 余票信息 */}
@@ -312,7 +402,7 @@ export default function SeatSelectionModal({
             background: '#f0f9ff',
             borderRadius: 4
           }}>
-            本次列车，二等座余票 <span style={{ color: '#ff4d4f', fontWeight: 600, fontSize: 18 }}>{remainingSeats}</span> 张。
+            本次列车，{seatClass}余票 <span style={{ color: '#ff4d4f', fontWeight: 600, fontSize: 18 }}>{remainingSeats}</span> 张。
           </div>
 
           {error && (
@@ -325,7 +415,7 @@ export default function SeatSelectionModal({
               borderRadius: 4,
               fontSize: 13 
             }}>
-              {error}
+              ⚠️ {error}
             </div>
           )}
 
@@ -348,7 +438,7 @@ export default function SeatSelectionModal({
                 cursor: (confirming || selectedSeats.filter(s => s).length !== passengerCount) ? 'not-allowed' : 'pointer'
               }}
             >
-              {confirming ? '确认中...' : '确认选座'}
+              {confirming ? '确认中...' : '确认'}
             </button>
           </div>
         </div>

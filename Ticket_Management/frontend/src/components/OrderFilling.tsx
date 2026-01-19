@@ -9,6 +9,7 @@ export default function OrderFilling() {
   const [seatLocks, setSeatLocks] = useState<any[]>([]);
   const [selectedSeats, setSelectedSeats] = useState<any[]>([]);
   const [passengers, setPassengers] = useState<any[]>([]);
+  const [passengerSeatTypes, setPassengerSeatTypes] = useState<{ [key: string]: string }>({});
   const [message, setMessage] = useState<string>('');
   const [showSeat, setShowSeat] = useState<boolean>(false);
   const [showWarmTip, setShowWarmTip] = useState<boolean>(false);
@@ -241,14 +242,93 @@ export default function OrderFilling() {
 
   // 座位选择确认后直接提交订单
   const handleSeatConfirm = async (seats: any[]) => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setSelectedSeats(seats);
     
     try {
       const sid = localStorage.getItem('SESSION_ID') || 'sess-super-12306';
       localStorage.setItem(seatsCacheKeyBase(sid), JSON.stringify(seats));
+      
+      console.log('[前端-锁座] 请求锁定的座位:', seats);
+      
+      // 先锁定座位
+      const lockRes = await fetch('http://localhost:3001/api/v1/seats/lock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sid}` },
+        body: JSON.stringify({ train_id: trainId, travel_date: travelDate, seats: seats })
+      });
+      
+      if (!lockRes.ok) {
+        setShowSeat(false);
+        setMessage('锁座失败，座位可能已被占用，请重新选择');
+        setIsSubmitting(false);
+        return;
+      }
+      
+      const lockData = await lockRes.json();
+      const locks = lockData.locks || [];
+      console.log('[前端-锁座] 后端返回的locks:', locks);
+      setSeatLocks(locks);
+      
+      // 提交订单
+      const orderData = {
+        train_id: trainId,
+        travel_date: travelDate,
+        from_station: fromStation,
+        to_station: toStation,
+        passengers: passengers.map((p: any) => ({
+          ...p,
+          seat_type: passengerSeatTypes[p.passenger_id] || '二等座'
+        })),
+        seat_locks: locks.map((lock: any) => ({ 
+          lock_token: lock.lock_token,
+          seat_no: lock.seat_no,
+          carriage_no: lock.carriage_no,
+          seat_class: lock.seat_class || '二等座'
+        }))
+      };
+      
+      console.log('[前端] 提交订单数据:', JSON.stringify(orderData, null, 2));
+      console.log('[前端] passengerSeatTypes:', passengerSeatTypes);
+      console.log('[前端] locks:', locks);
+      
+      const orderRes = await fetch('http://localhost:3001/api/v1/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sid}`
+        },
+        body: JSON.stringify(orderData)
+      });
+      
+      const data = await orderRes.json().catch(() => ({}));
+      
+      if (orderRes.status === 201) {
+        const orderId = String(data.order_id || '').trim();
+        if (!orderId) {
+          setShowSeat(false);
+          setMessage('提交订单失败');
+          setIsSubmitting(false);
+          return;
+        }
+        try {
+          localStorage.removeItem(seatsCacheKeyBase(sid));
+        } catch (e) {}
+        setSelectedSeats([]);
+        setSeatLocks([]);
+        setShowSeat(false);
+        // 跳转到支付页面
+        window.location.hash = `#payment?order_id=${orderId}&sid=${encodeURIComponent(sid)}`;
+      } else {
+        setShowSeat(false);
+        setMessage('提交订单失败');
+      }
     } catch (e) {
-    } finally {
       setShowSeat(false);
+      setMessage('网络错误');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -318,12 +398,9 @@ export default function OrderFilling() {
       setMessage('请选择乘车人');
       return;
     }
-    if (selectedSeats.length === 0) {
-      setMessage('请先选择座位');
-      return;
-    }
     if (isSubmitting) return;
-    setShowWarmTip(true);
+    // 直接打开座位选择弹窗
+    setShowSeat(true);
   };
 
   const proceedSubmit = async () => {
@@ -405,13 +482,13 @@ export default function OrderFilling() {
           <div className="train-info-content">
             <div className="train-details">
               <span className="date">{travelDate} (周一)</span>
-              <span className="train-no">{trainId}次列车</span>
+              <span className="train-no">{trainId}</span>
               <span className="route">{fromStation}站 ({getParam('departTime') || '06:10'}开) ━ {toStation}站 ({getParam('arriveTime') || '12:09'}到)</span>
             </div>
             <div className="seat-types">
-              <span className="seat-item">一等座 <span className="price">¥{getParam('firstClassPrice') || '576.0'}元</span> <span className="count">{getParam('firstClassCount') || '8'}张</span> 有票</span>
-              <span className="seat-item">商务座 <span className="price">¥{getParam('businessPrice') || '1873.0'}元</span> <span className="count">{getParam('businessCount') || '8'}张</span> <span className="count">{getParam('businessCount2') || '15'}张</span></span>
-              <span className="seat-item">二等座 <span className="price">¥{getParam('secondClassPrice') || '969.0'}元</span> <span className="count">{getParam('secondClassCount') || '9'}张</span> 有票</span>
+              <span className="seat-item">一等座 <span className="price">¥{getParam('firstClassPrice') || '933.0'}元</span> <span className="count">{getParam('firstClassCount') || '8'}张</span> 有票</span>
+              <span className="seat-item">商务座 <span className="price">¥{getParam('businessPrice') || '1748.0'}元</span> <span className="count">{getParam('businessCount') || '8'}张</span> <span className="count">{getParam('businessCount2') || '15'}张</span></span>
+              <span className="seat-item">二等座 <span className="price">¥{getParam('secondClassPrice') || '553.0'}元</span> <span className="count">{getParam('secondClassCount') || '9'}张</span> 有票</span>
             </div>
             <div className="info-notice">
               * 当前价格为成年旅客所需价格，儿童票、学生票、残疾军人（警察）优惠票及支付方式可能影响票价，具体请参照订单确认信息为准。
@@ -422,7 +499,6 @@ export default function OrderFilling() {
 
       {/* 乘客信息填写区域 */}
       <div className="wrapper main-content">
-        <div className="section-title">订单填写</div>
         <div className="passenger-info-section">
           <div className="section-title-bar">
             <span className="icon-passenger">👤</span>
@@ -454,7 +530,7 @@ export default function OrderFilling() {
                         checked={isSelected}
                         onChange={() => togglePassenger(c)}
                       />
-                      <span className={`passenger-name ${isSelected ? 'selected' : ''}`}>{c.name} ({c.masked_id_number || maskIdForDisplay(c.id_number || '')})</span>
+                      <span className={`passenger-name ${isSelected ? 'selected' : ''}`}>{c.name}</span>
                     </label>
                   );
                 })}
@@ -491,12 +567,19 @@ export default function OrderFilling() {
                         </select>
                       </div>
                       <div className="col-seat">
-                        <select className="select-input">
-                          <option>二等座 (¥{getParam('secondClassPrice') || '576.0'}元)</option>
-                          <option>一等座</option>
-                          <option>商务座</option>
-                          <option>硬卧</option>
-                          <option>软卧</option>
+                        <select 
+                          className="select-input"
+                          value={passengerSeatTypes[p.passenger_id] || '二等座'}
+                          onChange={(e) => {
+                            const seatType = e.target.value.split(' ')[0]; // 提取座位类型（去掉价格部分）
+                            setPassengerSeatTypes(prev => ({ ...prev, [p.passenger_id]: seatType }));
+                          }}
+                        >
+                          <option value="二等座">二等座 (¥{getParam('secondClassPrice') || '553.0'}元)</option>
+                          <option value="一等座">一等座 (¥{getParam('firstClassPrice') || '933.0'}元)</option>
+                          <option value="商务座">商务座 (¥{getParam('businessPrice') || '1748.0'}元)</option>
+                          <option value="硬卧">硬卧</option>
+                          <option value="软卧">软卧</option>
                         </select>
                       </div>
                       <div className="col-name">{contact.name}</div>
@@ -556,7 +639,7 @@ export default function OrderFilling() {
         {/* 协议确认 */}
         <div className="agreement-section">
           <label className="agreement-checkbox">
-            <input type="checkbox" defaultChecked style={{ display: 'none' }} />
+            <input type="checkbox" defaultChecked />
             <span>提交订单表示已阅读并同意</span>
           </label>
           <a href="javascript:;" className="agreement-link">《国铁集团铁路旅客运输规程》</a>
@@ -566,9 +649,6 @@ export default function OrderFilling() {
         {/* 操作按钮 */}
         <div className="action-buttons">
           <button className="btn-back" onClick={() => window.history.back()}>上一步</button>
-          <button className="btn-back" onClick={openSeatSelection} disabled={isSubmitting}>
-            {selectedSeats.length > 0 ? '修改座位' : '选择座位'}
-          </button>
           <button className="btn-submit-order" onClick={startSubmit} disabled={isSubmitting}>提交订单</button>
         </div>
 
@@ -614,13 +694,15 @@ export default function OrderFilling() {
           departTime={getParam('departTime') || '06:10'}
           arriveTime={getParam('arriveTime') || '12:09'}
           passengerCount={passengers.length}
+          seatClass={passengers.length > 0 ? (passengerSeatTypes[passengers[0].passenger_id] || '二等座') : '二等座'}
           passengers={passengers.map(p => {
             const contact = contacts.find(c => c.passenger_id === p.passenger_id) || p;
             return {
               passenger_id: p.passenger_id,
               name: contact.name || '',
               id_type: contact.id_type || '居民身份证',
-              masked_id_number: contact.masked_id_number || ''
+              masked_id_number: contact.masked_id_number || '',
+              seat_type: passengerSeatTypes[p.passenger_id] || '二等座',
             };
           })}
           onConfirm={handleSeatConfirm}
