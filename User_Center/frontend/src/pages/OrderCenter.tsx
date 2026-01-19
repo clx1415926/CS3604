@@ -275,7 +275,7 @@ export default function OrderCenter() {
       if (activeTab === 'upcoming') return o.status === 'paid';
       return o.status === 'canceled';
     })
-    .filter(o => inDateRange(o))
+    .filter(o => (activeTab === 'unfinished' ? true : inDateRange(o)))
     .filter(o => matchQuery(o));
 
   if (loading) return <div style={{ padding: 20 }}>加载中...</div>;
@@ -304,10 +304,14 @@ export default function OrderCenter() {
       </div>
 
       <div className="order-filter-row">
-        <span className="order-filter-label">按出行日期查询</span>
-        <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="order-filter-date" />
-        <span className="order-filter-sep">—</span>
-        <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="order-filter-date" />
+        {activeTab !== 'unfinished' && (
+          <>
+            <span className="order-filter-label">按出行日期查询</span>
+            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="order-filter-date" />
+            <span className="order-filter-sep">—</span>
+            <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="order-filter-date" />
+          </>
+        )}
         <input className="order-filter-input" placeholder="订单编号/车次/旅客姓名" value={query} onChange={e => setQuery(e.target.value)} />
         <button className="order-filter-btn" onClick={() => { setStartDate(startDate); setEndDate(endDate); setQuery(query); }}>查询</button>
       </div>
