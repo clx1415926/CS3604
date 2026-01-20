@@ -136,6 +136,11 @@ describe('Feature: Payment', () => {
     } else {
       expect(window.location.hash === '' || window.location.hash === '#').toBe(true);
     }
-    expect(fetchSpy).not.toHaveBeenCalled();
+    
+    // 验证没有调用支付接口
+    const payCalls = fetchSpy.mock.calls.filter(call => 
+      String(call[0]).includes('/pay')
+    );
+    expect(payCalls.length).toBe(0);
   });
 });

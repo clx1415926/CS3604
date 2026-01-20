@@ -4,48 +4,7 @@ const API_BASE = '/api/v1';
 function qs(id) { return document.getElementById(id); }
 function show(el) { el.classList.remove('hidden'); }
 function hide(el) { el.classList.add('hidden'); }
-function setError(id, msg) {
-  const el = qs(id);
-  if (!el) return;
-  el.textContent = msg || '';
-}
-
-function setInvalid(inputEl, invalid) {
-  if (!inputEl) return;
-  if (invalid) inputEl.classList.add('invalid');
-  else inputEl.classList.remove('invalid');
-}
-
-function setFieldError(inputEl, errorId, msg) {
-  setError(errorId, msg);
-  setInvalid(inputEl, !!msg);
-}
-
-function requiredMessage(label) {
-  return `请填写${label}`;
-}
-
-function termsRequiredMessage() {
-  return '请确认服务条款';
-}
-
-function markTouched(el) {
-  if (!el) return;
-  el.dataset.touched = '1';
-}
-
-function isTouched(el) {
-  return !!el && el.dataset.touched === '1';
-}
-
-function isEmptyFieldValue(el) {
-  if (!el) return true;
-  const tag = (el.tagName || '').toLowerCase();
-  const type = (el.getAttribute && el.getAttribute('type')) || '';
-  if (type === 'checkbox') return !el.checked;
-  if (tag === 'select') return !String(el.value || '').trim();
-  return !String(el.value || '').trim();
-}
+function setError(id, msg) { qs(id).textContent = msg || ''; }
 
 // Step elements
 const accountForm = qs('account-form');
@@ -135,256 +94,62 @@ function validatePhoneLocal(cc, num) {
 
 // Live validations
 usernameInput.addEventListener('blur', async () => {
-  markTouched(usernameInput);
   const u = usernameInput.value.trim();
-  if (!u) {
-    setFieldError(usernameInput, 'username-error', requiredMessage('用户名'));
-    return;
-  }
   const vu = validateUsernameDetail(u);
-  if (!vu.ok) {
-    setFieldError(usernameInput, 'username-error', vu.message);
-    return;
-  }
+  if (!vu.ok) { setError('username-error', vu.message); return; }
   try {
     const res = await fetch(`${API_BASE}/users/username/check?username=${encodeURIComponent(u)}`);
     const data = await res.json();
     if (!res.ok) {
-      setFieldError(usernameInput, 'username-error', data.message || '用户名校验失败');
+      setError('username-error', data.message || '用户名校验失败');
     } else if (data.available === false) {
-      setFieldError(usernameInput, 'username-error', '该用户名已经占用，请重新选择用户名！');
+      setError('username-error', '该用户名已经占用，请重新选择用户名！');
     } else {
-      setFieldError(usernameInput, 'username-error', '');
+      setError('username-error', '');
     }
   } catch (e) {
-    setFieldError(usernameInput, 'username-error', '网络连接异常，请检查网络后重试');
-  }
-});
-
-usernameInput.addEventListener('input', () => {
-  if (!isTouched(usernameInput)) return;
-  const u = usernameInput.value.trim();
-  if (!u) {
-    setFieldError(usernameInput, 'username-error', requiredMessage('用户名'));
-    return;
-  }
-  const existing = ((qs('username-error') || {}).textContent || '').trim();
-  if (existing === requiredMessage('用户名')) {
-    setFieldError(usernameInput, 'username-error', '');
-  } else {
-    setInvalid(usernameInput, !!existing);
+    setError('username-error', '网络连接异常，请检查网络后重试');
   }
 });
 
 passwordInput.addEventListener('input', () => {
-  if (!isTouched(passwordInput)) return;
   const p = passwordInput.value;
   const u = usernameInput.value;
-  if (!p) {
-    setFieldError(passwordInput, 'password-error', requiredMessage('登录密码'));
-    strengthText.textContent = '弱';
-    strengthBar.style.setProperty('--strength-w', `${40}px`);
-    strengthBar.style.setProperty('--strength-color', '#e74c3c');
-    return;
-  }
   const r = passwordStrength(p, u);
   strengthBar.style.setProperty('--strength-w', `${r.width}px`);
   strengthBar.style.setProperty('--strength-color', r.color);
   strengthText.textContent = r.strength;
-  setFieldError(passwordInput, 'password-error', r.ok ? '' : r.message || '密码格式不正确');
-});
-
-passwordInput.addEventListener('blur', () => {
-  markTouched(passwordInput);
-  const p = passwordInput.value;
-  const u = usernameInput.value;
-  if (!p) {
-    setFieldError(passwordInput, 'password-error', requiredMessage('登录密码'));
-    return;
-  }
-  const r = passwordStrength(p, u);
-  setFieldError(passwordInput, 'password-error', r.ok ? '' : r.message || '密码格式不正确');
+  setError('password-error', r.ok ? '' : r.message || '密码格式不正确');
 });
 
 confirmInput.addEventListener('input', () => {
-  if (!isTouched(confirmInput)) return;
-  const v = confirmInput.value;
-  if (!v) {
-    setFieldError(confirmInput, 'confirm-error', requiredMessage('确认密码'));
-    return;
-  }
-  if (confirmInput.value !== passwordInput.value) setFieldError(confirmInput, 'confirm-error', '确认密码与密码不同！');
-  else setFieldError(confirmInput, 'confirm-error', '');
-});
-
-confirmInput.addEventListener('blur', () => {
-  markTouched(confirmInput);
-  const v = confirmInput.value;
-  if (!v) {
-    setFieldError(confirmInput, 'confirm-error', requiredMessage('确认密码'));
-    return;
-  }
-  if (confirmInput.value !== passwordInput.value) setFieldError(confirmInput, 'confirm-error', '确认密码与密码不同！');
-  else setFieldError(confirmInput, 'confirm-error', '');
-});
-
-nameInput.addEventListener('blur', () => {
-  markTouched(nameInput);
-  if (!nameInput.value.trim()) setFieldError(nameInput, 'name-error', requiredMessage('姓名'));
-  else setFieldError(nameInput, 'name-error', '');
-});
-
-nameInput.addEventListener('input', () => {
-  if (!isTouched(nameInput)) return;
-  if (!nameInput.value.trim()) setFieldError(nameInput, 'name-error', requiredMessage('姓名'));
-  else setFieldError(nameInput, 'name-error', '');
-});
-
-idTypeSelect.addEventListener('change', () => {
-  markTouched(idTypeSelect);
-  if (isTouched(idNumberInput)) idNumberInput.dispatchEvent(new Event('blur'));
-});
-
-travelerTypeSelect.addEventListener('change', () => {
-  markTouched(travelerTypeSelect);
-  if (isEmptyFieldValue(travelerTypeSelect)) setFieldError(travelerTypeSelect, 'traveler-type-error', requiredMessage('优惠（待）类型'));
-  else setFieldError(travelerTypeSelect, 'traveler-type-error', '');
+  if (confirmInput.value !== passwordInput.value) setError('confirm-error', '确认密码与密码不同！');
+  else setError('confirm-error', '');
 });
 
 idNumberInput.addEventListener('blur', () => {
-  markTouched(idNumberInput);
-  const v = idNumberInput.value.trim();
-  if (!v) {
-    setFieldError(idNumberInput, 'id-error', requiredMessage('证件号码'));
-    return;
-  }
-  const ok = validateIdLocal(idTypeSelect.value, v);
-  setFieldError(idNumberInput, 'id-error', ok ? '' : '请输入正确的身份证号码格式');
-});
-
-idNumberInput.addEventListener('input', () => {
-  if (!isTouched(idNumberInput)) return;
-  const v = idNumberInput.value.trim();
-  if (!v) setFieldError(idNumberInput, 'id-error', requiredMessage('证件号码'));
-  else setFieldError(idNumberInput, 'id-error', '');
+  const ok = validateIdLocal(idTypeSelect.value, idNumberInput.value.trim());
+  setError('id-error', ok ? '' : '请输入正确的身份证号码格式');
 });
 
 phoneNumberInput.addEventListener('blur', async () => {
-  markTouched(phoneNumberInput);
   const cc = phoneCountrySelect.value, num = phoneNumberInput.value.trim();
-  if (!num) {
-    setFieldError(phoneNumberInput, 'phone-error', requiredMessage('手机号码'));
-    return;
-  }
-  if (!validatePhoneLocal(cc, num)) { setFieldError(phoneNumberInput, 'phone-error', '请输入正确的手机号'); return; }
+  if (!validatePhoneLocal(cc, num)) { setError('phone-error', '请输入正确的手机号'); return; }
   try {
     const url = `${API_BASE}/users/phone/check?phone_country_code=${encodeURIComponent(cc)}&phone_number=${encodeURIComponent(num)}`;
     const res = await fetch(url);
     const data = await res.json();
-    if (!res.ok) setFieldError(phoneNumberInput, 'phone-error', data.message || '手机号校验失败');
-    else if (data.available === false) setFieldError(phoneNumberInput, 'phone-error', '该手机号已被注册，请尝试找回账户或联系客服');
-    else setFieldError(phoneNumberInput, 'phone-error', '');
-  } catch (e) { setFieldError(phoneNumberInput, 'phone-error', '网络连接异常，请检查网络后重试'); }
+    if (!res.ok) setError('phone-error', data.message || '手机号校验失败');
+    else if (data.available === false) setError('phone-error', '该手机号已被注册，请尝试找回账户或联系客服');
+    else setError('phone-error', '');
+  } catch (e) { setError('phone-error', '网络连接异常，请检查网络后重试'); }
 });
-
-phoneNumberInput.addEventListener('input', () => {
-  if (!isTouched(phoneNumberInput)) return;
-  const num = phoneNumberInput.value.trim();
-  if (!num) setFieldError(phoneNumberInput, 'phone-error', requiredMessage('手机号码'));
-  else setFieldError(phoneNumberInput, 'phone-error', '');
-});
-
-termsCheckbox.addEventListener('change', () => {
-  markTouched(termsCheckbox);
-  if (!termsCheckbox.checked) setFieldError(termsCheckbox, 'terms-error', termsRequiredMessage());
-  else setFieldError(termsCheckbox, 'terms-error', '');
-});
-
-function validateAccountForm() {
-  const validators = [
-    () => {
-      const u = usernameInput.value.trim();
-      if (!u) { setFieldError(usernameInput, 'username-error', requiredMessage('用户名')); return false; }
-      const v = validateUsernameDetail(u);
-      if (!v.ok) { setFieldError(usernameInput, 'username-error', v.message); return false; }
-      setFieldError(usernameInput, 'username-error', '');
-      return true;
-    },
-    () => {
-      const p = passwordInput.value;
-      if (!p) { setFieldError(passwordInput, 'password-error', requiredMessage('登录密码')); return false; }
-      const u = usernameInput.value;
-      const r = passwordStrength(p, u);
-      setFieldError(passwordInput, 'password-error', r.ok ? '' : r.message || '密码格式不正确');
-      return r.ok;
-    },
-    () => {
-      const c = confirmInput.value;
-      if (!c) { setFieldError(confirmInput, 'confirm-error', requiredMessage('确认密码')); return false; }
-      if (c !== passwordInput.value) { setFieldError(confirmInput, 'confirm-error', '确认密码与密码不同！'); return false; }
-      setFieldError(confirmInput, 'confirm-error', '');
-      return true;
-    },
-    () => {
-      const n = nameInput.value.trim();
-      if (!n) { setFieldError(nameInput, 'name-error', requiredMessage('姓名')); return false; }
-      setFieldError(nameInput, 'name-error', '');
-      return true;
-    },
-    () => {
-      if (isEmptyFieldValue(idTypeSelect)) { setFieldError(idTypeSelect, 'id-type-error', requiredMessage('证件类型')); return false; }
-      setFieldError(idTypeSelect, 'id-type-error', '');
-      return true;
-    },
-    () => {
-      const v = idNumberInput.value.trim();
-      if (!v) { setFieldError(idNumberInput, 'id-error', requiredMessage('证件号码')); return false; }
-      const ok = validateIdLocal(idTypeSelect.value, v);
-      setFieldError(idNumberInput, 'id-error', ok ? '' : '请输入正确的身份证号码格式');
-      return ok;
-    },
-    () => {
-      if (isEmptyFieldValue(travelerTypeSelect)) { setFieldError(travelerTypeSelect, 'traveler-type-error', requiredMessage('优惠（待）类型')); return false; }
-      setFieldError(travelerTypeSelect, 'traveler-type-error', '');
-      return true;
-    },
-    () => {
-      const num = phoneNumberInput.value.trim();
-      const cc = phoneCountrySelect.value;
-      if (!num) { setFieldError(phoneNumberInput, 'phone-error', requiredMessage('手机号码')); return false; }
-      if (!validatePhoneLocal(cc, num)) { setFieldError(phoneNumberInput, 'phone-error', '请输入正确的手机号'); return false; }
-      setFieldError(phoneNumberInput, 'phone-error', '');
-      return true;
-    },
-    () => {
-      if (!termsCheckbox.checked) { setFieldError(termsCheckbox, 'terms-error', termsRequiredMessage()); return false; }
-      setFieldError(termsCheckbox, 'terms-error', '');
-      return true;
-    },
-  ];
-
-  usernameInput && markTouched(usernameInput);
-  passwordInput && markTouched(passwordInput);
-  confirmInput && markTouched(confirmInput);
-  nameInput && markTouched(nameInput);
-  idTypeSelect && markTouched(idTypeSelect);
-  idNumberInput && markTouched(idNumberInput);
-  travelerTypeSelect && markTouched(travelerTypeSelect);
-  phoneNumberInput && markTouched(phoneNumberInput);
-  termsCheckbox && markTouched(termsCheckbox);
-
-  let ok = true;
-  for (const v of validators) {
-    const r = v();
-    ok = r && ok;
-  }
-  return ok;
-}
 
 // Submit account info
 accountForm.addEventListener('submit', async (evt) => {
   evt.preventDefault();
-  if (!validateAccountForm()) return;
+  // basic checks
+  if (!termsCheckbox.checked) { setError('terms-error', '请勾选同意12306服务条款与隐私权政策'); return; }
 
   const username = usernameInput.value.trim();
   const password = passwordInput.value;
@@ -396,6 +161,17 @@ accountForm.addEventListener('submit', async (evt) => {
   const phone_number = phoneNumberInput.value.trim();
   const email = emailInput.value.trim();
   const traveler_type = travelerTypeSelect.value;
+
+  {
+    const v = validateUsernameDetail(username);
+    if (!v.ok) { setError('username-error', v.message); return; }
+  }
+  const pw = passwordStrength(password, username);
+  if (!pw.ok) { setError('password-error', pw.message || '密码格式不正确'); return; }
+  if (confirm !== password) { setError('confirm-error', '确认密码与密码不同！'); return; }
+  const okId = validateIdLocal(id_type, id_number);
+  if (!okId) { setError('id-error', '请输入正确的身份证号码格式'); return; }
+  if (!validatePhoneLocal(phone_country_code, phone_number)) { setError('phone-error', '请输入正确的手机号'); return; }
 
   try {
     const sres = await fetch(`${API_BASE}/registration/sessions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
@@ -460,12 +236,6 @@ verifyCodeBtn.addEventListener('click', async () => {
   if (!sessionId) return alert('会话未创建');
   const code = smsCodeInput.value.trim();
   const channel = currentChannel();
-  markTouched(smsCodeInput);
-  if (!code) {
-    setFieldError(smsCodeInput, 'code-error', requiredMessage('验证码'));
-    return;
-  }
-  setFieldError(smsCodeInput, 'code-error', '');
   try {
     const url = channel === 'email'
       ? `${API_BASE}/registration/sessions/${sessionId}/email/verify`
@@ -523,10 +293,10 @@ acceptTermsBtn.addEventListener('click', async () => {
   if (!sessionId) return alert('会话未创建');
   
   if (agreeTermsFinal && !agreeTermsFinal.checked) {
-    setFieldError(agreeTermsFinal, 'terms-final-error', termsRequiredMessage());
+    setError('terms-final-error', '请先阅读并同意服务条款');
     return;
   }
-  if (agreeTermsFinal) setFieldError(agreeTermsFinal, 'terms-final-error', '');
+  setError('terms-final-error', '');
 
   try {
     const tres = await fetch(`${API_BASE}/registration/sessions/${sessionId}/terms`, {
@@ -581,9 +351,8 @@ function isValidChineseID(id) {
 idNumberInput.addEventListener('blur', () => {
   const id = idNumberInput.value.trim();
   const type = idTypeSelect.value;
-  if (!id) return;
   if (type === '居民身份证' && !isValidChineseID(id)) {
-    setFieldError(idNumberInput, 'id-error', '身份证格式错误或校验位不正确');
+    setError('id-error', '身份证格式错误或校验位不正确');
   }
 });
 

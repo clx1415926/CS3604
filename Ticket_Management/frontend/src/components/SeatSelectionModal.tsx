@@ -76,6 +76,10 @@ export default function SeatSelectionModal({
     return () => clearInterval(t);
   }, [carriageNo, trainId, travelDate, seatClass]);
 
+  useEffect(() => {
+    setSelectedSeats([]);
+  }, [carriageNo]);
+
   const fetchSeatMap = async () => {
     setLoading(true);
     try {
@@ -271,6 +275,27 @@ export default function SeatSelectionModal({
                 <div>{p.masked_id_number || ''}</div>
               </div>
             ))}
+          </div>
+
+          {/* 车厢选择与统计 */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
+             <div style={{ display: 'flex', alignItems: 'center', fontSize: 14 }}>
+                <span style={{ marginRight: 10, fontWeight: 600 }}>车厢：</span>
+                <select 
+                  value={carriageNo} 
+                  onChange={(e) => setCarriageNo(e.target.value)}
+                  style={{ padding: '4px 8px', borderRadius: 4, border: '1px solid #d9d9d9' }}
+                >
+                  {[...Array(16)].map((_, i) => {
+                    const c = String(i + 1);
+                    return <option key={c} value={c}>{c}号车厢</option>
+                  })}
+                </select>
+                <span style={{ marginLeft: 10 }}> - {seatClass}</span>
+             </div>
+             <div style={{ fontSize: 14, color: '#666' }}>
+                需要选择 {passengerCount} 个座位，已选择 {selectedSeats.filter(s => s).length} 个
+             </div>
           </div>
 
           {/* 选座提示 */}

@@ -143,7 +143,7 @@ router.post('/', requireAuth, (req, res) => {
       let carriageNo = lock.carriage_no;
       
       // 如果车厢号是通用的（如10），根据座位类型重新分配
-      if (!carriageNo || carriageNo === '10') {
+      if (!carriageNo) {
         const range = carriageRangeMap[seatClass] || carriageRangeMap['二等座'];
         carriageNo = String(range.start);
       }

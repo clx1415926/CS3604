@@ -545,6 +545,19 @@
       "created_at": "2025-12-21T06:55:55.302Z"
     },
     {
+      "passenger_id": "1766758297942",
+      "user_id": "fb39eff6-24c2-4882-bb8a-52bb82d0e7ec",
+      "name": "张三",
+      "id_type": "居民身份证",
+      "id_number": "6597ef3c20b83e2df2ed2b039edd977a:3eda17625748530c50bddcde8f7927785fb91f91f8c81e6142ab520b1c4a3c99",
+      "phone_country_code": "+86",
+      "phone_number": "18621523333",
+      "traveler_type": "成人",
+      "verified_status": "已通过",
+      "is_self": false,
+      "created_at": "2025-12-26T14:11:37.942Z"
+    },
+    {
       "passenger_id": "self-84d20cb3-406f-4c34-9c9e-da7e491017cb",
       "user_id": "84d20cb3-406f-4c34-9c9e-da7e491017cb",
       "name": "czf",
@@ -651,20 +664,6 @@
       "verified_status": "已通过",
       "is_self": false,
       "created_at": "2025-12-28T15:40:18.512Z"
-    },
-    {
-      "passenger_id": "self-74665e0d-f9e8-43b4-be04-6ad378ebb98c",
-      "user_id": "74665e0d-f9e8-43b4-be04-6ad378ebb98c",
-      "name": "王五",
-      "id_type": "居民身份证",
-      "id_number": "37e5ff44162d4df4ae73ef85c679e949:6a78cba2e2f63f37dad31b14f403642c347d55bc029c2b1ed9f25ea30bafb2a3",
-      "phone_country_code": "+86",
-      "phone_number": "13811111111",
-      "traveler_type": "成人",
-      "verified_status": "已通过",
-      "is_self": true,
-      "protected_flag": 1,
-      "created_at": "2026-01-15T13:00:45.229Z"
     }
   ],
   "users": {
@@ -731,7 +730,7 @@
             }
           ],
           "price_total": 576,
-          "status": "canceled"
+          "status": "unpaid"
         },
         {
           "order_id": "o-01KD2BWVJXYQFSZP1EW3EPBGPA",
@@ -762,7 +761,7 @@
             }
           ],
           "price_total": 576,
-          "status": "canceled"
+          "status": "unpaid"
         },
         {
           "order_id": "o-01KD2BN841GG3S4VM4A88WNN9F",
@@ -889,7 +888,7 @@
           "status": "canceled"
         }
       ],
-      "updated_at": "2026-01-15T11:13:42.377Z"
+      "updated_at": "2025-12-22T06:32:07.154Z"
     },
     "8c0bf5c3-6d2f-4c21-aca5-a4e1a77b8bf7": {
       "orders": [
@@ -1497,6 +1496,37 @@
     "84d20cb3-406f-4c34-9c9e-da7e491017cb": {
       "orders": [
         {
+          "order_id": "o-01KFAB7JQMASPES2RS97ADMTE5",
+          "booked_at": "2026-01-19T05:21:51.349Z",
+          "travel_date": "2026-01-19",
+          "train": {
+            "code": "D2711",
+            "from": "北京站",
+            "to": "上海站",
+            "depart_time": "08:00",
+            "arrive_time": "13:36"
+          },
+          "passengers": [
+            {
+              "passenger_id": "self-84d20cb3-406f-4c34-9c9e-da7e491017cb",
+              "name": "czf",
+              "id_type": "居民身份证",
+              "id_number": "330182200501221315",
+              "phone_number": null,
+              "ticket_type": null
+            }
+          ],
+          "seats": [
+            {
+              "seat_class": "一等座",
+              "carriage_no": "3",
+              "seat_no": "1B"
+            }
+          ],
+          "price_total": 933,
+          "status": "paid"
+        },
+        {
           "order_id": "o-01KF7YA9RMJK71RV9XQXQK1JRY",
           "booked_at": "2026-01-18T06:57:40.118Z",
           "travel_date": "2026-01-21",
@@ -1869,7 +1899,7 @@
           "status": "paid"
         }
       ],
-      "updated_at": "2026-01-18T06:57:47.539Z"
+      "updated_at": "2026-01-19T05:21:58.704Z"
     },
     "bcf0a538-f465-4cfe-9ed5-d36d78d307c8": {
       "orders": [],
@@ -1985,10 +2015,6 @@
         }
       ],
       "updated_at": "2025-12-28T15:51:56.121Z"
-    },
-    "74665e0d-f9e8-43b4-be04-6ad378ebb98c": {
-      "orders": [],
-      "updated_at": "2026-01-15T13:01:14.961Z"
     }
   }
 }

@@ -47,7 +47,7 @@
         </div>
 
         <!-- 步骤1：账户信息填写 -->
-        <form id="account-form" class="form-grid" autocomplete="off" novalidate>
+        <form id="account-form" class="form-grid" autocomplete="off">
           <div class="form-row">
             <label for="username" class="required">用户名</label>
             <div class="field">
@@ -82,7 +82,6 @@
             <div class="field">
               <input id="name" name="name" type="text" placeholder="请输入真实姓名" required />
               <div class="hint">请输入与有效身份证件上相符的姓名</div>
-              <div class="error" id="name-error"></div>
             </div>
           </div>
 
@@ -95,7 +94,6 @@
                 <option value="港澳居民来往内地通行证">港澳居民来往内地通行证</option>
                 <option value="台湾居民来往大陆通行证">台湾居民来往大陆通行证</option>
               </select>
-              <div class="error" id="id-type-error"></div>
             </div>
           </div>
 
@@ -116,24 +114,21 @@
                 <option value="学生">学生</option>
                 <option value="残疾军人">残疾军人</option>
               </select>
-              <div class="error" id="traveler-type-error"></div>
             </div>
           </div>
 
           <div class="form-row">
             <label for="phone_number" class="required">手机号码</label>
-            <div class="field">
-              <div class="phone-field">
-                <select id="phone_country_code" name="phone_country_code">
-                  <option value="+86">+86 中国大陆</option>
-                  <option value="+852">+852 香港</option>
-                  <option value="+853">+853 澳门</option>
-                  <option value="+886">+886 台湾</option>
-                </select>
-                <input id="phone_number" name="phone_number" type="tel" placeholder="请输入手机号码" required />
-              </div>
-              <div class="error" id="phone-error"></div>
+            <div class="field phone-field">
+              <select id="phone_country_code" name="phone_country_code">
+                <option value="+86">+86 中国大陆</option>
+                <option value="+852">+852 香港</option>
+                <option value="+853">+853 澳门</option>
+                <option value="+886">+886 台湾</option>
+              </select>
+              <input id="phone_number" name="phone_number" type="tel" placeholder="请输入手机号码" required />
             </div>
+            <div class="error" id="phone-error"></div>
           </div>
 
           <div class="form-row">

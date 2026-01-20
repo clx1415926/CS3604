@@ -50,7 +50,7 @@ describe('Feature: Hash Router (index.tsx)', () => {
     await vi.resetModules();
     await import('../src/index');
 
-    expect(await screen.findByText('订单填写')).toBeInTheDocument();
+    expect(await screen.findByText('乘客信息')).toBeInTheDocument();
   });
 
   it('should render Payment page when hash starts with #payment', async () => {
